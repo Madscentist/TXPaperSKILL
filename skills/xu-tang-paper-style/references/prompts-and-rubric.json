@@ -1,0 +1,71 @@
+{
+  "example_library_schema": {
+    "paper_id": "Tang_2023_MIEN_PLA_RemoteSensing",
+    "section": "abstract | introduction | related_work | methods | results | discussion | conclusion",
+    "function": "background | problem_statement | gap | motivation | method_overview | setting_description | result_report | comparison | result_explanation | limitation | implication | contribution_summary",
+    "text": "Source paragraph or excerpt for internal style analysis; do not use for verbatim generation.",
+    "style_notes": {
+      "move": "Rhetorical move performed by the paragraph.",
+      "preferred_logic": "Local progression pattern.",
+      "hedging": "low | medium | high",
+      "voice": "active | passive | mixed",
+      "confidence": "low | medium | high"
+    },
+    "keywords": [
+      "remote sensing",
+      "task keyword",
+      "method keyword"
+    ]
+  },
+  "prompt_templates": {
+    "prompt_abstract": "你正在写论文的 Abstract。目标是为以下研究内容生成一段风格接近 Xu Tang 近年遥感论文的摘要，但不得照抄任何原文。\n\n输入信息：\n- 任务：\n- 研究背景：\n- 现有方法：\n- 具体不足：\n- 本文方法名称：\n- 核心模块：\n- 实验数据集：\n- 已知结果：\n- 代码/资源可用性：\n\n写作要求：\n1. 严格遵守 skill_abstract。\n2. 先输出 5-7 行提纲，再输出正文。\n3. 使用“任务重要性→现有不足→方法提出→模块解释→实验验证”的结构。\n4. 不得编造事实、数字、引用、数据集或代码链接。\n5. 风格应接近导师的技术性、克制性、模块化表达，但不得机械复用原句。",
+    "prompt_introduction": "你正在写论文的 Introduction。目标是建立研究必要性，并自然推出本文方法。\n\n输入信息：\n- 研究领域：\n- 目标任务：\n- 应用价值：\n- 主要技术路线：\n- 现有方法不足：\n- 本文方法：\n- 贡献点：\n- 文章组织结构：\n\n写作要求：\n1. 严格遵守 skill_introduction。\n2. 先输出段落级提纲，再输出正文。\n3. 按“背景→任务→已有方法→缺口→方法→贡献→组织结构”推进。\n4. 每个 gap 必须对应本文方法中的一个设计。\n5. 不得编造引用、事实、指标或应用场景。\n6. 风格接近导师的稳健问题驱动写法，不得照抄原文。",
+    "prompt_related_work": "你正在写 Related Work。目标是按技术路线梳理前人工作，并服务于本文缺口。\n\n输入信息：\n- 本文任务：\n- 需要覆盖的方法类别：\n- 已提供参考文献及其真实贡献：\n- 本文与已有工作的差异：\n\n写作要求：\n1. 严格遵守 skill_related_work。\n2. 先输出小节提纲，再输出正文。\n3. 每类方法先概括共同思想，再讨论代表性工作，最后指出与本文问题相关的不足。\n4. 不得生成不存在的引用，不得夸大前人缺陷。\n5. 风格保持中性、压缩、分类清晰。",
+    "prompt_methods": "你正在写 Methods。目标是清楚描述本文方法的总体框架、模块设计和训练流程。\n\n输入信息：\n- 方法名称：\n- 输入与输出：\n- 符号定义：\n- 总体框架：\n- 模块 1：\n- 模块 2：\n- 模块 3：\n- 损失函数/训练策略：\n- 实现细节：\n\n写作要求：\n1. 严格遵守 skill_methods。\n2. 先输出方法结构提纲，再输出正文。\n3. 每个模块必须说明输入、操作、输出和目的。\n4. 不得编造公式、参数、复杂度或实现细节。\n5. 使用技术性、程序化、克制的语气。\n6. 风格接近导师的模块化方法叙述，但不得复写原句。",
+    "prompt_results": "你正在写 Results。目标是报告实验设置、对比结果、消融分析和必要解释。\n\n输入信息：\n- 数据集：\n- 指标：\n- 实现设置：\n- 对比方法：\n- 主实验结果：\n- 消融实验：\n- 参数/效率/可视化结果：\n- 已观察到的限制：\n\n写作要求：\n1. 严格遵守 skill_results。\n2. 先输出结果叙述提纲，再输出正文。\n3. 所有数字必须来自输入，不得自行生成。\n4. 先描述设置，再报告对比，再解释模块贡献。\n5. 不得使用 unsupported 的 significantly/best 等表达。\n6. 风格接近导师的实验报告写法，保持事实优先。",
+    "prompt_discussion": "你正在写 Discussion。目标是解释实验现象、方法有效原因、适用边界和未来方向。\n\n输入信息：\n- 关键实验发现：\n- 可能原因：\n- 与模块设计的对应关系：\n- 失败案例或弱项：\n- 适用边界：\n- 未来工作：\n\n写作要求：\n1. 严格遵守 skill_discussion。\n2. 先输出讨论提纲，再输出正文。\n3. 明确区分实验事实与推断性解释。\n4. 不得引入新实验、新数据或新引用。\n5. 使用 may/could/possibly 等保守表达处理解释性判断。\n6. 风格接近导师的结果解释方式，不得机械照抄。",
+    "prompt_conclusion": "你正在写 Conclusion。目标是简洁总结方法、模块作用、实验结论和未来工作。\n\n输入信息：\n- 任务：\n- 方法名称：\n- 核心模块：\n- 主要实验结论：\n- 限制或未来工作：\n\n写作要求：\n1. 严格遵守 skill_conclusion。\n2. 先输出 4-5 行提纲，再输出正文。\n3. 不得引入正文未出现的新信息。\n4. 使用“本文提出→模块回收→实验验证→未来工作”的顺序。\n5. 语气确定但克制，避免绝对化。\n6. 风格接近导师的简洁收束方式，不得照抄原文。"
+  },
+  "rubric_1_to_5": {
+    "style_similarity": {
+      "1": "Generic academic prose; lacks task-gap-module-experiment chain.",
+      "3": "Partly follows the style, but module explanation or limitation framing is unstable.",
+      "5": "Consistently problem-driven, modular, restrained, and evidence-linked."
+    },
+    "tone_consistency": {
+      "1": "Promotional, colloquial, or absolute.",
+      "3": "Mostly academic with occasional overstatement.",
+      "5": "Objective, stable, conservative, and suited to remote sensing engineering papers."
+    },
+    "section_match": {
+      "1": "Functions of abstract, introduction, results, or conclusion are mixed.",
+      "3": "Mostly section-appropriate, but paragraph functions are unclear.",
+      "5": "Fully follows the target section skill and progression."
+    },
+    "structural_completeness": {
+      "1": "Missing key elements such as background, gap, method, or validation.",
+      "3": "Complete but loosely connected.",
+      "5": "Clear paragraph roles; gaps map to modules."
+    },
+    "factual_fidelity": {
+      "1": "Invents data, citations, metrics, datasets, or links.",
+      "3": "No obvious fabrication, but contains unsupported generalization.",
+      "5": "All facts come from the input; unknowns are omitted or marked."
+    },
+    "terminology_consistency": {
+      "1": "Task, metric, and module names are inconsistent.",
+      "3": "Mostly consistent with minor variation.",
+      "5": "Terminology, acronyms, modules, and datasets are consistent throughout."
+    },
+    "exaggeration_control": {
+      "1": "Uses many absolute or promotional claims.",
+      "3": "Contains occasional overly strong wording.",
+      "5": "Uses strong claims only when supplied evidence supports them."
+    },
+    "new_information_control": {
+      "1": "Adds unsupported datasets, formulas, results, or references.",
+      "3": "Adds small background inferences.",
+      "5": "Strictly stays within input facts and reasonable structural expression."
+    }
+  }
+}

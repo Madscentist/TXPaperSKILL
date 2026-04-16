@@ -1,0 +1,461 @@
+[
+  {
+    "filename": "EATDer_Edge-Assisted_Adaptive_Transformer_Detector_for_Remote_Sensing_Change_Detection.txt",
+    "surface_style": {
+      "avg_sentence_length": 13.76086956521739,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 63.3,
+      "passive_ratio": 0.02527646129541864,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.011058451816745656,
+      "first_person_usage": "使用第一人称",
+      "top_conjunctions": {
+        "in addition": 2,
+        "however": 1,
+        "but": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.021739130434782608,
+      "concession_ratio": 0.06521739130434782,
+      "causal_ratio": 0.043478260869565216,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.0631911532385466,
+      "sentence_endings": {
+        "citation": 2
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → gap → method → contribution",
+      "methods": "overview → technical details"
+    },
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": [
+        "novelty"
+      ]
+    }
+  },
+  {
+    "filename": "Interacting-Enhancing_Feature_Transformer_for_Cross-Modal_Remote-Sensing_Image_and_Text_Retrieval.txt",
+    "surface_style": {
+      "avg_sentence_length": 14.872727272727273,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 204.5,
+      "passive_ratio": 0.039119804400977995,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.011002444987775062,
+      "first_person_usage": "使用第一人称",
+      "top_conjunctions": {
+        "however": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {
+        "especially": 1
+      }
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.01818181818181818,
+      "concession_ratio": 0.03636363636363636,
+      "causal_ratio": 0.05454545454545454,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.028117359413202935,
+      "sentence_endings": {
+        "citation": 1
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method",
+      "methods": "overview → technical details",
+      "results": "setup → results → comparison"
+    },
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "Language-Guided_Progressive_Query_Refinement_With_Diffusion_Model_for_Visual_Grounding_on_Remote_Sensing_Images.txt",
+    "surface_style": {
+      "avg_sentence_length": 14.761904761904763,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 620.0,
+      "passive_ratio": 0.027419354838709678,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.00967741935483871,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {
+        "although": 1,
+        "therefore": 1,
+        "in addition": 1,
+        "for example": 1,
+        "on the other hand": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.047619047619047616,
+      "concession_ratio": 0.07142857142857142,
+      "causal_ratio": 0.09523809523809523,
+      "comparison_ratio": 0.023809523809523808,
+      "nominalization_ratio": 0.05806451612903226,
+      "sentence_endings": {
+        "citation": 2
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method",
+      "results": "setup → results → comparison"
+    },
+    "academic_stance": {
+      "assertion_strength": "强断言",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "Multiple_Information_Collaborative_Fusion_Network_for_Joint_Classification_of_Hyperspectral_and_LiDAR_Data.txt",
+    "surface_style": {
+      "avg_sentence_length": 15.945945945945946,
+      "sentence_length_pref": "中等句",
+      "avg_paragraph_length": 196.66666666666666,
+      "passive_ratio": 0.02711864406779661,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.011864406779661017,
+      "first_person_usage": "使用第一人称",
+      "top_conjunctions": {
+        "however": 1,
+        "although": 1,
+        "therefore": 1,
+        "in addition": 1,
+        "specifically": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {
+        "essentially": 1
+      }
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.05405405405405406,
+      "concession_ratio": 0.10810810810810811,
+      "causal_ratio": 0.08108108108108109,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.09322033898305085,
+      "sentence_endings": {
+        "citation": 2
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method",
+      "results": "setup → results → comparison"
+    },
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "Multipretext-Task_Prototypes_Guided_Dynamic_Contrastive_Learning_Network_for_Few-Shot_Remote_Sensing_Scene_Classification.txt",
+    "surface_style": {
+      "avg_sentence_length": 10.435483870967742,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 161.75,
+      "passive_ratio": 0.03245749613601236,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.0077279752704791345,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {
+        "however": 2,
+        "therefore": 1,
+        "for example": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.016129032258064516,
+      "concession_ratio": 0.03225806451612903,
+      "causal_ratio": 0.04838709677419355,
+      "comparison_ratio": 0.016129032258064516,
+      "nominalization_ratio": 0.04945904173106646,
+      "sentence_endings": {
+        "citation": 1
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method",
+      "results": "setup → results → comparison"
+    },
+    "academic_stance": {
+      "assertion_strength": "强断言",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "Multiscale_Sparse_Cross-Attention_Network_for_Remote_Sensing_Scene_Classification.txt",
+    "surface_style": {
+      "avg_sentence_length": 14.595238095238095,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 102.16666666666667,
+      "passive_ratio": 0.03425774877650897,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.008156606851549755,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {
+        "but": 2,
+        "however": 1,
+        "although": 1,
+        "thus": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {
+        "particularly": 1,
+        "especially": 1
+      }
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.023809523809523808,
+      "concession_ratio": 0.11904761904761904,
+      "causal_ratio": 0.07142857142857142,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.057096247960848286,
+      "sentence_endings": {
+        "citation": 2
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method",
+      "methods": "overview → technical details"
+    },
+    "academic_stance": {
+      "assertion_strength": "强断言",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "remotesensing-15-04229-v2.txt",
+    "surface_style": {
+      "avg_sentence_length": 0,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 0,
+      "passive_ratio": 0,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {},
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0,
+      "concession_ratio": 0,
+      "causal_ratio": 0,
+      "comparison_ratio": 0,
+      "nominalization_ratio": 0,
+      "sentence_endings": {}
+    },
+    "rhetorical_structure": {},
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "remotesensing-15-05706-v2.txt",
+    "surface_style": {
+      "avg_sentence_length": 0,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 0,
+      "passive_ratio": 0,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {},
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0,
+      "concession_ratio": 0,
+      "causal_ratio": 0,
+      "comparison_ratio": 0,
+      "nominalization_ratio": 0,
+      "sentence_endings": {}
+    },
+    "rhetorical_structure": {},
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "Spatial_Pooling_Transformer_Network_and_Noise-Tolerant_Learning_for_Noisy_Hyperspectral_Image_Classification.txt",
+    "surface_style": {
+      "avg_sentence_length": 12.0,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 122.4,
+      "passive_ratio": 0.03431372549019608,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.021241830065359478,
+      "first_person_usage": "使用第一人称",
+      "top_conjunctions": {
+        "however": 1,
+        "but": 1,
+        "although": 1,
+        "thus": 1
+      },
+      "top_hedge_words": {
+        "indicates": 1
+      },
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.0,
+      "concession_ratio": 0.0784313725490196,
+      "causal_ratio": 0.0784313725490196,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.06699346405228758,
+      "sentence_endings": {
+        "citation": 1
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method",
+      "results": "setup → results → comparison"
+    },
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "SpiralMamba_Spatial-Spectral_Complementary_Mamba_With_Spatial_Spiral_Scan_for_Hyperspectral_Image_Classification.txt",
+    "surface_style": {
+      "avg_sentence_length": 14.838709677419354,
+      "sentence_length_pref": "短句",
+      "avg_paragraph_length": 92.0,
+      "passive_ratio": 0.02391304347826087,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.008695652173913044,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {
+        "therefore": 2,
+        "however": 1,
+        "but": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.0,
+      "concession_ratio": 0.0967741935483871,
+      "causal_ratio": 0.12903225806451613,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.058695652173913045,
+      "sentence_endings": {}
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method"
+    },
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "Unsupervised_SAR_Image_Change_Detection_Based_on_Feature_Fusion_of_Information_Transfer.txt",
+    "surface_style": {
+      "avg_sentence_length": 19.0625,
+      "sentence_length_pref": "中等句",
+      "avg_paragraph_length": 101.66666666666667,
+      "passive_ratio": 0.03278688524590164,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.01639344262295082,
+      "first_person_usage": "使用第一人称",
+      "top_conjunctions": {
+        "but": 1,
+        "thus": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.0625,
+      "concession_ratio": 0.125,
+      "causal_ratio": 0.25,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.07540983606557378,
+      "sentence_endings": {
+        "citation": 1
+      }
+    },
+    "rhetorical_structure": {
+      "introduction": "background → gap → method → contribution"
+    },
+    "academic_stance": {
+      "assertion_strength": "平衡",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  },
+  {
+    "filename": "WNet_W-Shaped_Hierarchical_Network_for_Remote-Sensing_Image_Change_Detection.txt",
+    "surface_style": {
+      "avg_sentence_length": 15.67741935483871,
+      "sentence_length_pref": "中等句",
+      "avg_paragraph_length": 97.2,
+      "passive_ratio": 0.0411522633744856,
+      "voice_pref": "主动语态较多",
+      "first_person_ratio": 0.006172839506172839,
+      "first_person_usage": "避免第一人称",
+      "top_conjunctions": {
+        "however": 1,
+        "furthermore": 1,
+        "for example": 1,
+        "for instance": 1
+      },
+      "top_hedge_words": {},
+      "top_emphasis_words": {}
+    },
+    "syntactic_style": {
+      "general_specific_ratio": 0.06451612903225806,
+      "concession_ratio": 0.06451612903225806,
+      "causal_ratio": 0.0967741935483871,
+      "comparison_ratio": 0.0,
+      "nominalization_ratio": 0.05761316872427984,
+      "sentence_endings": {}
+    },
+    "rhetorical_structure": {
+      "introduction": "background → method"
+    },
+    "academic_stance": {
+      "assertion_strength": "强断言",
+      "conservative_expression": "保守表达较少",
+      "acknowledges_limitations": "较少承认局限",
+      "emphasis_directions": []
+    }
+  }
+]

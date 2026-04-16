@@ -1,0 +1,48 @@
+{
+  "section": "conclusion",
+  "goal": [
+    "总结论文的主要贡献",
+    "强调方法的创新点",
+    "说明研究的意义",
+    "提出未来工作方向",
+    "给读者留下深刻印象"
+  ],
+  "structure": [
+    "研究总结（1-2段）",
+    "主要贡献（1段）",
+    "研究意义（1段）",
+    "未来工作（1段）",
+    "结束语（1句）"
+  ],
+  "tone": [
+    "简洁、有力、有说服力",
+    "使用现在完成时总结",
+    "避免引入新信息",
+    "强调实际应用价值"
+  ],
+  "preferred_phrases": [
+    "In this paper, we have proposed...",
+    "The main contributions include...",
+    "Experimental results demonstrate that...",
+    "Future work will focus on...",
+    "We believe that..."
+  ],
+  "logic_pattern": [
+    "总结 → 贡献 → 意义 → 未来 → 结束"
+  ],
+  "avoid": [
+    "重复abstract内容",
+    "引入新信息",
+    "过度承诺",
+    "缺乏未来方向",
+    "过于简略"
+  ],
+  "constraints": [
+    "长度：300-500词",
+    "贡献：明确列出主要贡献",
+    "意义：说明实际应用价值",
+    "未来：提出具体改进方向",
+    "不引入新实验结果",
+    "不重复详细内容"
+  ]
+}

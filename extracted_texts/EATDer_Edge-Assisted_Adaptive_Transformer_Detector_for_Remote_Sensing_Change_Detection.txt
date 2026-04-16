@@ -1,0 +1,1555 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+5602015
+
+EATDer: Edge-Assisted Adaptive Transformer
+Detector for Remote Sensing Change Detection
+Jingjing Ma, Member, IEEE, Junyi Duan , Xu Tang , Senior Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, and Licheng Jiao , Fellow, IEEE
+Abstract— Change detection (CD) is one of the important
+research topics in remote sensing (RS) image processing.
+Recently, convolutional neural networks (CNNs) have dominated
+the RSCD community. Many successful CNN-based models have
+been proposed, and they achieved cracking performance. Nevertheless, influenced by the limited receptive field, the CNN-based
+models are not good at capturing long-distance context dependencies within RS images, negatively impacting their performance.
+With the appearance of the visual transformer, the above problems have been mitigated. However, the high time costs of the
+transformer-based models limit their applicability. In addition,
+previous CD networks (whether CNN-based or transform-based)
+do not pay attention to the edges of changed areas, reducing the
+quality of change maps. To overcome the shortcomings discussed
+above, we propose a new CD method named edge-assisted
+adaptive transformer detector (EATDer). EATDer consists of a
+Siamese encoder and an edge-aware decoder. Each branch in the
+Siamese encoder encloses three self-adaption vision transformer
+(SAVT) blocks, which aim to capture the local and global
+information within RS images. Also, two branches are connected
+by full-range fusion modules (FRFMs), which focus on mining the
+temporal clues among bi-temporal RS images and pointing out
+the changed/unchanged messages. The edge-aware decoder first
+integrates the multiscale features obtained by the encoder using
+a restoring block. Then, it enhances the combined features by
+a refining block. Finally, based on the refined features, both the
+change and edge detection results can be produced. Along with a
+joint loss function, we can get high-quality change maps in which
+the changed areas are correct and have clear and smooth edges.
+The usefulness of our EATDer is validated by extensive experiments conducted on three popular RSCD datasets. Our source
+codes are available at https://github.com/TangXu-Group/RemoteSensing-Image-Change-Detection/tree/main/EATDer
+Index Terms— Change detection (CD), remote sensing (RS),
+transformer.
+
+I. I NTRODUCTION
+HANKS to the development of sensor technologies,
+a large number of remote sensing (RS) images can be
+collected every day. These Earth observation data provide rich
+land-cover information for researchers. As a basic and vibrant
+interpretation technique, RS change detection (RSCD) plays a
+vital role in the RS community. It aims to find the changed
+
+T
+
+Manuscript received 7 February 2023; revised 23 July 2023 and
+21 November 2023; accepted 13 December 2023. Date of publication
+18 December 2023; date of current version 26 December 2023. This work
+was supported in part by the National Natural Science Foundation of China
+under Grant 62171332 and Grant 62276197 and in part by the Shaanxi
+Province Innovation Capability Support Plan under Grant 2023-CX-TD-09.
+(Corresponding author: Xu Tang.)
+The authors are with the Key Laboratory of Intelligent Perception and Image
+Understanding of the Ministry of Education, School of Artificial Intelligence,
+Xidian University, Xi’an 710071, China (e-mail: tangxu128@gmail.com).
+Digital Object Identifier 10.1109/TGRS.2023.3344083
+
+pixels and regions within the multitemporal RS images, which
+cover the same areas but are produced at different times [1],
+[2]. The accurate RSCD results contribute to many RS applications, including land-cover analysis [3], object detection [4],
+disaster monitoring [5], and scene understanding [6], [7],
+[8], [9].
+In the past, numerous methods have been developed for
+RSCD with the help of traditional machine learning [10],
+[11]. Those methods mainly rely on algebra and transformation
+techniques. The algebra-based methods, such as change vector
+analysis [12], are used to determine the changed pixels by
+performing the common algebraic operations on the original
+image space. The transformation-based approaches, such as
+principal component analysis [13], are habituated to mapping RS images into suitable feature spaces for deciding
+the changed areas. Although the above methods are feasible,
+their performance cannot meet what we expected due to
+the hand-crafted features, which are not able to represent
+the complex contents within RS images. For example, the
+pseudo variation issues (see Fig. 1) caused by illumination and
+shadows are hardly addressed using only the low-level visual
+features.
+Recently, with the appearance of deep learning, especially
+convolutional neural networks (CNNs), the results of RSCD
+have improved significantly. Benefiting from the stacked structure and hierarchical learning manner, CNNs can explore the
+semantic features of RS images. Compared with the handcrafted features, these high-level visual features can fully
+express intricate land covers within RS images so that accurate
+RSCD maps can be generated [14]. Many CNN-based models
+have been proposed, and their performance is cracking [15],
+[16]. In the beginning, scholars adopt some existing CNNs to
+construct their RSCD models [17]. Then, some RSCD-oriented
+CNNs are developed [18] to enhance the performance. With
+the help of some advanced technologies, such as Siamese
+architecture [19] and attention mechanisms [20], [21], these
+RSCD-oriented CNNs promote the RSCD results to a new
+level. Despite great successes, the CNN-based RSCD methods
+still have an inherent problem, that is, they are not able to
+capture the long-range contextual information hidden in RS
+images. This shortcoming limits their behavior more or less.
+For instance, a set of bi-temporal RS images is shown in
+Fig. 2(a) and (b). CNNs can capture local information (e.g.,
+“trees,” “cars,” and “buildings”) easily. If we only leverage the
+local clues, the generated change map may contain misjudgments (see Fig. 2(c) in the first row, areas in red). If the global
+relationships between various local objects can be further
+
+1558-0644 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Fig. 1. Two common interference factors of RSCD task. (a) Caused by
+illumination. (b) Caused by shadow.
+
+Fig. 2.
+Examples of how local and global information influence the
+RSCD results. (a) Former RS images. (b) Later RS images. (c) RSCD maps.
+CNNs are good at capturing the local land covers. If we only use the local
+information, the incorrect RSCD map may be produced. This case is shown
+in the first row. If the global relations between different local land covers are
+modeled, the correct RSCD map can be generated. This case is displayed in
+the second row.
+
+mined, the correct change map can be produced (see Fig. 2(c)
+in the second row).
+Considering the above limitations, researchers introduce
+the transformer [22], [23] into the RS community. Due
+to the energetic capacity of long-range knowledge mining,
+the transformer has become increasingly popular for RS
+image processing. Various transformer-based models have
+been developed for different RS tasks [24], [25], as well as
+RSCD [26], [27]. Although those transformer-based models
+have shown their superiorities, there is still room for improvement, especially for RSCD tasks. First, due to the multihead
+self-attention (MSA) mechanism [23], the transformer-based
+RSCD models’ time consumption is always high, which
+limits their practicality and generalization capability. Second,
+the complicated content information and temporal cues of
+different RS images are equally important for RSCD tasks.
+However, most current transformer-based models focus on the
+RS images themselves but ignore the temporal clues between
+RS images collected at different times. Third, since the land
+covers within RS images are diverse, and their scales are
+various, the changed areas among multitemporal RS images
+are usually irregular. However, the normal transformer-based
+models are not good at exploring the boundaries precisely,
+which impacts the RSCD tasks negatively.
+To overcome the mentioned shortcomings, we develop a
+new encoder–decoder RSCD model named edge-assisted adaptive transformer detector (EATDer). The encoder is a Siamese
+network that involves self-adaption vision transformer (SAVT)
+blocks and full-range fusion modules (FRFMs). The function
+of SAVT blocks is to explore both the local and global information from RS images with relatively low time consumption.
+
+The goals of FRFMs are to mine the invisible temporal
+knowledge among different RS images and to emphasize the
+changed/unchanged areas. The decoder contains a restoring
+block and a refining block. Their targets are to integrate
+and enhance the multiscale features obtained from encoders
+and produce the change maps. Meanwhile, an auxiliary edge
+detection task is added to ensure the decoder is aware of the
+edges of changed areas so that the change maps’ quality can
+be further enhanced. Our contributions can be summarized as
+follows.
+1) An encoder–decoder RSCD network (i.e., EATDer) is
+developed. Not only the local details and global context
+within a single RS image but also the temporal clues
+hidden in a series of RS images can be explored by
+EATDer. Therefore, promising CD maps can be generated.
+2) Instead of adopting the original vision transformer
+and its existing variants, we develop an SAVT block
+to explore the valuable information from RS images.
+To mine the complex local details within RS images,
+the common grid patch scheme used in the original
+transformer is replaced by the overlapping embedding
+scheme. To reduce computational costs, a self-adaptive
+MSA (SAMSA) embedded in self-adaption progress
+(SAP) is designed. In this fashion, local and global
+messages can be fully captured from RS images with
+modest time costs.
+3) In addition to focusing on the intricate contents of
+RS images, our EATDer also considers the temporal clues among different RS images to address CD
+tasks. To this end, we develop a FRFM. Adding it
+into the encoder allows helpful information across the
+bi-temporal RS images to be exchanged and fused
+mutually, and the invisible temporal knowledge among
+different RS images can be explored. Therefore, the
+changed/unchanged areas among different RS images
+can be highlighted.
+4) Apart from detecting the changes, we also recognize the edges around the changed areas to enhance
+the CD results further. For this purpose, the output
+of the decoder is split at the channel dimension to
+represent the confidence degrees of the change and edge
+information. Also, two sets of edge detection ground
+truths are constructed automatically to assist in identifying the edges.
+The rest parts of this article are organized as follows.
+Section II reviews some literature related to RSCD. Section III
+explains our EATDer in detail. The experiments and corresponding discussion are displayed in Section IV. Finally,
+a short conclusion is summarized in Section V.
+II. R ELATED W ORK
+A. CNN-Based CD Models
+Recently, CNN-based methods have dominated the RSCD
+community. We roughly divide them into two groups according
+to their architecture [28], [29], i.e., single- and dual-branch
+models. In the first group, the methods are used to concatenate the bi-temporal RS images to be the input data for
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+the following feature learning and change map generation.
+Liu et al. [30] proposed a local restricted CNN (LRCNN)
+to deal with PolSAR image CD tasks. LRCNN receives the
+combination of the bi-temporal PolSAR images and their
+difference maps (DIs). Then, by leveraging regression pretraining and classification fine-tuning, the positive change maps
+can be generated in an unsupervised manner. An end-to-end
+CNN framework was developed for hyperspectral image (HSI)
+CD [31]. Considering the high-dimension properties of HSIs,
+the endmember analysis approach is first adopted to mine
+cross-channel features and explore multisource information.
+Then, the preprocessed HSIs are combined and input into a
+specific CNN for the change maps. Another HSI CD network
+was presented in [32], in which the self-calibrated convolution
+is adopted to enhance the features’ discrimination and reduce
+the model’s volume simultaneously. Based on the pseudo
+label generation scheme, fuzzy clustering algorithm, and CNN,
+a single-branch SAR image CD model was proposed in [33].
+The high-confidence samples and their pseudo labels are used
+to train CNN, and then the trained CNN is used to produce
+the final change maps.
+With the help of booming Siamese networks, many
+dual-branch models have been proposed for RSCD. In contrast to the single-branch models, the bi-temporal RS images
+are fed into two branches individually for the following
+steps. Chen et al. [34] proposed a Siamese convolutional
+multilayer recurrent neural network (SiamCRNN) for RSCD.
+By embedding the CNN and recurrent neural network
+(RNN) into a Siamese framework, both the structural and
+spatial–spectral information can be explored from multitemporal RS images. Thus, favorable change maps can be
+obtained. Similarly, another dual-branch network was developed in [35]. The positive CD results are ensured by the
+extracted local-global features and cross-task transfer learning
+strategy. Chen et al. [36] designed a dual encoder–encoder network to deal with RSCD tasks, in which the dense connection
+scheme and self-supervised learning are integrated to generate
+the encouraging change maps. Apart from constructing various
+models under the framework of the Siamese networks, some
+scholars pay attention to capturing the boundary clues for
+improving RSCD results. Bai et al. [37] presented a dualbranch network. Besides the common Siamese feature learning
+and difference information extraction, the prior knowledge
+of the edge structure is also considered to guarantee the
+accuracy of change maps. Lei et al. [38] added a boundary
+extraction constraint into the Siamese network to enhance the
+discrimination of learned visual features and improve the CD
+results.
+
+5602015
+
+RSCD. Chen et al. [42] proposed a bi-temporal image transformer (BIT) to handle the RSCD problem by exploring
+the spatial–temporal contexts. BIT first maps RS images
+into high-level feature maps using two conventional CNNs.
+Then, it adopts a transformer encoder to model the contextual
+relations in both spatial and temporal domains. Finally, BIT
+leverages two transformer encoders to produce the refined
+feature maps, which can be used to decide change maps.
+The encouraging results confirm the effectiveness of the transformer in RSCD. By integrating the superiorities of CNN
+and transformer, an intrascale cross-interaction and interscale
+feature fusion network (ICIF-Net) was developed in [43].
+ICIF-Net utilizes a CNN and a transformer to capture diverse
+information from bi-temporal RS images. Along with the
+intrascale clue interaction and interscale knowledge fusion
+strategies, the feature maps rich in local-global messages can
+be obtained to produce RSCD results. Li et al. [44] embedded
+the transformer into the UNet to develop an encoder–decoder
+model for RSCD. The UNet is used to capture the detailed
+local information, while the transformer is used to model
+the global contextual relations. After combining them, the
+positive change maps can be predicted. Considering the
+multiscale properties of RS images, a new model named
+MTCNet was introduced in [45], in which the conventional
+CNN, transformer, multiscale information fusion module, and
+block attention module are merged. The reported CD results
+demonstrate MTCNet’s usefulness to RSCD.
+Although the above methods have succeeded, their computational costs are always high because of the self-attention
+mechanism within the original transformer. To mitigate this
+problem, the methods within the second class are accustomed
+to introducing the variants of the transformer for RSCD
+models. Zhang et al. [27] developed a Siamese U-shaped
+model to deal with RSCD tasks named SwinSUNet. SwinSUNet consists of two weight-shared encoders, a decoder, and
+proper feature fusion/merging schemes. The basic unit within
+the encoder and decoder is the Swin transformer (SwinT)
+block rather than the common transformer. This way, the
+effectiveness and efficiency of SwinSUNet can be ensured.
+Bandara and Patel [46] embedded the sequence reduction into
+the original transformer so that the time costs of the whole
+method can be saved. Wang et al. [47] adopted ViTAE [48] to
+complete RSCD tasks. ViTAE’s computational complexity is
+lower than the original transformer due to the spatial pyramid
+reduction and shiftable window multihead attention. Thus, the
+process of RSCD is efficient.
+III. P ROPOSED M ETHOD
+A. Overall Framework
+
+B. Transformer-Based CD Models
+Transformer, proposed in natural language processing [22],
+has become popular in the RS community due to its intrinsic
+capacity in long-range relations exploration [39], [40], [41].
+For RSCD, many transformer-based methods have been proposed, and we broadly divide them into two classes.
+The methods within the first-class focus on taking advantage of the original transformer to design new models for
+
+The framework of the proposed EATDer is shown in Fig. 3.
+It mainly consists of a Siamese encoder and an edge-aware
+decoder. The Siamese encoder has two same networks, and
+each of them involves three SAVT blocks to learn valuable
+information from bi-temporal RS images with a tolerable computational cost. In addition, two networks are connected by our
+FRFM. In this way, not only can the profitable information
+corresponding to bi-temporal RS images be transferred, but
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+Fig. 3.
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Framework of the proposed EATDer.
+
+part, while the residual connection is adopted after each part.
+Therefore, the output of the first SAVT encoder is
+PSAMSA
+= SAMSA LN P′1
+1
+
++ P′1
+
+Pnew
+= MLP LN PSAMSA
++ PSAMSA
+1
+1
+1
+
+Fig. 4.
+
+Architecture of the SAVT block.
+
+also the changed and unchanged clues can be highlighted.
+The edge-aware decoder mainly incorporates a restoring block
+and a refining block, which aim to integrate knowledge from
+various scales and improve the feature maps for CD. In addition, besides generating the change maps, we also estimate
+the edges of the changed areas. This way, our EATDer could
+accurately capture the edges of changed land covers to enhance
+the quality of change maps.
+B. Siamese Encoder
+This section will explain the Siamese encoder. Before
+introducing it in detail, we first clarify the SAVT block and
+FRFM.
+1) SAVT Block: The goal of the SAVT block is to capture the complex contents within RS images from a global
+aspect with an acceptable computational cost. To this end, our
+SAVT block is developed based on the original vision transformer [23]. Also, we introduce the overlapping embedding
+scheme [46], [49], [50], [51] to explore the local clues hidden
+in RS images and remold the MSA mechanism [22], [23] to
+reduce computation.
+The block architecture is shown in Fig. 4. Suppose the input
+of a SAVT block is Fin ∈ Rh×w×c . Considering the complex
+and rich local contents within RS images, the overlapping
+embedding scheme instead of the grid strategy is adopted
+to transform Fin into data patches. Particularly, we pass Fin
+through a convolution with c′ kernels to generate a set of data
+′
+patches P ∈ R(h/s)×(w/s)×c . The sizes, stride, and padding sizes
+of c′ kernels are 2s − 1, s, and s − 1. Then, the obtained
+data patches will be fed into L SAVT encoders to generate
+2
+′
+the updated patches Pnew ∈ R(hw/s )×c . Finally, the output
+′
+Fout ∈ R(h/s)×(w/s)×c of the SAVT block can be obtained after
+the reshape operation.
+Since the L SAVT encoders are the same, we adopt the
+first SAVT encoder as an example for description. The SAVT
+encoder involves a SAMSA part and a multilayer perceptron
+(MLP) part. The layer-norm (LN) layer is added before each
+
+
+
+(1)
+
+where P′1 denotes the reshaped data patches P and its size
+is (hw/s 2 ) × c′ , LN(·), SAMSA(·) and MLP(·) indicate the
+functions of the LN, SAMSA, and MLP layers, and Pnew
+∈
+1
+2
+′
+R(hw/s )×c means the encoded features. Here, the MLP part
+contains two linear transformations and a Gaussian error linear
+unit activation. Pnew
+would be fed into the second SAVT
+1
+encoder to generate Pnew
+2 . In a similar fashion, we can obtain
+the updated patches Pnew after L SAVT encoders.
+The SAMSA part mainly contains a SAP and a conventional
+MSA. Here, the “self-adaption” in SAP mainly describes
+the adaptive spatial size changes of the pending data for
+MSA. First, we copy the normalized P′1 to produce pend2
+′
+2
+′
+ing data Q1 ∈ R(hw/s )×c , V1 ∈ R(hw/s )×c , and K1 ∈
+2
+′
+R(hw/s )×c . Customarily, the MSA mechanism can be applied
+to {Q1 , K1 , V1 } directly. However, the computational costs
+would be large. To mitigate this issue, we develop SAP to
+reduce the spatial sizes of {K1 , V1 }. For K1 , we reshape it into
+′
+2-D version K̃1 ∈ R(h/s)×(w/s)×c , and use the√ average
+pooling
+√
+′
+and a 1 × 1 convolution to get K̂1 ∈ R⌈ (h/s)⌉×⌈ (w/s)⌉×c .
+Here, the average pooling aims to reduce the spatial size,
+and the 1 × 1 convolution avoids the information loss. After
+the√ reshape operation, we can get the reductive data Ka1 ∈
+′
+R⌈ hw/s⌉×c . Similarly,
+we can obtain the reductive data of
+√
+′
+V1 , i.e., Va1 ∈ R⌈ hw/s⌉×c . Second, the MSA mechanism is
+a
+a
+conducted on {Q1 , K1 , V1 }, which can be formulated as
+
+MSA Q1 , Ka1 , Va1 = concat(head1 , . . . , headn )W O
+
+
+head j = Attention Q1 W Qj , Ka1 W Kj , Va1 WVj
+
+p 
+Attention(Q, K, V) = softmax QKT / dk V
+(2)
+where W O , W Qj , W Kj , and WVj imply the learnable parameter
+matrixes, concat(·), Attention(·), and softmax(·) denote√the
+concatenation, self-attention, and softmax functions, and dk
+indicates a scaling factor with a dk value equals the dimension of K. Compared with the standard MSA, the proposed
+SAMSA has lower computational complexity. For the input
+′
+data P ∈ R(h/s)×(w/s)×c , the time complexities of MSA and
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+5602015
+
+SAMSA are
+
+
+hw 2 ′
+hw ′ 2
+c
+(MSA) = 4 2 c + 2
+s
+s2
+!
+√
+
+
+hw+s hw ′2
+hw 3/2 ′
+(SAMSA) = 2
+c
++
+2
+c . (3)
+s2
+s2
+The idea of reducing the computational costs of the transformer by decreasing the feature maps’ spatial sizes can
+also be found in pyramid vision transformer (PVT) [52] and
+PVT V2 [53]. Here, we summarize the similar and different
+points between our SAVT block and the other two models.
+The similar point of the three models is that they reduce
+the sizes of K and V to whittle down the computational
+costs of the original visual transformer. However, the spatial
+reduction schemes are different from each other. For clarity,
+we use K as an example to explain. Suppose the size of
+K is (h/s) × (w/s) × c′ . PVT uses a reshape and a linear
+projection to reduce its size with a fixed reduction ratio R.
+After this process, the size of the new feature map K′PVT
+is (h/s R) × (w/s R) × c′ . PVT V2 leverages the average
+pooling to reduce the size of K to P × P × c′ forcibly, where
+P < (h/s) and P < (w/s). In other words, the reduced feature
+map K′PVTV2 has a size of P × P × c′ . In contrast to the
+two schemes above, the reduction strategy in our SAVT block
+utilizes average pooling and 1 × 1 convolution operations to
+achieve a spatial reduction of K√
+in an adaptive
+√ way. The size
+of the new feature map K′SAP is ⌈ h/s ⌉ × ⌈ w/s ⌉ × c′ . This
+way, we do not need to tune the hyper-parameters (R or P)
+to control the reduced spatial size. Besides the above point,
+another difference is that we add a 1 × 1 convolution after
+′
+the dimension-reduced K SAP
+. This seemingly inconspicuous
+operation can help SAVT regularize the information within the
+dimension-reduced feature maps. The benefits of our adaptive
+spatial reduction scheme and additional 1 × 1 convolution will
+be studied in Section IV-E1.
+2) Full-Range Fusion Module: The targets of FRFM are
+twofold. One is to fuse the information (e.g., complex land
+covers and temporal clues) corresponding to the input data
+pair mutually. Here, the temporal clues mean the progression
+of content changes. The other one is to point out the salient
+clues hidden in the input data. To achieve these goals, there
+are two submodules in FRFM [see Fig. 5(a)], including a
+cross fusion submodule and a convolutional block attention
+submodule (CBAM) [54].
+The schematic illustration of the cross-fusion submodule
+can be found in Fig. 5(b). When input {X, Y} ∈ Rh×w×c to
+FRFM, the cross fusion submodule first fuses their messages
+and generates {Xcf , Ycf } ∈ Rh×w×c . For X, this process can be
+formulated as
+
+
+ 
+Q y KTx
+cf
+X = X + softmax √
+Vx WxO
+(4)
+dkx
+√
+where WxO indicates a learnable parameter matrix, dkx is a
+scaling factor and the value of dkx is the dimension of Kx , Kx
+and Vx denote the key and value of X, and Q y implies the
+query of Y. Here, the definitions of {Q y , Kx , Vx } are
+Q y = YW yQ ,
+
+Kx = XWxK , Vx = XWxV
+
+(5)
+
+Fig. 5. Architecture of the FRFM and cross fusion submodule. (a) FRFM.
+(b) Cross fusion submodule.
+
+where W yQ , WxK , and WxV are learnable weights. Similarly, the
+cross fusion process for Y is
+"
+! #
+Qx KTy
+cf
+Y = Y + softmax p
+Vy WO
+y
+dky
+Qx = XWxQ ,
+
+K y = YW Ky , V y = YWVy
+
+(6)
+p
+where dky is a scaling factor and the value of dky is the
+dimension of K y , K y , and V y denote the key and value of Y,
+and Qx implies the Query of X.
+Then, two CBAMs are applied to Xcf and Ycf to explore the
+salient information from two separated aspects. CBAM links
+channel attention and spatial attention serially. For Xcf , CBAM
+sequentially deduces a channel attention score Scx ∈ R1×1×c
+and a spatial attention score Ssx ∈ Rh×w×1 with the assistance
+of average-pooling, max-pooling, MLP, and convolution. Next,
+the obtained scores are multiplied back to Xcf for producing
+the refined feature data X̃. This procedure can be formulated
+as
+
+cf
+X̃ = Scx Xcf ⊗ Xcf
+ cf 
+cf
+X̃ = Ssx X̃ ⊗ X̃
+(7)
+where ⊗ means the element-wise multiplication. Likewise, the
+CBAM process for Ycf is
+
+cf
+Ỹ = Scy Ycf ⊗ Ycf
+ cf 
+cf
+Ỹ = Ssy Ỹ ⊗ Ỹ
+(8)
+where Scy ∈ R1×1×c and Ssy ∈ Rh×w×1 denote the channel
+and attention scores. By exploring the salient messages, the
+changed/unchanged information within RS images can be
+highlighted. More details of CBAM can be referred to [54].
+3) Structure of Siamese Encoder: Now, let us introduce the
+structure of our Siamese encoder. It comprises three stages
+serially, and each stage incorporates two SAVT blocks and
+an FRFM. When bi-temporal RS images {I A , I B } with the
+size of H × W × 3 are input the encoder, the two SAVT
+blocks in the first stage will map them into feature maps F1A ∈
+R(H/4)×(W/4)×C1 and F1B ∈ R(H/4)×(W/4)×C1 . Then, {F1A , F1B }
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+Fig. 6.
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Architecture of the restoring block and the refining block.
+
+will be fed into the FRFM to generate the enhanced features
+{F̃1A , F̃1B } ∈ R(H/4)×(W/4)×C1 . By analogy, after the second and
+third stages, we can get {F2A , F2B , F̃2A , F̃2B } ∈ R(H/8)×(W/8)×C2
+and {F3A , F3B , F̃3A , F̃3B } ∈ R(H/16)×(W/16)×C3 orderly. These feature maps involve not only the RS images’ complex contents
+with various scales but also the temporal messages. Here,
+we set the number of channels C1 , C2 , and C3 to be 64,
+128, and 256, respectively. In addition, the stride s in the
+overlapping embedding scheme is set to be 4 for the first stage
+and is set to be 2 for the last two stages.
+C. Edge-Aware Decoder
+So far, we have obtained the encoded feature maps
+{F̃1A , F̃2A , F̃3A , F̃1B , F̃2B , F̃3B } for bi-temporal RS images I A and
+I B . Then, they will be fed into the edge-aware decoder
+to produce the change map. Meanwhile, our decoder will
+generate an edge map to ensure the estimated changed areas
+have smooth and accurate edges. Along with the proposed
+joint loss function, the exact CD results can be obtained. The
+detailed framework of the edge-aware decoder is shown in
+Fig. 6, which incorporates a restoring block and a refining
+block.
+1) Restoring Block: The goal of the restoring block is to
+integrate encoded feature maps’ contributions. First, we concatenate the feature maps with the same scales in the channel
+dimension, i.e.,
+
+
+W
+H
+O1 = F̃1A ; F̃1B ∈ R 4 × 4 ×2C1
+
+
+H
+W
+O2 = F̃2A ; F̃2B ∈ R 8 × 8 ×2C2
+
+
+H
+W
+O3 = F̃3A ; F̃3B ∈ R 16 × 16 ×2C3 .
+(9)
+Then, three 3 × 3 convolutions are adopted to fuse the concatenated feature maps from the temporal aspects, i.e.,
+Oi′ = Conv3×3 (Oi ),
+
+i = 1, 2, 3
+
+(10)
+
+where Conv3×3 (·) denotes the 3 × 3 convolution. Here, the
+spatial sizes of Oi′ are the same as the Oi , and the channel
+numbers Oi′ are half of Oi . After applying up-sampling operations to O′2 and O′3 , the fused features Om can be generated by
+concatenating them in the channel direction, and this process
+can be formulated as
+
+
+
+H
+W
+Om = O′1 , Up O′2 , Up O′3 ∈ R 4 × 4 ×(C1 +C2 +C3 ) (11)
+where Up(·) means the up-sampling operations.
+
+2) Refining Block: As the name suggests, this block is
+developed to improve the feature map Om for CD. To further
+highlight multiscale information and temporal clues hidden
+in Om , we stack four 3 × 3 convolutions, one 1 × 1 convolution, two SAVTs (with only one SAVT encoder), two
+de-convolutions, and three batch-norms. The convolutions are
+used to capture the local knowledge, two SAVTs are adopted
+to analyze the global contextual clues, and de-convolutions
+are introduced to accomplish up-sampling with the consideration of relations between feature pixels. Particularly, Om
+is first passed through a 3 × 3 convolution and a SAVT
+to generate O′m ∈ R(H/4)×(W/4)×(C1 +C2 +C3 )/2 . Then, O′m will
+be fed into two de-convolutions in sequence for producing
+O′′m ∈ R H ×W ×⌈(C1 +C2 +C3 )/12⌉ . Note that two batch norms are
+followed by two de-convolutions, respectively. Finally, other
+two 3 × 3 convolutions, one 1 × 1 convolution, and a SAVT
+will be applied to O′′m for achieving the improved feature map
+O ∈ R H ×W ×2 .
+The reasons we leverage different tools to adjust the feature
+maps’ sizes in two blocks are summarized as follows. First,
+the main goal of the restoring block is to fuse the encoded
+feature maps {F̃1A , F̃1B , F̃2A , F̃2B , F̃3A , F̃3B }. To this end, a simple
+and time-saving operation is needed to readily integrate all
+feature maps from the Siamese encoder. Therefore, we use upsampling here to unify their spatial sizes. Second, the function
+of the refining block is to enhance the integrated feature map
+Om . To achieve this goal, the information within Om should be
+analyzed carefully. Thus, de-convolution is adopted to adjust
+the feature map’s size and explore the valuable clues within
+the feature map simultaneously.
+3) Loss Function for Joint Learning: When we get O, the
+final change map could be produced using a simple comparison scheme with a proper change loss function commonly.
+This way is feasible, however, it is not good at maintaining
+the edges of changed areas which would limit the accuracies
+of CD results. To overcome this limitation, we add an edge
+detection task to ensure that our model can be aware of the
+edges. To generate the change and edge predictions, we regard
+two channels of O as the confidence degrees of the change
+and edge information following the semantic segmentation
+ideas [55]. Thus, when O is mapped into Ms ∈ R H ×W ×2
+by a softmax function, it can be split in the channel wise
+to generate a change map Mc ∈ R H ×W ×1 and an edge map
+Me ∈ R H ×W ×1 . Then, a joint loss function is proposed to
+narrow the gaps between them and the different ground truths.
+Considering the binarity of our tasks, the binary cross-entropy
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+Fig. 7.
+
+Flowchart of generating edge ground truths.
+
+(BCE) loss [56] is selected as the basic unit of our joint loss
+function. For the change map Mc , the change loss is defined
+as
+Lc = −Gc log(Mc ) − (1 − Gc ) log(1 − Mc )
+
+(12)
+
+where Gc indicates the CD ground truth. For the edge map
+Me , the edge loss is specified as
+Le = −Ge log(Me ) − (1 − Ge ) log(1 − Me )
+
+patch pairs into 256 × 256 and get 7120 training pairs,
+2048 testing pairs, and 1024 validation pairs according to the
+suggestions in [42]. CDD encompasses 16 000 season-varying
+RS image pairs collected from Google Earth. Their spatial
+sizes are 256 × 256, and their resolution varies from 0.03 to
+1 m. The changed land covers are diverse in CDD, including
+buildings, cars, and roads. In agreement with the original
+literature, the numbers of images in the training, testing, and
+validation sets are 10 000, 3000, and 3000, respectively. WHU
+encloses a pair of RS images. Their spatial sizes and resolution
+are 32 507 × 15 354 and 0.2 m. The key objects in this dataset
+are buildings. Similar to [44], we first cut the images into
+256 × 256 patches. Then, 5974, 744, and 743 image pairs are
+selected to construct the training, testing, and validation sets.
+The examples of three datasets and their change/edge detection
+ground truths are exhibited in Fig. 8.
+
+(13)
+
+where Ge denotes the edge detection ground truth. Finally, the
+joint loss function can be formulated as
+L = λLc + (1 − λ)Le
+
+5602015
+
+(14)
+
+where λ is a free parameter that controls the contributions of
+different terms.
+There is another point we want to touch on, that is, the
+way for collecting the edge ground truth. Instead of annotating
+the edges of the changed areas manually, we can use Gc
+to generate Ge automatically. The schematic illustration of
+generating the edge ground truth can be found in Fig. 7.
+In detail, the Canny operator [57] is first applied to Gc for
+producing the original edges of the changed areas Gep . Then,
+by passing Gep through a 3 × 3 convolution, the dilatant edges
+Gde can be obtained. In the following experiments, the dilatant
+and primary edge ground truths will be used to train our model
+sequentially. The main reason for collecting two sets of edge
+detection ground truths is to enable our EATDer to capture the
+edges of the changed areas in a coarse-to-fine way. The dilatant
+edge ground truth can help EATDer rapidly explore the edges
+of the changed areas. While the primary edge ground truth can
+assist EATDer in refining the obtained edges. Combining Gde
+and Gep , the edges of changed areas in the final change maps
+are smooth and accurate. The impacts of Gde and Gep on our
+EATDer would be discussed in Section IV-E4.
+IV. E XPERIMENT
+A. Datasets Introduction
+We select three CD datasets to evaluate the proposed EATDer, including the LEVIR building CD dataset
+(LEVIR-CD) [58], the CD dataset (CDD) proposed in [59],
+and the Wuhan University CD dataset (WHU) [60].
+LEVIR-CD contains 637 Google Earth image patch pairs
+with a size of 1024 × 1024 pixels. The pixel resolution of
+those images is 0.5 m. LEVIR-CD mainly focuses on the
+changes in various buildings, such as villa residences and tall
+apartments. The original dataset is divided into 445 training
+pairs, 128 testing pairs, and 64 validation pairs. However,
+considering the limited computational capacity, we crop the
+
+B. Experimental Settings
+The experiments are conducted using the Pytorch platform
+on a workstation with two GeForce RTX 3090 GPUs which
+have 24G Memory and 35.6 Tera floating point operations. Our
+EATDer is initialized with Xavier [61] to avoid the gradient
+vanishing and gradient explosion. The AdamW algorithm is
+adopted to optimize the parameters of our model. The learning
+rate, training epochs, and batch size are set to 0.001, 200,
+and 22. Note that we use the dilatant/original edge detection
+ground truths to train EATDer at the first and last 100 epochs.
+All RS images are resized into 256 × 256, and the common
+data augmentation strategies (e.g., flipping and rotation) are
+utilized to stabilize the model training. Three crucial free
+parameters should be decided in advance, i.e., the number of
+SAVT encoders L, the weight λ for two terms in (14), and
+the number of heads n in MSA [see (2)]. In the following
+experiments, we set L = 4, λ = 0.3, and n = 4 unless
+otherwise stated. Their influence on EATDer will be discussed
+in Section IV-F.
+Here, we select precision (P), recall (R), F1-score (F1),
+and overall accuracy (OA) to achieve numerical assessments.
+Their definitions are
+TP
+TP
+, R=
+P=
+TP + FP
+TP + FN
+2× P × R
+TP + TN
+F1 =
+, OA =
+(15)
+P+R
+TP + FP + FN + TN
+where TP, TN, FP, and FN imply the numbers of true positive, true negative, false positive, and false negative pixels,
+respectively.
+C. Comparison With State-of-the-Art Methods
+To study the performance of EATDer objectively, we compare it with the following nine methods, including
+SNUNet [18], ChangeNet [62], DARnet [21], DSAMNet [63],
+LightCDNet [64], ChangeFormer [46], BIT [42], ICIFNet [43], and CCLNet++ [65]. The first five methods are
+developed based on CNN, while the last four models are
+constructed based on the transformer. We complete these
+methods by using the released codes. Their hyper-parameters
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Fig. 8. Examples of three datasets. The former and later RS images are shown in the first two rows. The third row displays the CD ground truths. The
+original and dilatant edge detection ground truths are exhibited in the fourth and fifth rows.
+TABLE I
+P ERFORMANCE OF EATD ER AND C OMPARED M ETHODS C OUNTED ON T HREE DATASETS . T HE H IGHEST S CORES A RE M ARKED IN B OLD
+
+are set according to the original literature, and the experimental
+settings are the same as ours (see Section IV-B).
+Table I summarizes the numerical results of different methods. From the observation of the table, we can find that the
+behavior of EATDer is stronger than that of the compared
+methods in most cases. Taking LEVIR-CD as an example, the
+improvements achieved by EATDer in F1 are 1.65% (over
+SNUNet), 7.60% (over ChangeNet), 0.78% (over DARnet),
+2.91% (over DSAMNet), 0.55% (over LightCDNet), 0.72%
+(over ChangeFormer), 1.19% (over BIT), 0.58% (over ICIFNet), and 0.35% (over CCLNet++). For another instance,
+the enhancements obtained by our model in OA counted on
+WHU are 0.56% (over SNUNet), 1.42% (over ChangeNet),
+0.94% (over DARnet), 0.34% (over DSAMNet), 0.06% (over
+LightCDNet), 0.50% (over ChangeFormer), 0.28% (over BIT),
+0.06% (over ICIF-Net), and 0.04% (over CCLNet++). These
+positive results owe to the following points. First, the stacked
+SAVT blocks in the Siamese encoder can explore the complex
+contents and their contextual relations from RS images, which
+helps EATDer understand RS images deeply. Second, the
+relationships of various land covers corresponding to RS
+images collected in different periods are considered by the
+
+proposed FRFM, which assists our model with the introduction
+of temporal clues. Third, the edge-aware decoder focuses on
+both change and edge detections, which ensures that EATDer
+can generate satisfactory change maps. Apart from the OA,
+P, R, and F1, we also count the parameters, FLOPS, and
+inference time costs of EATDer and other methods. It is easy
+to find that our EATDer is a relatively light and efficient
+model.
+Despite the success mentioned above, we notice that P
+values of EATDer are not optimal in LEVIR-CD and WHU.
+This is mainly caused by the imbalanced sample problem. It is
+well-known that the number of changed samples is much less
+than that of the unchanged samples in normal CD datasets.
+Thus, the trained models are inclined to divide the pending
+pixels into the unchanged group. In this case, the obtained
+change maps would involve more FN pixels and fewer FP
+pixels, leading to larger P values and smaller R values (see
+ChangeFormer for LEVIR-CD and BIT for WHU). However,
+the distinct value gaps between P and R are improper, implying
+that the imbalanced sample issue impacts the models. Compared to them, although the P values of EATDer are slightly
+lower, the differences between P and R values are evidently
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+5602015
+
+Fig. 9. Change maps obtained by different methods on the LEVIR-CD dataset. The bi-temporal RS images are displayed in the first two columns, and their
+CD ground truths are shown in the third column. The rest columns exhibit the produced change maps. For clarity, we mark TP, TN, FP, and FN pixels in
+white, black, red, and green, respectively.
+
+Fig. 10. Change maps obtained by different methods on the CDD dataset. The bi-temporal RS images are displayed in the first two columns, and their CD
+ground truths are shown in the third column. The rest columns exhibit the produced change maps. For clarity, we mark TP, TN, FP, and FN pixels in white,
+black, red, and green, respectively.
+
+smaller, demonstrating that the proposed method can reduce
+the influence of sample imbalanced troubles.
+To further study our EATDer, we randomly select five RS
+image pairs from each dataset, and their visual change maps
+obtained by different methods are shown in Figs. 9–11. For
+clarity, we use white, black, red, and green to represent TP, TN,
+FP, and FN pixels, respectively. By investigating them, we can
+find that the performance of the transformer-based models
+(ChangeFormer, BIT, ICIF-Net, and CCLNet++) is better
+than that of CNN-based approaches (SNUNet, ChangeNet,
+DARnet, DSAMNet, and LightCDNet). This is because the
+transformer-based models can capture both the local and
+global information hidden in RS images. Furthermore, the
+change maps generated by EATDer are the closest to the
+ground truths, which incorporate accurate change areas with
+clear edges. For example, in the third row of Fig. 9, the
+changed land covers (houses) in our change map are detected
+separately, and their edges are apparent. In the third row of
+Fig. 10, the numbers of FP and FN pixels in our change map
+
+are fewer than others. In the third row of Fig. 11, the changed
+land covers, which occupy large areas and are accessible to
+identify as background, can be detected by EATDer accurately.
+These encouraging observations confirm the effectiveness of
+the developed EATDer.
+D. Rationality Analysis of Score Map Division
+As introduced in Section III-C3, two tasks are developed
+and added at the top of the edge-aware decoder, i.e., change
+and edge detection. The CD task focuses on generating the
+change maps, while edge detection aims at refining the edges
+of the changed areas. To satisfy these two tasks, we first
+pass the decoder’s output Oc ∈ R H ×W ×2 through a softmax
+function to get Oc ∈ R H ×W ×2 , and then split it into a change
+map Mc ∈ R H ×W ×1 and an edge map Me ∈ R H ×W ×1 from
+the channel dimension. To further study if this operation is
+useful or not, we remold our EATDer as follows. First, two
+1 × 1 convolutions are applied to O for generating Oc ∈
+R H ×W ×2 and Oe ∈ R H ×W ×2 , which are used to reflect change
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Fig. 11. Change maps obtained by different methods on the WHU dataset. The bi-temporal RS images are displayed in the first two columns, and their CD
+ground truths are shown in the third column. The rest columns exhibit the produced change maps. For clarity, we mark TP, TN, FP, and FN pixels in white,
+black, red, and green, respectively.
+TABLE II
+P ERFORMANCE OF EATD ER AND EATD ER - V 2
+C OUNTED ON T HREE DATASETS (%)
+
+and edge information, respectively. Then, the change and
+edge maps Mnew
+∈ R H ×W ×2 and Mnew
+∈ R H ×W ×2 can be
+c
+e
+obtained by passing them through a softmax function. Next,
+new
+the joint loss function closes the gaps between Mnew
+and
+c /Me
+the corresponding ground truths. We name this reconstructive
+model EATDer-v2. The performance of EATDer and EATDerv2 counted on three datasets is summarized in Table II.
+By observing those results, we can find no distinct differences between the two detectors. This illustrates that directly
+dividing O into two elements channel-wise is feasible for our
+tasks.
+E. Ablation Study
+The behavior of our EATDer is decided by the following
+four essential factors: the SAVT block, FRFM, refining block,
+and edge clues. The first two factors belong to the Siamese
+encoder, while the last two are associated with the edge-aware
+decoder. To study them deeply, we conducted the following
+experiments. Note that we only adopt F1 as the assessment
+criterion in this section for clarity.
+1) Ablation on SAVT Block: To verify the effectiveness of
+the proposed SAVT block, we replace it with the original
+transformer [66], PVT [52], PVT V2 [53], and SwinT [67]
+to construct EATDer-T, EATDer-PVT, EATDer-PVTv2, and
+EATDer-SwinT, respectively. For fairness, the number of heads
+
+TABLE III
+F1 S CORES (%), PARAMETER VOLUME , FLOP S , AND RUNNING T IMES OF
+EATD ER AND I TS F OUR VARIETIES C OUNTED ON T HREE DATASETS
+
+in MSA mechanisms is set to four, and experimental settings
+are the same as the contents described in Section IV-B. The
+results of four new models are exhibited in Table III, and the
+results of the original EATDer are also displayed for reference.
+Besides the F1 scores, we count the Parameters, FLOPs, and
+inference time costs as well. We can find that our EATDer
+outperforms other models in all cases by investigating them.
+The reasons are 1) SAVT introduces the overlapping embedding scheme that benefits the exploration of local information
+and 2) SAVT remolds MSA by a simple SAP, which can
+reduce the time costs and parameter volume. The positive
+results discussed above confirm the usefulness of our SAVT
+block.
+To further investigate the feature extraction capacity of
+SAVT, we randomly select three bi-temporal RS image pairs
+from LEVIR-CD and visualize the feature maps learned by
+EATDer in Fig. 12. Also, the feature maps obtained by
+EATDer-T are exhibited for reference. Observing these feature
+maps shows us that both the SAVT block and the transformer
+encoder can explore the significant clues hidden in temporal
+RS images for downstream CD. Taking the feature maps
+displayed in the second row as an example, the road in
+the former RS image and the buildings in the later RS
+images (which are the important messages for CD) can be
+captured by both EATDer and EATDer-T. This suggests that
+the proposed SAVT block possesses similar feature extraction
+capabilities to the transformer encoder. Considering the lower
+computational costs of the SAVT block, its superiorities are
+undeniable.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+5602015
+
+TABLE V
+F1-S CORE OF EATD ER , EATD ER - W / O -1 × 1, EATD ER -PVT V 2, AND
+EATD ER -PVT V 2- W /-1 × 1 C OUNTED ON T HREE DATASETS (%)
+
+TABLE VI
+F1 S CORES (%) OF EATD ER AND I TS A BLATION VARIETIES
+C OUNTED ON T HREE DATASETS
+
+Fig. 12. Visualization of feature maps obtained by EATDer and EATDer-T.
+Three bi-temporal RS images are displayed in the first column, and the feature
+maps output in the different stages are exhibited in the last three columns
+orderly.
+TABLE IV
+F1-S CORE OF EATD ER AND EATD ER -PVT V 2 C OUNTED ON T HREE
+DATASETS (%). T HE S PATIAL S IZES I NPUT RS I MAGES A RE
+VARIED F ROM 512 × 512 TO 128 × 128
+
+As discussed in Section III-B1, SAVT is similar to PVT
+V2 [53], which focuses on reducing the computational costs
+of the transformer by decreasing the feature maps’ spatial
+sizes. However, there are two different points between SAVT
+and them. First, PVT V2 reduces the size of K and V to
+a fixed scale. Compared to it, the reduced size of K and V
+is adaptively decided by SAVT. The benefit of doing this is
+that it reduces the complexity of parameter tuning based on
+the size of input data and the requirements of downstream
+tasks and maintains good performance. Second, compared
+with PVT V2, SAVT adds a 1 × 1 convolution after the
+dimension-reduced K and V . This seemingly inconspicuous
+operation can help SAVT regularize the information within
+the dimension-reduced feature maps.
+We do two groups of experiments to confirm the above
+statements. In the first group, we replaced all SAVT blocks
+with PVT V2 to construct EATDer-PVTv2. Then, RS images
+with different spatial sizes are input into EATDer and EATDerPVTv2 to study the advantages of SAVT’s adaptive dimension
+reduction scheme. Note that the free parameters of PVT V2
+are consistent with the original literature. The sizes of RS
+images and F1 scores of RSCD results counted on three
+datasets are displayed in Table IV. By observing the results,
+
+we can find that EATDer outperforms EATDer-PVTv2 in
+all cases. This indicates that compared to a fixed dimension
+reduction mode, the adaptive dimension reduction strategy
+in SAVT can better adapt to the RSCD task. Admittedly,
+the reduced dimension (a free setting) of PVT V2 may be
+improper for our tasks, and we can find an empirically optimal
+dimension by careful tuning. However, the adaptive dimension
+reduction scheme makes SAVT more extensive compared with
+complicated tuning processes.
+In the second group, we remove (add) 1 × 1 convolution
+from (to) SAVT and PVT V2 to construct EATDer-w/o1 × 1 and EATDer-PVTv2-w/-1 × 1. In this way, the function
+of the simple 1 × 1 convolution can be investigated. The
+F1 scores of different models counted on different datasets
+are exhibited in Table V. We can quickly discover that
+the behavior of EATDer and EATDer-PVTv2-w/-1 × 1 is
+stronger than that of EATDer-w/o-1 × 1 and EATDer-PVTv2.
+This implies the adoption of 1 × 1 convolution (after the
+dimension reduction) can normalize the knowledge of the
+dimension-reduced feature maps so that the final RSCD results
+can be improved.
+2) Ablation on FRFM: As shown in Fig. 4, there are three
+stages in the Siamese encoder, and each stage has an FRFM to
+fuse the information from the bi-temporal RS images. Thus,
+we remove FRFMs individually to study their contributions
+to our EATDer deeply. In particular, we first remove the last
+FRFM and construct a new change detector named EATDer-2FRFM. In this case, the outputs of two SAVT blocks {F3A , F3B }
+and other enhanced feature maps {F̃1A , F̃1B , F̃2A , F̃2B } will be
+fed into the edge-aware decoder to produce change maps.
+Analogously, we remove the last two FRFMs and construct
+EATDer-1-FRFM. In this specific scenario, the input for
+the edge-aware decoder is {F̃1A , F̃1B , F2A , F2B , F3A , F3B }. Finally,
+we remove all FRFM and establish EATDer-no-FRFM. In this
+instance, the outputs of SAVT blocks will be input into the
+decoder directly. The F1 scores of the above models counted
+on three datasets are exhibited in Table VI. Also, the results
+of EATDer are displayed for reference.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+By the observation of the results, we can find that the
+behavior of detectors becomes stronger with the number of
+FRFM increases. Taking the results counted on LEVIR-CD
+as an example, the F1 score of EATDer-no-FRFM is only
+90.93%. When we add FRFMs gradually to detectors, the
+F1 score is increased to 91.13%. When three FRFMs are
+all added (i.e., EATDer), the F1 score is as high as 91.20%.
+This investigation means that FRFM plays a positive role in
+our EATDer. By embedding it into the Siamese encoder, not
+only can the valuable information corresponding to temporal
+RS images be fused, but also the salient clues hidden in RS
+images can be highlighted. Consequently, the CD results are
+improved.
+3) Ablation on Refining Block: To study the significance
+of the refining block, we replace it with an up-sampling
+and a 3 × 3 convolution. The constructed model is named
+EATDer-no-Refine. Then, we use it to complete the CD on
+three datasets with the same experimental settings discussed
+in Section IV-B. Its F1 scores are also exhibited in Table VI.
+By comparing the results, we can find a distinct performance
+gap between EATDer-no-Refine and EATDer. Notably, compared with EATDer, the declines caused by removing the
+refining block are −1.08% (LEVIR-CD), −1.32% (CDD), and
+−0.97% (WHU). These discoveries demonstrate the importance of the refining block.
+4) Ablation on Edge Clues: As mentioned in
+Section III-C3, we add an edge detection task to improve our
+CD results. To investigate if these clues are helpful or not,
+we fix the weight of Le to zero and construct a new model
+recorded EATDer-no-Edge. According to the experimental
+settings mentioned in Section IV-B, we count the F1 scores
+of EATDer-no-Edge and EATDer on three datasets which
+can be found in Table VI. By observing them, we can find
+that EATDer outperforms EATDer-no-Edge in all cases,
+which implies the effectiveness of edge clues. Furthermore,
+we also display some change maps obtained by EATDer and
+EATDer-no-Edge in Fig. 13. Three bi-temporal RS image
+pairs are selected from LEVIR-CD (the first row), CDD
+(the second row), and WHU (the third row) randomly. From
+the observation of these maps, we can find that the maps
+generated by EATDer are closer to ground truths, and the
+changed areas’ edges are continuous and apparent. These
+visual results confirm the strength of edge clues.
+Apart from the above discussion, we continue to study the
+contributions of the primary edge ground truth Gep and dilatant
+edge ground truth Gde , individually. To this end, we first only
+use Gep to complete the training. In this case, the trained
+EATDer is recorded as EATDer-PriEdge. Then, Gde and Gep are
+both used to train EATDer. As explained in Section III-C3, Gde
+is obtained by passing Gep through a 3 × 3 convolution. Here,
+we want to study if the 3 × 3 convolution is a proper choice
+for producing dilatant edge ground truth. Hence, we change
+the convolution kernel size from 3 × 3 to 9 × 9 with an
+interval of 2 × 2, and record different EATDers as EATDer3, EATDer5, EATDer7, and EATDer9, respectively. The
+F1 scores of different models counted on three datasets are
+depicted in Fig. 14. By observing the bars, we can find that
+combining Gde and Gep is beneficial to CD tasks in most
+
+Fig. 13. Change maps of EATDer and EATDer-no-Edge. The bi-temporal
+RS images and their ground truths are exhibited in the first three columns.
+The change maps are displayed in the last two columns.
+
+Fig. 14.
+F1 scores of EATDers with different edge ground truths.
+(a) LEVIR-CD. (b) CDD. (c) WHU.
+
+cases, which implies the necessity of collecting the dilatant
+edges. However, another investigation is that when the size
+of convolutional kernels increases, the behavior of EATDer
+becomes weaker. This indicates that excessively inflated edges
+will generate unfavorable information for CD tasks, thereby
+reducing the accuracy of change maps. According to the
+results, the 3 × 3 convolution is a proper choice for producing
+dilatant edge ground truth.
+F. Parameter Analysis
+As discussed in Section IV-B, three free parameters should
+be decided in advance, including the number of SAVT
+encoders L, the weight λ in the loss function, and the number
+of heads in MSA n. Here, we study their influence on EATDer
+by altering their values.
+For L, we fix λ = 0.3, n = 4, and change its values
+from 2 to 8. The F1 scores of EATDers with various numbers
+of SAVT encoders are displayed in Fig. 15. It is not surprising
+that the more SAVT encoders, the stronger EATDer. This is
+because the SAVT encoder focuses on exploring the local and
+global information within RS images. More SAVT encoders
+bring much richer knowledge that benefits downstream tasks.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+5602015
+
+Fig. 15.
+
+F1 scores of EATDers with various numbers of SAVT encoders L. (a) LEVIR-CD. (b). CDD (c) WHU.
+
+Fig. 16.
+
+F1 scores of EATDers with different λ. (a) LEVIR-CD. (b) CDD. (c) WHU.
+
+Fig. 17.
+
+F1 scores of EATDers with different n. (a) LEVIR-CD. (b) CDD. (c) WHU.
+TABLE VII
+PARAMETER VOLUME AND FLOP S OF EATD ERS W ITH
+VARIOUS N UMBERS OF SAVT E NCODERS
+
+However, the parameters of our model will also explode when
+more SAVT encoders are adopted. Therefore, we suggest L =
+4 considering both performance and efficiency. Apart from the
+F1 scores, we also count the parameter volume and FLOPs
+of different EATDers, which are displayed in Table VII. Not
+surprisingly, the parameter volume and FLOPs of EATDer
+are both raised distinctly when L increases. Especially when
+L > 4, the increase in the parameter volume and FLOPs
+is much greater than the increase in the F1 score. Consequently, we suggest L = 4 considering both performance and
+efficiency.
+For λ, we settle L = 4, n = 4, and vary λ from 0.1 to
+0.9 with an interval of 0.1. The F1 scores of EATDers with
+different λ are summarized in Fig. 16. The trend of the three
+curves is ascending slightly before declining intensively, and
+their optimal ranges are [0.3, 0.4] (LEVIR-CD), [0.3, 0.5]
+(CDD), and [0.2, 0.3] (WHU), respectively. These investigations imply the importance of the edge term Le is little bigger
+than that of Lc . To sum up, we suggest λ = 0.3. If the readers
+apply our EATDer on some new datasets, these two parameters
+{L , λ} could be tuned beginning with {4, 0.3}.
+
+For n, its values are varied in a range of [2, 4, 8]. Note
+that when n changes, L and λ remain 4 and 0.3. The
+F1 score curves of various EATDers with different n counted
+on three datasets are exhibited in Fig. 17. We can find
+that the behavior of EATDers becomes stronger when n is
+varied from 2 to 4. Nevertheless, once n increases to 8, the
+performance of EATDers is whittled down. This indicates
+that when the number of heads increases (within a certain
+range), the inherent global relationships in the input data can
+be more thoroughly explored. However, when n exceeds a
+certain threshold, the resulting global relationships become
+less reliable due to excessive data fragmentation, leading to
+a decrease in model performance. In summary, n = 4 is a
+suitable setting for our model in CD tasks.
+V. C ONCLUSION
+This article presents a new CD method (EATDer) for RS
+images. EATDer contains a Siamese encoder and an edgeaware decoder, and they aim to capture essential knowledge
+from RS images and generate change maps, respectively.
+The basic unit of the Siamese encoder is the SAVT block,
+developed under the vision transformer’s framework. SAVT
+can obtain local and global information from RS images with
+respectable time costs by introducing the overlapping embedding scheme and remolding the MSA mechanism. We also
+developed FRFM to further explore the temporal knowledge
+among RS images. By embedding FRFMs into the Siamese
+encoder, the land covers within RS images collected in different periods can be discovered mutually, which helps the
+encoder to highlight the changed and unchanged areas. The
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+5602015
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+edge-ware decoder consists of a restoring block and a refining
+block, which focus on fusing the multiscale features and
+enhancing their discrimination. Taking the edges of changed
+areas into account, both change and edge detection results
+are output by the decoder. Along with the joint loss function,
+high-quality change maps can be produced. The encouraging
+results counted on three widespread datasets confirm that the
+proposed EATDer is applicable to RSCD.
+R EFERENCES
+[1] D. Wen et al., “Change detection from very-high-spatial-resolution optical remote sensing images: Methods, applications, and future directions,”
+IEEE Geosci. Remote Sens. Mag., vol. 9, no. 4, pp. 68–101, Dec. 2021.
+[2] X. Tang et al., “An unsupervised remote sensing change detection
+method based on multiscale graph convolutional network and metric learning,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5609715.
+[3] X. Tang et al., “Hyperspectral image classification based on 3-D
+octave convolution with spatial–spectral attention network,” IEEE Trans.
+Geosci. Remote Sens., vol. 59, no. 3, pp. 2430–2447, Mar. 2021.
+[4] Y. Yang et al., “AR2 Det: An accurate and real-time rotational one-stage
+ship detector in remote sensing images,” IEEE Trans. Geosci. Remote
+Sens., vol. 60, 2022, Art. no. 5605414.
+[5] Z. Zhu, S. Qiu, and S. Ye, “Remote sensing of land change: A
+multifaceted perspective,” Remote Sens. Environ., vol. 282, Dec. 2022,
+Art. no. 113266.
+[6] X. Tang, M. Li, J. Ma, X. Zhang, F. Liu, and L. Jiao, “EMTCAL:
+Efficient multiscale transformer and cross-level attention learning for
+remote sensing scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5626915.
+[7] X. Tang, W. Lin, J. Ma, X. Zhang, F. Liu, and L. Jiao, “Class-level
+prototype guided multiscale feature learning for remote sensing scene
+classification with limited labels,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5622315.
+[8] X. Tang et al., “Meta-hashing for remote sensing image retrieval,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5615419.
+[9] C. Liu, J. Ma, X. Tang, F. Liu, X. Zhang, and L. Jiao, “Deep hash
+learning for remote sensing image retrieval,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 4, pp. 3420–3443, Apr. 2021.
+[10] A. P. Tewkesbury, A. J. Comber, N. J. Tate, A. Lamb, and P. F. Fisher,
+“A critical synthesis of remotely sensed optical image change detection
+techniques,” Remote Sens. Environ., vol. 160, pp. 1–14, Apr. 2015.
+[11] Z. Zhu, “Change detection using Landsat time series: A review of
+frequencies, preprocessing, algorithms, and applications,” ISPRS J. Photogramm. Remote Sens., vol. 130, pp. 370–384, Aug. 2017.
+[12] S. Saha, F. Bovolo, and L. Bruzzone, “Unsupervised deep change vector
+analysis for multiple-change detection in VHR images,” IEEE Trans.
+Geosci. Remote Sens., vol. 57, no. 6, pp. 3677–3693, Jun. 2019.
+[13] H. Abdi and L. J. Williams, “Principal component analysis,” Wiley
+Interdiscipl. Rev., Comput. Statist., vol. 2, no. 4, pp. 433–459, 2010.
+[14] H. Zheng et al., “HFA-Net: High frequency attention Siamese network
+for building change detection in VHR remote sensing images,” Pattern
+Recognit., vol. 129, Sep. 2022, Art. no. 108717.
+[15] W. Shi, M. Zhang, R. Zhang, S. Chen, and Z. Zhan, “Change detection
+based on artificial intelligence: State-of-the-Art and challenges,” Remote
+Sens., vol. 12, no. 10, p. 1688, May 2020.
+[16] Z. Lv, T. Liu, J. A. Benediktsson, and N. Falco, “Land cover change
+detection techniques: Very-high-resolution optical images: A review,”
+IEEE Geosci. Remote Sens. Mag., vol. 10, no. 1, pp. 44–63, Mar. 2022.
+[17] R. C. Daudt, B. L. Saux, and A. Boulch, “Fully convolutional Siamese
+networks for change detection,” in Proc. 25th IEEE Int. Conf. Image
+Process. (ICIP), Oct. 2018, pp. 4063–4067.
+[18] S. Fang, K. Li, J. Shao, and Z. Li, “SNUNet-CD: A densely connected
+Siamese network for change detection of VHR images,” IEEE Geosci.
+Remote Sens. Lett., vol. 19, pp. 1–5, 2022.
+[19] G. Cheng, G. Wang, and J. Han, “ISNet: Towards improving separability
+for remote sensing image change detection,” IEEE Trans. Geosci.
+Remote Sens., vol. 60, 2022, Art. no. 5623811.
+[20] C. Zhang et al., “A deeply supervised image fusion network for
+change detection in high resolution bi-temporal remote sensing
+images,” ISPRS J. Photogramm. Remote Sens., vol. 166, pp. 183–200,
+Aug. 2020.
+
+[21] Z. Li, C. Yan, Y. Sun, and Q. Xin, “A densely attentive refinement
+network for change detection based on very-high-resolution bitemporal
+remote sensing images,” IEEE Trans. Geosci. Remote Sens., vol. 60,
+2022, Art. no. 4409818.
+[22] A. Vaswani et al., “Attention is all you need,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 30, 2017, pp. 5998–6008.
+[23] K. Han et al., “A survey on vision transformer,” IEEE Trans. Pattern
+Anal. Mach. Intell., vol. 45, no. 1, pp. 87–110, Jan. 2023.
+[24] J. Ma, M. Li, X. Tang, X. Zhang, F. Liu, and L. Jiao, “Homo–
+heterogenous transformer learning framework for RS scene classification,” IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 15,
+pp. 2223–2239, 2022.
+[25] Z. Xu, W. Zhang, T. Zhang, Z. Yang, and J. Li, “Efficient transformer
+for remote sensing image segmentation,” Remote Sens., vol. 13, no. 18,
+p. 3585, Sep. 2021.
+[26] Z. Zheng, Y. Zhong, S. Tian, A. Ma, and L. Zhang, “ChangeMask: Deep
+multi-task encoder-transformer-decoder architecture for semantic change
+detection,” ISPRS J. Photogramm. Remote Sens., vol. 183, pp. 228–239,
+Jan. 2022.
+[27] C. Zhang, L. Wang, S. Cheng, and Y. Li, “SwinSUNet: Pure transformer
+network for remote sensing image change detection,” IEEE Trans.
+Geosci. Remote Sens., vol. 60, 2022, Art. no. 5224713.
+[28] S. Liu, D. Marinelli, L. Bruzzone, and F. Bovolo, “A review of change
+detection in multitemporal hyperspectral images: Current techniques,
+applications, and challenges,” IEEE Geosci. Remote Sens. Mag., vol. 7,
+no. 2, pp. 140–158, Jun. 2019.
+[29] Y. Afaq and A. Manocha, “Analysis on change detection techniques
+for remote sensing applications: A review,” Ecol. Informat., vol. 63,
+Jul. 2021, Art. no. 101310.
+[30] F. Liu, L. Jiao, X. Tang, S. Yang, W. Ma, and B. Hou, “Local restricted
+convolutional neural network for change detection in polarimetric SAR
+images,” IEEE Trans. Neural Netw. Learn. Syst., vol. 30, no. 3,
+pp. 818–833, Mar. 2019.
+[31] Q. Wang, Z. Yuan, Q. Du, and X. Li, “GETNET: A general end-to-end
+2-D CNN framework for hyperspectral image change detection,” IEEE
+Trans. Geosci. Remote Sens., vol. 57, no. 1, pp. 3–13, Jan. 2019.
+[32] L. Wang, L. Wang, Q. Wang, and L. Bruzzone, “RSCNet: A residual
+self-calibrated network for hyperspectral image change detection,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5529917.
+[33] Y. Li, C. Peng, Y. Chen, L. Jiao, L. Zhou, and R. Shang, “A deep
+learning method for change detection in synthetic aperture radar images,”
+IEEE Trans. Geosci. Remote Sens., vol. 57, no. 8, pp. 5751–5763,
+Aug. 2019.
+[34] H. Chen, C. Wu, B. Du, L. Zhang, and L. Wang, “Change detection
+in multisource VHR images via deep Siamese convolutional multiplelayers recurrent neural network,” IEEE Trans. Geosci. Remote Sens.,
+vol. 58, no. 4, pp. 2848–2864, Apr. 2020.
+[35] T. Liu et al., “Building change detection for VHR remote sensing images
+via local–global pyramid network and cross-task transfer learning strategy,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 4704817.
+[36] P. Chen, B. Zhang, D. Hong, Z. Chen, X. Yang, and B. Li, “FCCDN:
+Feature constraint network for VHR image change detection,” ISPRS J.
+Photogramm. Remote Sens., vol. 187, pp. 101–119, May 2022.
+[37] B. Bai, W. Fu, T. Lu, and S. Li, “Edge-guided recurrent convolutional neural network for multitemporal remote sensing image building
+change detection,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5610613.
+[38] J. Lei, Y. Gu, W. Xie, Y. Li, and Q. Du, “Boundary extraction constrained
+Siamese network for remote sensing image change detection,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5621613.
+[39] S. Khan, M. Naseer, M. Hayat, S. W. Zamir, F. S. Khan, and M. Shah,
+“Transformers in vision: A survey,” ACM Comput. Surveys, vol. 54,
+no. 10s, pp. 1–41, Jan. 2022.
+[40] L. Wang et al., “UNetFormer: A UNet-like transformer for efficient
+semantic segmentation of remote sensing urban scene imagery,” ISPRS
+J. Photogramm. Remote Sens., vol. 190, pp. 196–214, Aug. 2022.
+[41] D. Wang et al., “Advancing plain vision transformer toward remote
+sensing foundation model,” IEEE Trans. Geosci. Remote Sens., vol. 61,
+2023, Art. no. 5607315.
+[42] H. Chen, Z. Qi, and Z. Shi, “Remote sensing image change detection
+with transformers,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5607514.
+[43] Y. Feng, H. Xu, J. Jiang, H. Liu, and J. Zheng, “ICIF-Net: Intra-scale
+cross-interaction and inter-scale feature fusion network for bitemporal
+remote sensing images change detection,” IEEE Trans. Geosci. Remote
+Sens., vol. 60, 2022, Art. no. 4410213.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: EATDer: EDGE-ASSISTED ADAPTIVE TRANSFORMER DETECTOR FOR RSCD
+
+[44] Q. Li, R. Zhong, X. Du, and Y. Du, “TransUNetCD: A hybrid transformer network for change detection in optical remote-sensing images,”
+IEEE Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5622519.
+[45] W. Wang, X. Tan, P. Zhang, and X. Wang, “A CBAM based multiscale
+transformer fusion approach for remote sensing image change detection,” IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 15,
+pp. 6817–6825, 2022.
+[46] W. G. C. Bandara and V. M. Patel, “A transformer-based Siamese
+network for change detection,” in Proc. IEEE Int. Geosci. Remote Sens.
+Symp., Jul. 2022, pp. 207–210.
+[47] D. Wang, J. Zhang, B. Du, G.-S. Xia, and D. Tao, “An empirical study of
+remote sensing pretraining,” IEEE Trans. Geosci. Remote Sens., vol. 61,
+2023, Art. no. 5608020.
+[48] Y. Xu, Q. Zhang, J. Zhang, and D. Tao, “ViTAE: Vision transformer
+advanced by exploring intrinsic inductive bias,” in Proc. Adv. Neural
+Inf. Process. Syst., vol. 34, 2021, pp. 28522–28535.
+[49] H. Wu et al., “CvT: Introducing convolutions to vision transformers,” in
+Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV), Oct. 2021, pp. 22–31.
+[50] E. Xie, W. Wang, Z. Yu, A. Anandkumar, J. M. Alvarez, and P. Luo,
+“SegFormer: Simple and efficient design for semantic segmentation with
+transformers,” in Proc. Adv. Neural Inf. Process. Syst., vol. 34, 2021,
+pp. 12077–12090.
+[51] X. Dong et al., “CSWin transformer: A general vision transformer backbone with cross-shaped windows,” in Proc. IEEE/CVF Conf. Comput.
+Vis. Pattern Recognit. (CVPR), Jun. 2022, pp. 12114–12124.
+[52] W. Wang et al., “Pyramid vision transformer: A versatile backbone for
+dense prediction without convolutions,” in Proc. IEEE/CVF Int. Conf.
+Comput. Vis. (ICCV), Oct. 2021, pp. 548–558.
+[53] W. Wang et al., “PVT v2: Improved baselines with pyramid vision
+transformer,” Comput. Vis. Media, vol. 8, no. 3, pp. 415–424, Sep. 2022.
+[54] S. Woo, J. Park, J.-Y. Lee, and I. S. Kweon, “CBAM: Convolutional
+block attention module,” in Proc. Eur. Conf. Comput. Vis. (ECCV),
+Sep. 2018, pp. 3–19.
+[55] S. Minaee, Y. Boykov, F. Porikli, A. Plaza, N. Kehtarnavaz, and
+D. Terzopoulos, “Image segmentation using deep learning: A survey,”
+IEEE Trans. Pattern Anal. Mach. Intell., vol. 44, no. 7, pp. 3523–3542,
+Jul. 2022.
+[56] P.-T. de Boer, D. P. Kroese, S. Mannor, and R. Y. Rubinstein, “A tutorial on the cross-entropy method,” Ann. Oper. Res., vol. 134, no. 1,
+pp. 19–67, Feb. 2005.
+[57] J. Canny, “A computational approach to edge detection,” IEEE Trans.
+Pattern Anal. Mach. Intell., vol. PAMI-8, no. 6, pp. 679–698, Nov. 1986.
+[58] H. Chen and Z. Shi, “A spatial–temporal attention-based method and a
+new dataset for remote sensing image change detection,” Remote Sens.,
+vol. 12, no. 10, p. 1662, May 2020.
+[59] M. A. Lebedev, Y. V. Vizilter, O. V. Vygolov, V. A. Knyaz, and
+A. Y. Rubis, “Change detection in remote sensing images using conditional adversarial networks,” Int. Arch. Photogramm., Remote Sens.
+Spatial Inf. Sci., vol. XLII-2, pp. 565–571, May 2018.
+[60] S. Ji, S. Wei, and M. Lu, “Fully convolutional networks for multisource
+building extraction from an open aerial and satellite imagery data
+set,” IEEE Trans. Geosci. Remote Sens., vol. 57, no. 1, pp. 574–586,
+Jan. 2019.
+[61] X. Glorot and Y. Bengio, “Understanding the difficulty of training deep
+feedforward neural networks,” in Proc. 13th Int. Conf. Artif. Intell.
+Statist., 2010, pp. 249–256.
+[62] A. Varghese, J. Gubbi, A. Ramaswamy, and P. Balamuralidhar,
+“ChangeNet: A deep learning architecture for visual change detection,”
+in Proc. Eur. Conf. Comput. Vis. (ECCV), Sep. 2018, pp. 129–145.
+[63] M. Liu and Q. Shi, “DSAMNet: A deeply supervised attention metric
+based network for change detection of high-resolution images,” in
+Proc. IEEE Int. Geosci. Remote Sens. Symp. (IGARSS), Jul. 2021,
+pp. 6159–6162.
+[64] H. Yang et al., “A lightweight Siamese neural network for building
+change detection using remote sensing images,” Remote Sens., vol. 15,
+no. 4, p. 928, Feb. 2023.
+[65] Z. Song, X. Wei, X. Kang, S. Li, and J. Liu, “Toward efficient remote
+sensing image change detection via cross-temporal context learning,”
+IEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5404210.
+[66] A. Dosovitskiy et al., “An image is worth 16×16 words: Transformers
+for image recognition at scale,” 2020, arXiv:2010.11929.
+[67] Z. Liu et al., “Swin transformer: Hierarchical vision transformer using
+shifted windows,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV),
+Oct. 2021, pp. 9992–10002.
+
+5602015
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor at the
+Key Laboratory of Intelligent Perception and Image
+Understanding, Ministry of Education, Xidian University. Her research interests include computational
+intelligence and image understanding.
+
+Junyi Duan received the B.E. degree in intelligent science and technology from Xidian University,
+Xi’an, China, in 2021, where he is currently pursuing the master’s degree in computer science and
+technology with the Key Laboratory of Intelligent
+Perception and Image Understanding of the Ministry
+of Education.
+His main research directions include image perception and understanding, remote-sensing change
+detection, and deep learning.
+
+Xu Tang (Senior Member, IEEE) received the
+B.Sc., M.Sc., and Ph.D. degrees in electronic circuits
+and systems from Xidian University, Xi’an, China,
+in 2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a Joint Ph.D. Student
+along with Prof. W. J. Emery at the University
+of Colorado at Boulder, Boulder, CO, USA. He is
+currently a Full Professor at the Key Laboratory
+of Intelligent Perception and Image Understanding, Ministry of Education, Xidian University. His
+research interests include remote sensing image
+content-based retrieval and reranking, hyperspectral image processing, remote
+sensing scene classification, and object detection. For more details, please refer
+to: https://web.xidian.edu.cn/tangxu/.
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From January 2015 to March 2016, she was
+a Visiting Scientist with the Computer Science
+and Artificial Intelligence Laboratory, Massachusetts
+Institute of Technology, Cambridge, MA, USA. She
+is currently a Professor with the Key Laboratory of
+Intelligent Perception and Image Understanding of the Ministry of Education,
+Xidian University. Her research interests include pattern recognition, machine
+learning, and remote sensing image analysis and understanding.
+Licheng Jiao (Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding of the Ministry of Education of China. He has authored
+or coauthored more than 200 scientific articles. His research interests include
+signal and image processing, nonlinear circuits and systems theory, wavelet
+theory, natural computation, and intelligent information processing.
+Dr. Jiao is a member of the IEEE Xian Section Executive Committee and
+an Executive Committee Member of the Chinese Association of Artificial
+Intelligence. He is the Chairperson of the Awards and Recognition Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:55:08 UTC from IEEE Xplore. Restrictions apply.
+
+

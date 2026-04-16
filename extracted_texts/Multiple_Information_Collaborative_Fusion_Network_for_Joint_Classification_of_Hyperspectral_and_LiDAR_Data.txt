@@ -1,0 +1,1561 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+5525416
+
+Multiple Information Collaborative Fusion Network
+for Joint Classification of Hyperspectral
+and LiDAR Data
+Xu Tang , Senior Member, IEEE, Yizhou Zou, Jingjing Ma, Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE,
+and Licheng Jiao , Fellow, IEEE
+
+Abstract— Joint classification of hyperspectral image (HSI)
+and light detection and ranging (LiDAR) can simultaneously
+utilize rich spectral information and elevation information and
+has become a hot research topic in remote sensing (RS).
+Although many works have been proposed for this task, their
+performance cannot reach what we expected due to inadequate
+cross-modal feature learning and simple feature fusion. This
+article proposes a multiple information collaborative fusion
+network (MICF-Net) to overcome those limitations, which aims
+to leverage the essentially consistent spatial relationships and
+high-level semantic information in multimodal data to guide
+the extraction of multimodal fusion features. Specifically, MICFNet first uses a simple two-branch convolutional neural network
+(CNN) for preliminary feature extraction. Then, a dual-branch
+cross-modal attention fusion transformer (CMAFT) is developed
+to mine global contextual content. By fusing the attention maps
+of two modalities and limiting their similarity, CMAFT can
+retain modality-specific information while achieving information
+interaction based on spatial relationships. Next, an adaptive
+mask modulation (AMM) module is designed to dynamically
+balance the learning rate of each modality to ensure the
+effectiveness of the features of all modalities. Finally, to mine the
+complementary information of HSI and LiDAR data, a semanticguided feature fusion (SGFF) module is introduced. It achieves
+mutual guided learning by exchanging semantic information
+between two modalities. Positive experimental results counted
+on three popular HSI and LiDAR datasets demonstrate the
+effectiveness of the proposed MICF-Net. Our source codes are
+available at https://github.com/TangXu-Group/HyperspectralImages-Classification/tree/main/MICF-Net.
+
+Manuscript received 28 April 2024; revised 29 June 2024; accepted 12 July
+2024. Date of publication 18 July 2024; date of current version 8 August
+2024. This work was supported in part by the National Natural Science
+Foundation of China under Grant 62171332 and Grant 62276197, in part
+by the Key Research and Development Program of Shaanxi under Grant
+2024GX-YBXM-125, in part by the Natural Science Basic Research Program
+of Shaanxi under Grant 2024JC-YBMS-472, and in part by the Shaanxi
+Province Innovation Capability Support Plan under Grant 2023-CX-TD-09.
+(Corresponding author: Jingjing Ma.)
+Xu Tang, Yizhou Zou, Jingjing Ma, Xiangrong Zhang, and Licheng Jiao are
+with the Key Laboratory of Intelligent Perception and Image Understanding of
+the Ministry of Education, School of Artificial Intelligence, Xidian University,
+Xi’an 710071, China (e-mail: tangxu128@gmail.com; jjma@ieee.org).
+Fang Liu is with the Key Laboratory of Intelligent Perception and Systems
+for High-Dimensional Information of the Ministry of Education, School
+of Computer Science and Engineering, Nanjing University of Science and
+Technology, Nanjing 210094, China.
+This article has supplementary downloadable material available at
+https://doi.org/10.1109/TGRS.2024.3430373, provided by the authors.
+Digital Object Identifier 10.1109/TGRS.2024.3430373
+
+Index Terms— Hyperspectral image (HSI), image classification,
+light detection and ranging (LiDAR), multimodal remote
+sensing (RS).
+
+I. I NTRODUCTION
+N RECENT years, remote sensing (RS) technology has
+been developed rapidly, and RS imagery plays an irreplaceable role in various applications, such as disaster detection,
+agricultural management, and urban development planning [1],
+[2], [3]. With the emergence of various RS data, multimodal
+learning has gradually attracted researchers’ attention. The
+land covers within RS images can be fully captured by
+integrating information from multiple perspectives. However,
+massive data from different observation sensors increases the
+model’s learning burden, as they contain complementary clues
+and redundant and interfering messages. In addition, due to the
+diverse imaging conditions, the differences within various RS
+data are significant, quickly causing an imbalance problem in
+model learning. Therefore, preserving valuable information,
+eliminating unnecessary knowledge, and considering the
+specific characteristics of different RS data are crucial to RS
+multimodal learning [4], [5].
+Hyperspectral images (HSIs), as an important product of
+RS data, have always garnered increasing attention. Due to
+hundreds of continuous spectral bands, HSIs can capture
+subtle differences among targets to accurately identify ground
+objects [6]. However, it encounters challenges in expressing
+differences between objects of the same material and is
+susceptible to external factors, such as cloud cover [7].
+To overcome these limitations, many other kinds of RS
+data have been introduced to the HSI community [8],
+including multispectral images (MSIs) [9] and light detection
+and ranging (LiDAR) [10]. Among them, LiDAR has
+attracted particular attention. This is because it can capture
+elevation information for land covers, which aids in accurately
+identifying targets with minor spectral discrepancies and
+exhibits insensitivity to climatic variations. Considering the
+distinct characteristics of the two modalities, the joint
+exploration of HSI and LiDAR can provide additional
+perspectives for a comprehensive understanding of land
+covers, thereby achieving a breakthrough in performance. This
+advantage, which a single data source lacks, has propelled the
+joint classification task of HSI and LiDAR into a current hot
+research topic [11], [12], [13].
+
+I
+
+1558-0644 © 2024 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+To fully exploit the rich information hidden in HSI
+and LiDAR data, many successful methods have been
+proposed [14], [15], [16], [17]. The information fusion
+technologies incorporated in them can be broadly categorized
+into feature fusion and information interaction [18]. For
+feature-fusion-based technologies, they can be further divided
+into observation-, feature-, and decision-level fusion [19].
+Specifically, observation-level fusion methods are often
+associated with traditional machine learning methods. It uses
+specific mathematical operations to merge the original images
+from different modalities [20]. Feature-level fusion models
+focus on integrating features obtained from the original images
+to form a compact and discriminative representation [21].
+Their behavior depends on feature extractors and fusion
+strategies. With the continuous advancement of deep models,
+such as convolutional neural networks (CNNs) and recurrent
+neural networks (RNNs), the performance of feature-level
+fusion models has significantly improved. Decision-level
+fusion approaches typically utilize preset or statistical weights
+to merge the predictions from different data sources, yielding
+the final joint classification results [22]. For information
+interaction approaches, they focus on enhancing the discrimination of features for the final classification. To this end,
+the complementary messages between different modalities are
+always acquired by incorporating clues from another modality
+into the feature extraction process of the current modality.
+Building on this idea, various strategies, such as weight
+sharing, cross-attention, and contrastive learning [23], [24],
+[25], [26], have been proposed to exploit the interdependent
+knowledge from heterogeneous features corresponding to
+different modalities and yield excellent results.
+Despite the remarkable results of previous work, some
+challenges still deserve further research. First, for HSI
+and LiDAR joint classification tasks, information interaction
+during the feature extraction process is crucial to enhance
+the representation ability of features [27], [28]. However,
+existing information interaction methods often deal with
+features directly, which may weaken the specific information
+of each modality. Second, the feature learning rates for
+different modalities are always imbalanced due to the data
+differences. This leads to insufficient feature extraction in
+weaker modalities, which harms the representation ability of
+final features [29], [30]. Last but not least, simple feature
+fusion strategies struggle to fully exploit the correlation and
+complementary information of heterogeneous features from
+different modalities, limiting the model’s performance [31],
+[32], [33].
+To address the challenges above, we propose a multiple
+information collaborative fusion network (MICF-Net) for the
+joint classification of HSI and LiDAR data in this article. First,
+a simple two-branch CNN performs initial feature extraction
+and dimension unification on HSI and LiDAR data. Then,
+two dual-branch cross-modal attention fusion transformers
+(CMAFTs) are employed to mine the global interpixel relationships further and ensure the information interaction across
+the different modalities. Unlike simple interactions directly
+on features, CMAFTs complete communication by mining
+potential spatial similarities between modalities from attention
+
+maps. This way, the unique characteristics of modalities can be
+maintained, which is suitable for cross-modal learning. Next,
+an adaptive mask modulation (AMM) module is designed
+to identify and suppress the dominant modality, effectively
+mitigating the learning imbalance between different source
+data. Finally, instead of conventional linear fusion techniques,
+a semantic-guided feature fusion (SGFF) module is introduced
+to fully explore the correlation and complementary clues
+between different features by exchanging pseudo-predictions
+between modalities. Through the collaborative operation of the
+above modules, valuable multimodal semantic features can be
+obtained and utilized to achieve accurate classification.
+The main contributions of this article are summarized as
+follows.
+1) We propose an end-to-end multimodal fusion network
+named MICF-Net in this article to achieve the precise
+joint classification of HSI and LiDAR data. By fully
+extracting the intrinsic characteristics of each modality
+and the potential correlation between modalities, highquality discriminative features can be obtained and
+utilized for final classification.
+2) A dual-branch CMAFT is proposed to mine global contextual clues while performing information interaction
+based on spatial relationships. It not only integrates
+attentional information from both modalities but also
+facilitates the interaction of modalities by limiting the
+correlation of spatial associations. Therefore, efficient
+interaction is achieved while retaining modality specificity, enhancing feature representation.
+3) An AMM module is developed to dynamically adjust
+the optimization rate for each modality’s feature
+extraction process for mitigating the issue of imbalanced
+multimodal learning. In this way, the under-optimization
+of the weaker modality is effectively alleviated, which
+is beneficial to subsequent feature fusion.
+4) An SGFF module is developed to merge feature
+representations of different modalities. Unlike simple
+linear fusion strategies, it leverages the semantics of
+one modality to guide features in another. Thus, the
+complementary information of the two modalities can
+be explored, generating highly discriminative semantic
+features and improving the model’s performance.
+The remainder of this article is organized as follows.
+Section II reviews related studies based on feature fusion and
+information interaction. In Section III, we describe our MICFNet in detail. Section IV analyzes the experimental results
+counted on three public datasets. Finally, a short conclusion
+is presented in Section V.
+II. R ELATED W ORK
+In this section, we review some previous HSI and LiDAR
+joint classification methods from two aspects, i.e., feature
+fusion-based and information interaction-based methods.
+A. Feature Fusion-Based Joint Classification Methods
+For the joint classification of HSI and LiDAR data, feature
+fusion between modalities is an essential technology, and
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+numerous related studies have been proposed [34], [35], [36].
+Considering the heterogeneity of the two modalities, a spatial–
+spectral saliency enhancement network was proposed in [37].
+The authors first fuse LiDAR images with HSIs through the
+Gram–Schmidt method [20]. Then, a cross-layer interaction
+module and a center spectrum correction module are developed
+to enhance the feature representation of each modality.
+Finally, a decision-level fusion scheme effectively integrates
+multimodal features and achieves accurate classification.
+To further explore the correlation between fused features
+and single-modal features, Song et al. [38] proposed a
+hashing-based deep metric learning method. On the one hand,
+an attention-based feature fusion module is developed to
+generate high discriminative features. On the other hand,
+hashing-based metric loss is further used to constrain the
+similarity of single-modal and fused features to mine adequate
+information in multimodal data. Integrating them together
+will yield favorable classification results. Feng et al. [39]
+introduced a dynamic scale hierarchical fusion network for the
+joint classification of HSI and LiDAR data. It dynamically
+selects suitable scale features by evaluating similarity in
+scale space and employs spatial and modal attention modules
+for hierarchical fusion to achieve comprehensive feature
+complementarity. The positive classification maps reported in
+the literature illustrate their effectiveness.
+With the appearance of vision transformer (ViT) [40], many
+transformer-based models have been presented for HSI and
+LiDAR joint classification. For example, Zhang et al. [41]
+developed a multimodal transformer network to extract
+specific and shared features from HSI and LiDAR data. The
+local spectral, global spatial, and elevation information can be
+obtained by introducing the self-attention mechanism. Along
+with a new transformer encoder, the shared spatial features
+between the two modalities can be fully explored for reliable
+classification results. An extended ViT (ExViT) network
+was proposed in [42]. It integrates separable convolution
+modules and self-attention mechanisms to learn the spatial
+and channel information in a lightweight manner. Furthermore,
+by incorporating early-, mid-, and late-fusion techniques,
+ExViT enhances information interaction between cross-modal
+tokens, consequently improving the model’s performance in
+terms of quantitative accuracy.
+B. Information Interaction-Based Joint Classification
+Methods
+Information interaction is another crucial technology for the
+joint classification of HSI and LiDAR data, which enhances
+the richness of feature representations and the discriminability
+of classifiers. Typical techniques include image reconstruction,
+contrastive learning, etc. As for the technique of reconstruction, it plays an important role in preserving the integrity of
+the information, and many methods adopt this strategy. For
+instance, Zhang et al. [43] proposed an interleaving perception
+CNN network. It consists of a bidirectional autoencoder and a
+two-branch CNN, which aim to reconstruct HSI and LiDAR
+images and produce the final classification maps. Moreover,
+two multimodal structural constraints are designed to ensure
+
+5525416
+
+the completeness of the fused features. Similarly, Wu et al.
+[44] developed a cross-channel reconstruction network for
+HSI and LiDAR joint classification. Unlike typical direct
+reconstruction strategies, this model learns a more compact
+fusion representation by reconstructing flipped features, which
+benefits downstream classification. A coupled adversarial
+learning-based classification (CALC) method was introduced
+in [45] under the reconstructed framework. First, a game
+construction is used for dual generators and discriminators
+to learn modality-specific discriminative features. Second,
+a linear fusion scheme and a parameter-sharing strategy
+are used in the dual generator to mine the similar highorder semantics between HSIs and LiDAR effectively. Finally,
+a multilevel fusion network and adaptive prediction fusion
+method are introduced to generate accurate classification maps.
+Contrastive learning plays an irreplaceable role in multimodal information interaction by mining the consistency of
+structures between modalities. Specifically, Hang et al. [46]
+proposed an unsupervised feature learning framework based
+on contrastive learning. Initially, contrastive learning is
+employed to investigate the intrinsic structural similarities
+between HSIs and LiDAR data. Then, a small set of
+training samples are utilized for fine-tuning. Based on
+them, satisfactory classification results can be obtained.
+Furthermore, Feng et al. [47] proposed a novel self-supervised
+contrastive learning framework. Using intramodel and crossmodal contrastive learning, multimodal feature representations
+can be achieved in the pretraining stage. Then, in the
+fine-tuning stage, a hybrid cross-modal fusion module is
+designed to integrate multimodal complementary information
+compactly, ensuring satisfactory classification performance.
+Other strategies such as weight sharing and cross-attention
+also achieve efficient information interaction. Hang et al. [48]
+employed two coupled CNNs to extract features from HSI
+and LiDAR data separately. Through a specific parametersharing mechanism, the interaction of multimodal data
+is effectively enhanced. The reported results counted on
+two multimodal datasets confirm its effectiveness. Another
+attention-based interaction was introduced in [49]. It first
+integrates attention information from different modalities,
+exploiting complementary advantages among their features.
+Then, a hierarchical feature fusion framework combines
+modality-specific features with comprehensive features for
+precise classification.
+III. M ETHOD
+A. Overview
+To explore more beneficial knowledge and improve the
+feasibility of joint classification of HSI and LiDAR data,
+we propose a novel network named MICF-Net. Its overall
+framework is shown in Fig. 1(a).
+First, the corresponding patches Xh ∈ Rs×s×c1 and
+Xl ∈ Rs×s×c2 extracted from an HSI and LiDAR data are
+fed into a simple two-branch CNN network, where s × s
+represents the patch size, and c1 and c2 are the original
+channel numbers of HSI and LiDAR. For the HSI branch,
+a 3-D convolution with the kernel size of 5 × 1 × 1
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+Fig. 1.
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Framework of the proposed MICF-Net. (a) Overall framework. (b) CMAFT. (c) SGFF module (taking the HSI branch as an example).
+
+and a 2-D convolution with the kernel size of 1 × 1 are
+stacked sequentially to extract spectral information from HSI.
+Differently, since LiDAR is a single-channel image, two
+1 × 1 2-D convolutions are stacked to extract elevation
+information from LiDAR. Here, the number of filters of the
+two convolutional layers in the HSI branch are 8 and 64,
+respectively, while in the LiDAR branch, they are 32 and
+64. Furthermore, to speed up the convergence of the model,
+a batch normalization (BN) and a leaky rectified linear unit
+(LeakyReLU) function are applied sequentially after each
+convolutional layer. After this step, the patches from the two
+modalities are mapped into Fh ∈ Rs×s×c and Fl ∈ Rs×s×c ,
+where c = 64.
+Second, two dual-branch CMAFTs are employed to gather
+global contextual content from the obtained Fh and Fl , while
+further enhancing the interaction between modalities via the
+fusion of attention and the constraints of potential similarities.
+Following this, AMM is applied to identify the learning
+rates of two modalities based on classification accuracy and
+adaptively adjusts them to alleviate the unbalanced learning.
+This way, the effectiveness of each branch’s information can
+be ensured. Subsequently, SGFF will be used to mine the
+complementary information between different modalities fully.
+Through mutually exchanging semantics between HSI and
+LiDAR, the two branches’ valuable clues can be explored
+for a comprehensive integration. Finally, the discriminative
+fusion features are mapped into semantic vectors through a
+fully connected layer to achieve pixel-level classification. Now,
+we will explain the CMAFT, AMM, and SGFF modules in
+detail.
+B. Cross-Modal Attention Fusion (CMAF) Transformer
+Although HSI and LiDAR record target information from
+different perspectives, they essentially describe the same
+
+Fig. 2. Schematic of the proposed CMAF structure (taking the HSI branch
+as an example).
+
+area. Therefore, they should be similar in transformation
+spaces [46]. Inspired by this observation, we propose a dualbranch CMAFT to extract global contextual knowledge and
+simultaneously mine the similarities in the spatial relationship
+between the two modalities. Specifically, features Fh and
+Fl are first flattened and spliced with an all-zero learnable
+classification token to generate sequence features F′h ∈ R N ×c
+and Fl′ ∈ R N ×c , where N = s 2 + 1. Then, learnable position
+embeddings are added to F′h and Fl′ to produce the input
+features Z0h ∈ R N ×c and Zl0 ∈ R N ×c . Next, Z0h and Zl0 are input
+into D dual-branch CMAFTs orderly to mine global contextual
+knowledge while enhancing the interaction between the two
+modalities. In this article, we set D = 2. Since all CMAFTs
+share the same structure, we take the CMAFT of the first HSI
+branch as an example to explain for clarity.
+Like the standard ViT encoder, CMAFT is divided into two
+components. The former is responsible for mining the global
+context of the input, and the latter focuses on further nonlinear
+transformation. Unlike the standard ViT encoder, CMAFT
+expands the original self-attention into cross-modal fused
+attention, effectively enhancing the information interaction
+between modalities. Its structure is displayed in Fig. 1(b), and
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+its process can be expressed as
+ 
+0
+Ẑ h = CMAF LN Z0h , Al + Z0h
+  0 
+0
+Z1h = MLP LN Ẑ h
++ Ẑ h
+
+(1)
+
+where CMAF(·), LN(·), and MLP(·) represent the CMAF,
+layer normalization (LN), and multilayer perceptron (MLP)
+functions, and Al ∈ Rn h ×N ×N denotes the self-attention map
+obtained from the first LiDAR branch. Here, n h means the
+number of attention heads. The detailed acquisition process of
+Al will be explained later.
+As a key part of CMAFT, CMAF focuses on discovering
+the potential similarities and complementarities between
+modalities. To this end, apart from the self-attention within
+the modality, CMAF also fuses the attention maps of different
+modalities to utilize the complementary information of the
+two modalities effectively. Considering that the concatenation
+operation can better preserve modality-specific information
+than the addition operation, we choose to concatenate the
+self-attention maps of the two branches and then input them
+into the Project block containing only 1 × 1 convolutions to
+mine the complex correlation of spatial descriptions between
+different modalities. Its specific structure in the ith head space
+is shown in Fig. 2, and the complete CMAF can be formulated
+as
+  
+
+CMAF LN Z0h , Al = H1 , H2 , . . . , Hn h W
+
+Hi = Softmax CAih Vi
+
+
+CAih = Aih + Project Aih , Ali
+Qi KT
+Aih = √ i
+c/n h
+
+
+i
+Qh = LN Z0h Wiq , Kih = LN Z0h Wik
+
+(2)
+Vih = LN Z0h Wiv
+where Hi is the output of the ith head, CAih means the
+cross-modal attention of the ith head, Aih and Ali implies
+the self-attention of the ith head of the current HSI and
+LiDAR branches, Qi , Ki , and Vi are the ith key, query,
+and value of LN(Z0h ), W ∈ Rc×c , Wiq ∈ Rc×c/n h , Wik ∈
+Rc×c/n h , and Wiv ∈ Rc×c/n h indicate learnable parameter
+matrices, and [·], Softmax(·), and Project(·) denote the
+concatenation, softmax, and mapping operation functions,
+respectively. By concatenating the self-attention Aih of all head
+spaces, we can get Ah ∈ Rn h ×N ×N . The acquisition process
+of Al [mentioned in (1)] is consistent with Ah . The Project
+block consists of two 1 × 1 2-D convolutions with the kernel
+numbers of m and n. Also, the BN and LeakyReLU layers
+are added between them. In this article, we set m = 8 and
+n = 1, where m is a free parameter and n will be fixed
+for the residual connection. Note that to further enhance the
+interaction between modalities, Project blocks in the dualbranch CMAFT share parameters.
+In addition, considering the HSI and LiDAR data cover
+the same location, their attention maps should be similar.
+To formulate this point, we first obtain the cross-modal
+attention maps CAh_d and CAl_d of the dth CMAFT corresponding to the HSI and LiDAR branches by concatenating the
+
+5525416
+
+cross-modal attention maps collected from each head space.
+Then, Kullback–Leibler (KL) divergence [50] is introduced to
+constrain the correlation between two cross-modal attention
+maps. In sum, the correlation loss of D two-branch CMAFTs
+can be expressed as
+LCOR =
+
+D
+X
+
+
+KL CAh_d , CAl_d .
+
+(3)
+
+d=1
+
+In general, after passing D dual-branch CMAFTs, not only can
+the global context of HSI and LiDAR data be exploited, but the
+complementary information of the two modalities can also be
+deeply mined. This is beneficial for extracting comprehensive
+features.
+C. AMM Module
+For joint classification tasks of multimodal data, learning
+imbalance between modalities is a common challenge due to
+the heterogeneity of modalities [30]. This imbalance arises
+for two main reasons. First, the convergence speeds of
+different modalities are inherently inconsistent. Second, betterperforming modalities usually produce smaller losses, which
+hinders the learning of other modalities [51]. To alleviate this
+problem, we develop AMM in this section, which aims to
+adaptively select and suppress the dominant modality, thereby
+ensuring comprehensive feature learning for all modalities.
+The first step of AMM is to identify the dominant modality.
+Inspired by Fan et al. [52], we employ two nonparametric
+prototype classifiers to generate pseudo predictions for HSI
+and LiDAR and calculate the modal imbalance rate. In detail,
+1×c
+we first pick out the classification tokens tcls
+and
+h ∈ R
+cls
+1×c
+D
+D
+tl ∈ R
+from features Zh and Zl obtained by D CMAFTs.
+Then, the category distribution probability can be obtained
+for each modality by calculating the distance between its
+classification token and the corresponding prototype. This
+process can be expressed as
+
+k
+
+exp −d tcls
+h , Mh
+cls
+eh k|th = P K
+p
+ , k = 1, 2, . . . , K
+k
+cls
+l=1 exp −d th , Mh
+
+
+exp −d tlcls , Mlk
+el k|tlcls = P K
+p
+ , k = 1, 2, . . . , K (4)
+k
+cls
+l=1 exp −d tl , Ml
+where p̃h and p̃l represent the pseudo prediction probability
+distributions of HSI and LiDAR, respectively, K denotes the
+number of categories, d(·, ·) implies the Euclidean distance,
+and Mkh and Mlk are the prototypes of the kth category of
+HSI and LiDAR data. Next, the imbalance rate of the two
+modalities can be measured based on the confidence ratio of
+accurate predictions corresponding to each modality in each
+batch, which can be defined as
+r=
+
+B
+X
+
+B
+ X
+
+p̃ h yi |tcls
+/
+p̃l yi |tlcls
+h
+
+i=1
+
+i=1
+
+(5)
+
+where B indicates batch size and yi represents the ground truth
+of the ith sample.
+When we get the imbalance rate, we can further use it to
+adjust the learning speeds of different modalities by a feature
+mask modulation operation. It first converts r into the mask
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+probabilities β and γ of HSI and LiDAR features in line with
+the following formulas:
+(
+β = 1 − tanh(α · r ), γ = 1, r ≥ 1
+(6)
+β = 1, γ = 1 − tanh(α · r ), r < 1
+where tanh(·) means the hyperbolic tangent function and α is
+the penalty coefficient. Then, the modulation with probabilities
+β and γ will be conducted on ZhD and ZlD , i.e.,
+
+
+Zh = maskh · ZhD , maskh = δh1 , δh2 , . . . δhc
+
+
+Zl = maskl · ZlD , maskl = δl1 , δl2 , . . . δlc
+(7)
+where δhi ∈ {β, 1} and δli ∈ {γ , 1} represent Bernoulli random
+variables with probabilities β and γ . Here, we choose the
+Bernoulli distribution due to its binary characteristics and
+high computational efficiency. Therefore, it is simpler and
+more suitable for our task than other probability distributions.
+According to (6) and (7), we can find that when the learning
+rates of two modalities are imbalanced, the mask probability of
+the dominant modality will be smaller. This implies that more
+channels of the dominant modality will be suppressed. In this
+way, our AMM can effectively align the learning states of
+different modalities, facilitating the comprehensive extraction
+of multimodal features. Note that we update the prototypes in
+a momentum manner between each batch following [52], [53],
+which can be expressed as:
+k
+
+Mkh = εMkh + (1 − ε)M̄h
+k
+Mlk = εMlk + (1 − ε)M̄l
+k
+
+p̃l from the LiDAR branch into a fully connected layer to
+generate the query vector Q. Then, Q is multiplied by K
+and entered into the softmax function to obtain the aggregate
+weight S ∈ R1×N . After that, S is multiplied by V to obtain
+a LiDAR-assistant HSI-modal representation. In addition, the
+1×c
+classification token tcls
+of Zh is residually connected
+h ∈ R
+1×c
+to it to obtain gh ∈ R , which further highlights the
+characteristics of HSI further. Overall, this process can be
+formulated as
+
+
+QKT
+√
+gh = S · V + tcls
+,
+S
+=
+Softmax
+h
+c
+Q = p̃l Wq , K = Zh Wk , V = Zh Wv
+(9)
+where Wq ∈ R K ×c , Wk ∈ Rc×c , and Wv ∈ Rc×c indicate
+learnable parameter matrices. Similarly, the HSI-assistant
+LiDAR-modal feature gl ∈ R1×c can be obtained by inputting
+the pseudo-prediction probability of the HSI branch into the
+LiDAR branch. Finally, the multimodal feature g ∈ R1×2c
+can be obtained by concatenating them, i.e., g = [gh , gl ].
+Subsequently, the fused feature g is input into the fully
+connected layer to obtain the final classification results.
+E. Training Loss
+In this article, we utilize cross-entropy loss [54] as the
+classification loss, whose definition is
+LCE =
+
+k
+
+D. SGFF Module
+After obtaining the features zh and zl corresponding HSI and
+LiDAR, the next step for the final classification is to fuse them
+for the multimodal features. To enhance the discrimination
+of the multimodal features, we introduce the SGFF module
+in this section. Unlike simple integration, SGFF encourages
+each modality to leverage the semantic information from other
+modalities to extract multimodal complementary messages
+effectively so that the fused multimodal features can be
+enhanced. Here, the semantic information refers to the pseudoprediction results of the two modalities obtained in AMM,
+representing the possible category distributions of the same
+scene from two different modalities. For clarity, we take the
+HSI branch as an example to illustrate SGFF, whose structure
+is depicted in Fig. 1(c).
+To explore as many beneficial clues as possible for
+classification from HSI and LiDAR data, SGFF also takes
+the pseudo-prediction distribution probabilities of the two
+modalities obtained by AMM into account during the feature
+fusion. In particular, SGFF first passes the unique features
+zh corresponding to the HSI branch through two fully
+connected layers to derive the key and value vectors K and V.
+Simultaneously, SGFF inputs the pseudo prediction probability
+
+yi log( pi )
+
+(10)
+
+i=1
+
+(8)
+
+where M̄h and M̄l indicate the average of the corresponding
+features of the kth class samples calculated in the current
+batch, and ε is the momentum parameter that is fixed as 0.9 in
+this article.
+
+B
+X
+
+where pi indicates the probability of correct prediction. Considering the correlation loss LCOR mentioned in Section III-B,
+the overall loss can be expressed as
+L = LCE + λLCOR
+
+(11)
+
+where λ is the balance coefficient, which controls the
+importance of the classification loss and correlation loss.
+IV. E XPERIMENTS
+In this section, we evaluate the performance of the proposed
+MICF-Net on three publicly available datasets containing both
+HSI and LiDAR data. We assess the model’s performance
+using three assessment criteria [22]: overall accuracy (OA),
+average accuracy (AA), and Kappa coefficient (Kappa). Note
+that all experiments are conducted five times, and the average
+and standard deviation of the results are reported.
+A. Datasets Description
+1) Houston Dataset [55]: The first dataset was collected
+on the University of Houston campus and neighboring
+urban areas in June 2012. It comprises two data sources,
+each of which encloses 349 × 1905 pixels. The HSI data
+includes 144 reflection bands covering a wavelength range
+of 380–1050 nm, while the LiDAR data has only one
+channel. There are 15 029 labeled pixels with 15 land covers.
+Following [45], 20 labeled pixels from each category are
+selected as training data, and the rest are used as test data.
+Fig. 3 illustrates a pseudo-color HSI, a gray-scale image of
+LiDAR, and the ground truth map.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+5525416
+
+Fig. 4. Visualization of the MUUFL dataset. (a) Pseudo-color image of HSI.
+(b) Gray-scale image of LiDAR. (c) Ground truth map. The below legends
+indicate the categories by different colors.
+
+Fig. 3. Visualization of the Houston dataset. (a) Pseudo-color image of HSI.
+(b) Gray-scale image of LiDAR. (c) Ground truth map. The below legends
+indicate the categories by different colors.
+
+2) MUUFL Dataset [56]: The second dataset was collected
+in November 2010 at The University of Southern Mississippi
+Gulfport Campus, Long Beach, MS, USA. It comprises
+two data sources: HSI and LiDAR data. HSI consists of
+325 × 220 pixels with 64 bands ranging from 0.38 to 1.05 µm.
+The LiDAR data were acquired using the Gemini Airborne
+Laser Terrain Mapper (ALTM) LiDAR sensor. The number of
+labeled pixels in this dataset is 53 687, which are grouped into
+11 classes manually. In the following experiment, we select
+20 samples from each class to construct the training set, and
+the remaining samples are treated as the testing set [45]. Fig. 4
+visually shows the MUUFL dataset with its 11 distinguishable
+class labels.
+3) Trento Dataset [27]: The last dataset was captured
+in a rural area south of Trento, Italy, and it consists of
+HSI and LiDAR data. Their sizes are 600 × 166, and HSI
+involves 63 bands ranging from 0.40 to 0.98 µm. There are
+six annotated land covers covering 30 124 pixels. Similarly,
+20 labeled pixels from each category are randomly selected
+for training, and the others are allocated for testing [45]. Fig. 5
+visualizes two data in this dataset.
+B. Experiment Settings
+In this article, all experiments are conducted on a workstation equipped with a GeForce RTX 2080 Ti with 11 GB
+of memory. The PyTorch [57] deep learning framework is
+utilized for implementing the proposed method. All parameters
+of MICF-Net were randomly initialized without any pretrained
+parameters. The Adam optimizer was selected to optimize the
+parameters of MICF-Net. The training epoch and batch size
+are set to 120 and 64, respectively. The learning rates are set to
+2e−4, 1e−3, and 4e−4 for the Houston, MUUFL, and Trento
+datasets. Some free parameters within MICF-Net should be set
+in advance, including the patch size s × s, number of attention
+heads n h , number of dual-branch CMAFT D, middle layer
+size m of Project, balance coefficient λ in the overall loss,
+
+Fig. 5. Visualization of the Trento dataset. (a) Pseudo-color image of HSI.
+(b) Gray-scale image of LiDAR. (c) Ground truth map. The below legends
+indicate the categories by different colors.
+
+TABLE I
+VALUES OF F REE PARAMETERS FOR D IFFERENT DATASETS
+
+penalty coefficient α in AMM, and the momentum parameter
+ε in AMM. Their empirically optimal values are listed in
+Table I, and their impacts on MICF-Net will be presented in
+Section IV-E.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+TABLE II
+C LASSIFICATION P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON THE H OUSTON DATASET (%)
+
+C. Classification Performance
+To demonstrate the effectiveness of MICF-Net, we select
+eight advanced HSI and LiDAR joint classification methods,
+including dual attention-based multimodal fusion network
+(FusAtNet) [27], adaptive mutual-learning-based multimodal
+data fusion network (AM3Net) [58], global–local transformer
+network (GLT-Net) [59], CALC [45], hierarchical CNN and
+transformer (HCT) [60], multimodal fusion transformer (MFT)
+[61], ExViT [42], and mixing self-attention and convolution
+network (MACN) [62]. All methods are accomplished using
+the codes released by the authors. Their free parameters are
+set according to the original literature, and their experimental
+settings are consistent with the contents mentioned in
+Section IV-B.
+1) Results on Houston Dataset: The numerical results
+of different methods counted on the Houston dataset are
+summarized in Table II. For clarity, the best values are in bold.
+It is easy to find that MICF-Net achieves the best performance.
+For example, compared with the best-performing baseline
+model (i.e., MACN), our model improves OA/AA/Kappa
+by 0.25%/0.08%/0.17%, respectively. Moreover, MICF-Net
+exhibits the smallest standard deviations among all methods,
+i.e., only 0.17%/0.23%/0.19% on OA/AA/Kappa. In terms of
+accuracy of each category, MICF-Net also achieved the highest
+accuracy in most cases, even reaching 100% accuracy in the
+“Tennis Court” and “Running Track” categories. Performance
+in other categories is also satisfactory. The reasons behind
+these positive results are threefold. First, MICF-Net focuses
+on information interaction while retaining modal-specificity
+by mining the similarity of spatial relationships between
+modalities, which improves the discrimination of the crossmodal features. Second, the AMM module effectively
+balances the learning rates between different modalities, which
+ensures that valuable clues can be fully explored from HSI
+and LiDAR data simultaneously. Last, the SGFF module
+exchanges semantic information of different modalities, further
+promoting feature fusion. However, we cannot ignore that
+the behavior of MICF-Net is not strongest in some classes,
+such as “Stressed grass” and “Synthetic grass.” The main
+reason is that the objects in these categories exhibit variable
+geometric shapes and sizes, requiring hierarchical feature
+
+extraction to capture these details and variations effectively.
+However, MICF-Net mainly adopts the transformer structure,
+which treats all pixels equally without distinguishing the
+geometric complexity of different objects. This manner
+may lead to a slight decrease in the generalization ability
+of MICF-Net in these specific categories. Fortunately, the
+performance gaps between MICF-Net and better methods
+in these classes are small, and strengthening the proposed
+model for these unacceptable classes is our further work.
+The above discussion illustrates the effectiveness of our
+MICF-Net.
+The visualization result of MICF-Net is shown in Fig. 6.
+Also, the classification maps produced by the other compared
+methods are exhibited for reference. Given the large size
+of Houston, we have enlarged the area outlined by the red
+box in the classification diagram for ease of observation and
+analysis. It is evident that the map generated by MICF-Net is
+closest to the ground truth. Specifically, within the displayed
+area, MICF-Net achieves the best recognition results among
+all methods for the “Road” and “Healthy grass” categories,
+while other algorithms tend to produce more misclassification
+results. These observations further illustrate the MICF-Net’s
+usefulness.
+2) Results on MUUFL Dataset: The classification performance of different methods counted on the MUUFL dataset
+is exhibited in Table III. Also, the best value in each
+row is in bold for clarity. Like the Houston dataset, the
+proposed MICF-Net performs optimally in three indicators.
+Compared with various comparisons, our improvements in
+OA are 9.40% (over FusAtNet), 14.63% (over AM3Net),
+1.82% (over GLT), 4.18% (over CALC), 4.91% (over HCT),
+5.79% (over MFT), 5.50% (over ExViT), and 4.69% (over
+MACN). Regarding the accuracy of each category, MICF-Net
+outperforms others in five out of 11 categories. While GLT
+shows similar performance, achieving the best accuracy in five
+categories, MICF-Net maintains a more significant advantage
+when considering the three overall indicators. In addition,
+a notable finding is that in “Yellow cur” and “Mixed ground
+surface,” the improvement of MICF-Net is significant. This can
+be attributed to its comprehensive mining of complementary
+information in multimodal data, clearly distinguishing between
+categories.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+5525416
+
+Fig. 6. Classification maps of labeled samples of the Houston dataset obtained by various methods. Each column exhibits the maps obtained by a fixed
+method. (a) Ground truth, (b) FusAtNet [27], (c) AM3Net [58], (d) GLT [59], (e) CALC [45], (f) HCT [60], (g) MFT [61], (h) ExViT [42], (i) MACN [62],
+and (j) MICF-Net (Our).
+TABLE III
+C LASSIFICATION P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON THE MUUFL DATASET (%)
+
+Pixel-level classification maps of different methods are
+depicted in Fig. 7. By observation, we find that some
+noise is present in all classification maps. However, MICFNet produces results with more apparent edges and less
+noise, which are closest to the ground truth compared
+to other models. This superior performance is attributed
+to MICF-Net’s comprehensive exploration of multimodal
+complementary information, thereby obtaining more accurate
+feature representation.
+3) Results on Trento Dataset: Table IV summarizes the
+results of nine HSI and LiDAR joint classification methods
+counted on the Trento dataset. Not surprisingly, MICF-Net
+surpasses all compared methods in three metrics. Moreover,
+the accuracy of MICF-Net reaches the optimal value in four
+out of six categories. Taking Kappa as an example, our method
+achieves improvements of 1.19% (over FusAtNet), 5.30%
+(over AM3Net), 0.21% (over GLT), 0.10% (over CALC),
+0.22% (over HCT), 1.57% (over MFT), 0.43% (over ExViT),
+and 0.60% (over MACN), respectively. This illustrates the
+effectiveness of MICF-Net. In addition, the near-minimum
+
+standard deviation (only 0.09% on OA) further illustrates its
+stability.
+Fig. 8 presents the classification maps of various methods.
+Although the quality of the classification maps of all
+methods is acceptable, the result obtained by the proposed
+MICF-Net still outperforms others. For example, in the
+classification results of the “Road” class, MICF-Net predicts
+fewer misclassified pixels and smoother boundaries than
+others. Overall, the prediction map of MICF-Net is closest
+to the ground truth, further confirming its effectiveness and
+competitiveness.
+D. Ablation Analysis
+1) Importance of CMAFT Module: This section aims to
+ablate the CMAFT module to evaluate its effectiveness.
+It comprises two main components: CMAF and the correlation
+loss LCOR . CMAFT’s contributions can be evaluated by
+systematically removing each component. Therefore, based on
+CMAFT, we construct four variants of MICF-Net, including
+proposed (w/o CMAFT1 ), proposed (w/o CMAFT2 ), proposed
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Fig. 7. Classification maps of labeled samples of the MUUFL dataset obtained by various methods. Each column exhibits the maps obtained by a fixed
+method. (a) Ground truth, (b) FusAtNet [27], (c) AM3Net [58], (d) GLT [59], (e) CALC [45], (f) HCT [60], (g) MFT [61], (h) ExViT [42], (i) MACN [62],
+and (j) MICF-Net (Our).
+TABLE IV
+C LASSIFICATION P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON THE T RENTO DATASET (%)
+
+Fig. 8. Classification maps of labeled samples of the Trento dataset obtained by various methods. Each column exhibits the maps obtained by a fixed method.
+(a) Ground truth, (b) FusAtNet [27], (c) AM3Net [58], (d) GLT [59], (e) CALC [45], (f) HCT [60], (g) MFT [61], (h) ExViT [42], (i) MACN [62], and
+(j) MICF-Net (Our).
+
+(w/o CMAFT3 ), and proposed (w/o CMAFT4 ). The first
+one indicates that the CMAFT module is eliminated from
+MICF-Net. The second one represents that MICF-Net involves
+CMAF but without the correlation loss. The third one implies
+that CMAF is replaced with standard self-attention. The
+last one means the concatenation operation in CMAF is
+replaced with the addition operation. Table V presents their
+results, and the original MICF-Net’s performance is also
+exhibited for reference. Compared to the original MICF-Net,
+
+the performance of the four variants has decreased to varying
+degrees. For instance, the OA values of proposed (w/o
+CMAFT1 ) are dropped by 0.47%, 2.97%, and 0.19% on the
+three datasets. This illustrates the effectiveness of the proposed
+CMAFT. Moreover, in most cases, the second and third
+variants outperform the first one, indicating the importance
+of information interaction in the feature extraction process.
+In addition, MICF-Net outperforms proposed (w/o CMAFT4 )
+in all cases, indicating that concatenation operation is more
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+5525416
+
+TABLE V
+R ESULTS OF A BLATION S TUDIES OF VARIOUS PARTS OF O UR MICF-N ET ON T HREE DATASETS . P ROPOSED
+( W / O ∗) R EPRESENTS MICF-N ET W ITHOUT ∗ M ODULE (%)
+
+suitable for our tasks. This can be attributed to the addition
+operation potentially confusing information from different
+modalities. In contrast, the concatenation operation preserves
+the characteristics of each modality, which is conducive to the
+subsequent mining of modal correlation.
+2) Effectiveness of AMM Module: The AMM module is
+designed to alleviate the imbalance problem in multimodal
+learning. We remove it from MICF-Net to study its function
+and record the new network proposed (w/o AMM). Its
+performance counted on three datasets is summarized in
+Table V. By observing the results, we can find the various
+indicators’ values of proposed (w/o AMM) are lower than
+those of MICF-Net. For example, compared to proposed
+(w/o AMM) on Houston, MICF-Net obtains enhancements
+of 0.12%/0.11%/0.12% in OA/AA/Kappa, respectively. For
+another example, on MUUFL, the improvements achieved by
+MICF-Net in OA/AA/Kappa are 0.52%/0.34%/0.64%. These
+investigations illustrate that adjusting the learning rate of
+different modalities is crucial to the joint classification task
+of HSI and LiDAR data, thereby confirming the effectiveness
+of AMM.
+3) Significance of SGFF Module: For joint classification
+tasks of HSI and LiDAR data, simple linear fusion fails
+to fully exploit the potential complementary relationships
+between heterogeneous features. To address this, we developed
+the SGFF module, which aims to intuitively explore complementary relationships between modalities using high-level
+semantic information from other modalities. To demonstrate
+its performance, we conduct three sets of experiments. Specifically, first, we remove the SGFF module and concatenate the
+multimodal features (i.e., the classification tokens) to complete
+the classification directly. This model is named proposed
+(w/o SGFF1 ). Second, after eliminating SGFF, the two modal
+features are summed up for subsequent classification. This
+model is recorded as proposed (w/o SGFF2 ). Third, to prove
+the pseudo prediction’s effectiveness, we directly replace it
+with another branch’s classification token and fuse them
+through the SGFF module. This model is denoted as proposed
+(w/o SGFF3 ).
+Table V shows three models’ classification results counted
+on three datasets. As observed from the table, the behavior
+of the three models is weaker than that of MICF-Net
+in all cases. Taking the Houston dataset as an example,
+MICF-Net surpasses proposed (w/o SGFF1 ) and proposed
+
+(w/o SGFF2 ) by 0.42%/0.25%/0.45% and 0.98%/0.78%/1.06%
+in OA/AA/Kappa. This is because SGFF can utilize the semantic clues from different modalities to exploit complementary
+information, thereby improving the representation ability of
+fusion features. Compared with proposed (w/o SGFF3 ), MICFNet improves by 0.66%/0.66%/0.70% in OA/AA/Kappa. This
+is because information covered by classification tokens differs
+in distribution, hindering mutual guidance. The pseudoprediction results can mitigate these negative impacts by
+mapping the uneven clues into the same semantic space.
+Overall, the above findings underscore the importance of
+mining the complementary relationships between modalities,
+highlighting the effectiveness of SGFF.
+E. Parameter Analysis
+As mentioned in Section IV-B, there are several free
+parameters in MICF-Net. This section investigates their
+influence by tuning their values. Note that we only change
+one parameter each time, and others are fixed according to
+Table I.
+1) Patch Size s × s: To examine its influence on the joint
+classification of HSI and LiDAR, we vary its values within
+the range of [7 × 7, 13 × 13]. The OA curves of different
+MICF-Nets with various patch sizes counted on the three
+datasets are illustrated in Figs. 9(a), 10(a), and 11(a). For
+Houston, the OA values of MICF-Nets rise first and then
+decline, and the peak value appears at 9 × 9. For the other two
+datasets, the behavior of MICF-Nets becomes weaker when the
+patch size increases. These observations can be attributed to
+Houston’s lower spatial resolution and more complex contents
+than the other two datasets, thus requiring a larger patch size
+to gather more information. The results suggest the patch size
+can be set around 7 × 7.
+2) Number of Attention Heads n h : Like standard ViT,
+we apply the multihead mechanism to CMAF, and the head
+number equals n h . Here, the values n h are changed from 2 to
+16 with an interval of 2 to study its impacts. The results of
+MICF-Nets with different n h counted on the three datasets
+are shown in Figs. 9(b), 10(b), and 11(b). When it increases
+from 2 to 4, the performance of MICF-Nets almost remains.
+When n h is bigger than 4, MICF-Nets get stronger. The peak
+values of MICF-Nets for Houston, MUUFL, and Trento appear
+at n h = 8 and n h = 16, respectively. It is noted that when
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+Fig. 9. Influence of different free parameters on our MICF-Net. The OA curves are counted on the Houston dataset. (a) s × s. (b) n h . (c) D. (d) m. (e) λ.
+(f) α. (g) ε.
+
+Fig. 10. Influence of different free parameters on our MICF-Net. The OA curves are counted on the MUUFL dataset. (a) s × s. (b) n h . (c) D. (d) m. (e) λ.
+(f) α. (g) ε.
+
+Fig. 11. Influence of different free parameters on our MICF-Net. The OA curves are counted on the Trento dataset. (a) s × s. (b) n h . (c) D. (d) m. (e) λ.
+(f) α. (g) ε.
+
+n h is changed from 8 to 16, the behavior of MICF-Nets
+for Houston declines slightly. This is due to Houston’s low
+spatial resolution, therefore, fewer attention heads are needed
+to capture sufficient information.
+3) Number of Dual-Branch CMAFT D: To investigate
+the impacts of the number D of dual-branch CMAFT on
+MICF-Net, we tune D from 1 to 4. Experimental results for
+MICF-Nets with different D counted on the three datasets
+are depicted in Figs. 9(c), 10(c), and 11(c). MICF-Nets’ OA
+values on the three datasets first increase and then decrease,
+and they perform best on all datasets when D = 2. The
+
+reasons behind this are twofold. When there are too few dualbranch CMAFTs, they struggle to capture HSI and LiDAR’s
+complex contents adequately. When too many dual-branch
+CMAFTs exist, redundant parameters lead to over-fitting on
+the training samples, thus hindering generalization. Therefore,
+we recommend that D = 2.
+4) Middle Layer Size of Project m: In Section III-B,
+we fixed m to 8. Here, we change its values in the range of
+[2, 16]. The results of MICF-Nets with various m counted on
+three datasets are shown in Figs. 9(d), 10(d), and 11(d). As m
+increases, the MICF-Nets’ overall performance is initially
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+5525416
+
+Fig. 12. Feature distributions of MACN and MICF-Net, which are counted on three datasets using the t-SNE algorithm. The first row shows the results of
+MACN, and the second row shows the results of MICF-Net. (a) Houston. (b) MUUFL. (c) Trento.
+
+Fig. 13.
+
+Studies on the impact of different numbers of training samples on different methods. (a) Houston. (b) MUUFL. (c) Trento.
+
+upward and then downward, and their optimal values all
+appear at m = 8. Hence, we recommend fixing the value
+of m to 8.
+5) Balance Coefficient in the Overall Loss λ: The balance
+coefficient λ in the overall loss controls the importance of
+the correlation term. A larger value of λ implies that the
+spatial relationship similarity between the two modalities plays
+a more significant role in improving the overall performance.
+By changing the values of λ within the range [0.1, 0.9],
+we can analyze its impacts on MICF-Net. As displayed in
+Figs. 9(e), 10(e), and 11(e), the optimal values of λ are found
+to be 0.3, 0.5, and 0.1 for Houston, MUUFL, and Trento,
+respectively. This is attributed to the inherent differences in
+the characteristics of the modalities present in each dataset.
+For instance, since the similarity between modalities is
+relatively high in Trento, a smaller value of λ (i.e., 0.1)
+suffices to facilitate practical complementary information
+mining. Conversely, in datasets with greater disparity between
+modalities, such as Houston, a higher value of λ (i.e., 0.3)
+is needed to enhance the importance of capturing spatial
+relationship similarities.
+6) Penalty Coefficient in AMM α: It signifies the tolerance
+for imbalance between modalities. To examine its influence on
+MICF-Net, we change its values from 0.1 to 0.9. As illustrated
+in Figs. 9(f), 10(f), and 11(f), the models’ performance
+consistently deteriorates when α increases. The optimal OA
+values of MICF-Nets are obtained when α = 0.1 across
+the three datasets. These findings are attributed to the
+substantial disparity between HSI and LiDAT. A slight increase
+in α significantly impedes the learning of the dominant
+
+modal, resulting in a drastic performance decline. Therefore,
+we recommend setting α to 0.1.
+7) Momentum Parameter in AMM ε: This parameter plays
+a crucial role in balancing historical prototypes with current
+prototypes. To investigate its impacts on the proposed method,
+we systematically varied the value of ε within the range of
+[0.1, 0.9]. The OA values of MICF-Nets are summarized in
+Figs. 9(g), 10(g), and 11(g). It is easy to find that the optimal
+values of ε across the three datasets converge to 0.9. This is
+because a larger ε tends to yield more stable pseudo-prediction
+results. Conversely, opting for a smaller ε introduces greater
+volatility, potentially disrupting the model learning process.
+Therefore, we fix ε to 0.9.
+
+F. Feature Visualization
+To further verify the effectiveness of the designed MICFNet, we adopt the t-distributed stochastic neighbor embedding
+(t-SNE) algorithm [63] to visualize the learned features.
+MICF-Net’s feature distribution maps counted on the Houston,
+MUUFL, and Trento datasets are displayed in the second row
+of Fig. 12. Also, the feature distribution maps of the bestcompared models (i.e., MACN) are exhibited for reference
+and can be found in the first row of Fig. 12. By comparing
+the two sets of visual maps, it is easy to find that MICF-Net
+can produce more explicit category boundaries and a higher
+degree of aggregation of the same category. These positive
+results verify the advantage of MICF-Net in feature extraction,
+which is beneficial for the final classification.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+TABLE VI
+M ODEL S IZE , T RAINING T IME , AND I NFERENCE T IME OF
+E ACH A LGORITHM ON THE H OUSTON DATASET
+
+G. Effect of Different Numbers of Training Samples
+To evaluate the impact of different numbers of training
+samples on the classification performance of MICF-Net,
+we vary the number of training samples for each class
+from 20 to 100 to train different MICF-Nets. Their OA
+curves counted on the three datasets are drawn in Fig. 13.
+The results of the compared methods are also counted for
+reference. By analyzing these curves, we can see that the
+performance of all methods improves as the number of
+training samples increases. In addition, the proposed MICFNet consistently outperforms the other comparison models in
+all cases. These investigations demonstrate both the rationality
+and effectiveness of MICF-Net.
+H. Complexity Analysis
+This section studies MICF-Net’s parameter volume, training
+time, and inference time. For clarity, we only use the Houston
+dataset to count and exhibit the results in Table VI. The results
+of the compared methods are also displayed for reference.
+It is easy to observe that our MICF-Net is not optimal on
+the three metrics but is competitive. Regarding model size,
+we achieved the second smallest memory footprint at only
+0.71 MB, which is very close to the smallest one. Moreover,
+MICF-Net outperforms more than half of the compared
+methods in training and inference time. Although MICF-Net
+is slightly weaker than a few models in terms of training and
+inference times, its improvement in classification performance
+is significant (see Section IV-C). These observations affirm
+that our MICF-Net is an effective model. The main reason
+is that it achieves sufficient information interaction and
+comprehensively explores the complementary relationship of
+multimodal data.
+V. C ONCLUSION
+This article proposes a new network (i.e., MICF-Net)
+for joint classification tasks of HSI and LiDAR. It first
+implements preliminary feature extraction of multimodal
+data through a simple two-branch CNN network. Then, D
+dual-branch CMAFTs are developed to mine long-distance
+contextual clues in HSI and LiDAR data and realize
+information interaction based on spatial similarity, further
+enhancing feature representation. Next, the AMM module
+further processes the features to address the learning imbalance
+problem in cross-modal learning. By adaptively identifying
+
+and suppressing the strong modality, the feature learning of
+weak modalities is effectively promoted. Finally, considering
+the heterogeneity and complementarity of multimodal data,
+the SGFF module integrates multimodal features into a
+discriminative fusion representation. Positive experimental
+results on three public HSI and LiDAR joint classification
+datasets verify the effectiveness of MICF-Net.
+Although MICF-Net’s performance is good, it still has room
+for improvement. For types with variable scales and shapes,
+it is necessary to consider introducing multiscale structures
+to extract diverse information. In addition, compared with
+other models, MICF-Net is not the most lightweight and
+efficient model. Therefore, how to further improve the model’s
+efficiency and reduce resource consumption while ensuring
+model performance is also a topic worthy of study.
+R EFERENCES
+[1] G. Sun et al., “Large kernel spectral and spatial attention networks for
+hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 61, 2023, Art. no. 5519915.
+[2] X. Tang, R. Du, J. Ma, and X. Zhang, “Noisy remote sensing scene
+classification via progressive learning based on multiscale information
+exploration,” Remote Sens., vol. 15, no. 24, p. 5706, Dec. 2023. [Online].
+Available: https://www.mdpi.com/2072-4292/15/24/5706
+[3] N. Chen, J. Yue, L. Fang, and S. Xia, “SpectralDiff: A generative
+framework for hyperspectral image classification with diffusion models,”
+IEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5522416.
+[4] D. Hong et al., “SpectralGPT: Spectral remote sensing foundation
+model,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 46, no. 8,
+pp. 5227–5244, Aug. 2024, doi: 10.1109/TPAMI.2024.3362475.
+[5] D. Hong, C. Li, B. Zhang, N. Yokoya, J. A. Benediktsson, and
+J. Chanussot, “Multimodal artificial intelligence foundation models:
+Unleashing the power of remote sensing big data in earth observation,”
+Innovation, vol. 2, no. 1, 2024, Art. no. 100055. [Online]. Available:
+https://www.the-innovation.org/article/id/65e4f30cbf979918c9d8124d
+[6] C. Li, B. Zhang, D. Hong, J. Yao, and J. Chanussot, “LRRNet: An interpretable deep unfolding network for hyperspectral
+anomaly detection,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,
+Art. no. 5513412.
+[7] J. Wang, W. Li, Y. Wang, R. Tao, and Q. Du, “Representationenhanced status replay network for multisource remote-sensing image
+classification,” IEEE Trans. Neural Netw. Learn. Syst., 2023, doi:
+10.1109/TNNLS.2023.3286422.
+[8] Y. Yang et al., “Semi-supervised multiscale dynamic graph convolution
+network for hyperspectral image classification,” IEEE Trans. Neural
+Netw. Learn. Syst., vol. 35, no. 5, pp. 6806–6820, May 2022, doi:
+10.1109/TNNLS.2022.3212985.
+[9] G. Vivone, “Multispectral and hyperspectral image fusion in
+remote sensing: A survey,” Inf. Fusion, vol. 89, pp. 405–417,
+Jan. 2023. [Online]. Available: https://www.sciencedirect.com/science/
+article/pii/S1566253522001312
+[10] H. Gao, H. Feng, Y. Zhang, S. Xu, and B. Zhang, “AMSSENet: Adaptive multiscale spatial–spectral enhancement network for
+classification of hyperspectral and LiDAR data,” IEEE Trans. Geosci.
+Remote Sens., vol. 61, 2023, Art. no. 5531317.
+[11] Z. Xue, X. Tan, X. Yu, B. Liu, A. Yu, and P. Zhang, “Deep hierarchical
+vision transformer for hyperspectral and LiDAR data classification,”
+IEEE Trans. Image Process., vol. 31, pp. 3095–3110, 2022.
+[12] J. Wang, W. Li, Y. Gao, M. Zhang, R. Tao, and Q. Du, “Hyperspectral
+and SAR image classification via multiscale interactive fusion
+network,” IEEE Trans. Neural Netw. Learn. Syst., vol. 34, no. 12,
+pp. 10823–10837, May 2023.
+[13] S. Zhang, X. Meng, Q. Liu, G. Yang, and W. Sun, “Featuredecision level collaborative fusion network for hyperspectral and LiDAR
+classification,” Remote Sens., vol. 15, no. 17, p. 4148, 2023. [Online].
+Available: https://www.mdpi.com/2072-4292/15/17/4148
+[14] A. Kuras, M. Brell, J. Rizzi, and I. Burud, “Hyperspectral and LiDAR
+data applied to the urban land cover machine learning and neuralnetwork-based classification: A review,” Remote Sens., vol. 13, no. 17,
+p. 3393, Aug. 2021. [Online]. Available: https://www.mdpi.com/20724292/13/17/3393
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: MICF-Net FOR JOINT CLASSIFICATION OF HYPERSPECTRAL AND LiDAR DATA
+
+[15] W. Dong, T. Yang, J. Qu, T. Zhang, S. Xiao, and Y. Li, “Joint
+contextual representation model-informed interpretable network with
+dictionary aligning for hyperspectral and LiDAR classification,” IEEE
+Trans. Circuits Syst. Video Technol., vol. 33, no. 11, pp. 6804–6818,
+Nov. 2023.
+[16] W. Li, Y. Gao, M. Zhang, R. Tao, and Q. Du, “Asymmetric feature fusion
+network for hyperspectral and SAR image classification,” IEEE Trans.
+Neural Netw. Learn. Syst., vol. 34, no. 10, pp. 8057–8070, Oct. 2023.
+[17] J.-Y. Yang, H.-C. Li, J.-H. Yang, L. Pan, Q. Du, and A. Plaza, “Multifrequency graph convolutional network with cross-modality mutual
+enhancement for multisource remote sensing data classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no. 5505914.
+[18] Z. Xu, W. Jiang, and J. Geng, “Dual-branch dynamic modulation
+network for hyperspectral and LiDAR data classification,” IEEE Trans.
+Geosci. Remote Sens., vol. 61, 2023, Art. no. 5514813.
+[19] M. Wang, F. Gao, J. Dong, H.-C. Li, and Q. Du, “Nearest neighbor-based
+contrastive learning for hyperspectral and LiDAR data classification,”
+IEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5501816.
+[20] X. Zhao et al., “Joint classification of hyperspectral and LiDAR data
+using hierarchical random walk and deep CNN architecture,” IEEE
+Trans. Geosci. Remote Sens., vol. 58, no. 10, pp. 7355–7370, Oct. 2020.
+[21] S. Jia, X. Zhou, S. Jiang, and R. He, “Collaborative contrastive learning
+for hyperspectral and LiDAR classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 61, 2023, Art. no. 5507714.
+[22] C. Ge, Q. Du, W. Sun, K. Wang, J. Li, and Y. Li, “Deep residual networkbased fusion framework for hyperspectral and LiDAR data,” IEEE J. Sel.
+Topics Appl. Earth Observ. Remote Sens., vol. 14, pp. 2458–2472, 2021.
+[23] K. R. Shahi, P. Ghamisi, B. Rasti, P. Scheunders, and R. Gloaguen,
+“Unsupervised data fusion with deeper perspective: A novel multisensor
+deep clustering algorithm,” IEEE J. Sel. Topics Appl. Earth Obser.
+Remote Sens., vol. 15, pp. 284–296, 2022.
+[24] Y. Gao, M. Zhang, W. Li, X. Song, X. Jiang, and Y. Ma, “Adversarial
+complementary learning for multisource remote sensing classification,”
+IEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5505613.
+[25] Y. Zhang, Y. Peng, B. Tu, and Y. Liu, “Local information interaction
+transformer for hyperspectral and LiDAR data classification,” IEEE
+J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 16, pp. 1130–1143,
+2023.
+[26] M. Zhang, W. Li, Q. Du, L. Gao, and B. Zhang, “Feature extraction
+for classification of hyperspectral and LiDAR data using patch-to-patch
+CNN,” IEEE Trans. Cybern., vol. 50, no. 1, pp. 100–111, Jan. 2020.
+[27] S. Mohla, S. Pande, B. Banerjee, and S. Chaudhuri, “FusAtNet:
+Dual attention based SpectroSpatial multimodal fusion network for
+hyperspectral and LiDAR classification,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit. Workshops (CVPRW), Jun. 2020,
+pp. 416–425.
+[28] M. Zhang, W. Li, Y. Zhang, R. Tao, and Q. Du, “Hyperspectral
+and LiDAR data classification based on structural optimization
+transmission,” IEEE Trans. Cybern., vol. 53, no. 5, pp. 3153–3164,
+May 2023.
+[29] W. Wang, D. Tran, and M. Feiszli, “What makes training multi-modal
+classification networks hard?” in Proc. IEEE/CVF Conf. Comput. Vis.
+Pattern Recognit. (CVPR), Jun. 2020, pp. 12692–12702.
+[30] X. Peng, Y. Wei, A. Deng, D. Wang, and D. Hu, “Balanced multimodal
+learning via on-the-fly gradient modulation,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit. (CVPR), Jun. 2022, pp. 8228–8237.
+[31] D. Hong et al., “More diverse means better: Multimodal deep learning
+meets remote-sensing imagery classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 5, pp. 4340–4354, May 2021.
+[32] H.-C. Li, W.-S. Hu, W. Li, J. Li, Q. Du, and A. Plaza, “A3 CLNN:
+Spatial, spectral and multiscale attention ConvLSTM neural network
+for multisource remote sensing data classification,” IEEE Trans. Neural
+Netw. Learn. Syst., vol. 33, no. 2, pp. 747–761, Feb. 2022.
+[33] Z. Wang, C. Li, A. Zheng, R. He, and J. Tang, “Interact, embed,
+and enlarge: Boosting modality-specific representations for multi-modal
+person re-identification,” in Proc. AAAI Conf. Artif. Intell., 2022, vol. 36,
+no. 3, pp. 2633–2641.
+[34] X. Xu, W. Li, Q. Ran, Q. Du, L. Gao, and B. Zhang, “Multisource remote
+sensing data classification based on convolutional neural network,” IEEE
+Trans. Geosci. Remote Sens., vol. 56, no. 2, pp. 937–949, Feb. 2018.
+[35] Y. Fan et al., “MSLAENet: Multiscale learning and attention
+enhancement network for fusion classification of hyperspectral and
+LiDAR data,” IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens.,
+vol. 15, pp. 10041–10054, 2022.
+[36] W. Yu, L. Gao, H. Huang, Y. Shen, and G. Shen, “HI2 D2 FNet:
+Hyperspectral intrinsic image decomposition guided data fusion network
+for hyperspectral and LiDAR classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 61, 2023, Art. no. 5521715.
+
+5525416
+
+[37] J. Li, Y. Liu, R. Song, Y. Li, K. Han, and Q. Du, “Sal2 RN: A spatial–
+spectral salient reinforcement network for hyperspectral and LiDAR data
+fusion classification,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,
+Art. no. 5500114.
+[38] W. Song, Y. Dai, Z. Gao, L. Fang, and Y. Zhang, “Hashing-based deep
+metric learning for the classification of hyperspectral and LiDAR data,”
+IEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5704513.
+[39] Y. Feng, L. Song, L. Wang, and X. Wang, “DSHFNet: Dynamic
+scale hierarchical fusion network based on multi-attention for hyperspectral image and LiDAR data classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 61, 2023, Art. no. 5522514.
+[40] A. Dosovitskiy et al., “An image is worth 16×16 words: Transformers for image recognition at scale,” in Proc. Int. Conf. Learn.
+Represent., 2021, pp. 1–22. [Online]. Available: https://openreview.
+net/forum?id=YicbFdNTTy
+[41] Y. Zhang et al., “Multimodal transformer network for hyperspectral and
+LiDAR classification,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,
+Art. no. 5514317.
+[42] J. Yao, B. Zhang, C. Li, D. Hong, and J. Chanussot, “Extended vision
+transformer (ExViT) for land use and land cover classification: A
+multimodal deep learning framework,” IEEE Trans. Geosci. Remote
+Sens., vol. 61, 2023, Art. no. 5514415.
+[43] M. Zhang, W. Li, R. Tao, H. Li, and Q. Du, “Information fusion for
+classification of hyperspectral and LiDAR data using IP-CNN,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5506812.
+[44] X. Wu, D. Hong, and J. Chanussot, “Convolutional neural networks
+for multimodal remote sensing data classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 60, 2022, Art. no. 5517010.
+[45] T. Lu, K. Ding, W. Fu, S. Li, and A. Guo, “Coupled adversarial
+learning for fusion classification of hyperspectral and LiDAR data,”
+Inf. Fusion, vol. 93, pp. 118–131, May 2023. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S156625352200269X
+[46] R. Hang, X. Qian, and Q. Liu, “Cross-modality contrastive learning for
+hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5532812.
+[47] Z. Feng, L. Song, S. Yang, X. Zhang, and L. Jiao, “Cross-modal
+contrastive learning for remote sensing image classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5517713.
+[48] R. Hang, Z. Li, P. Ghamisi, D. Hong, G. Xia, and Q. Liu, “Classification
+of hyperspectral and LiDAR data using coupled CNNs,” IEEE Trans.
+Geosci. Remote Sens., vol. 58, no. 7, pp. 4939–4950, Jul. 2020.
+[49] X. Wang, Y. Feng, R. Song, Z. Mu, and C. Song, “Multiattentive hierarchical dense fusion net for fusion classification of
+hyperspectral and LiDAR data,” Inf. Fusion, vol. 82, pp. 1–18,
+Jun. 2022. [Online]. Available: https://www.sciencedirect.com/science/
+article/pii/S156625352100258X
+[50] M. Meyer and D. Gokhale, “Kullback–Leibler information measure for
+studying convergence rates of densities and distributions,” IEEE Trans.
+Inf. Theory, vol. 39, no. 4, pp. 1401–1404, Jul. 1993.
+[51] X. Geng et al., “Multisource joint representation learning fusion
+classification for remote sensing images,” IEEE Trans. Geosci.
+Remote Sens., vol. 61, 2023, Art. no. 4406414.
+[52] Y. Fan, W. Xu, H. Wang, J. Wang, and S. Guo, “PMR:
+Prototypical modal rebalance for multimodal learning,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2023,
+pp. 20029–20038.
+[53] Q. Liu, L. Xiao, N. Huang and J. Tang, “Composite neighbor-aware
+convolutional metric networks for hyperspectral image classification,”
+IEEE Trans. Neural Netw. Learn. Syst., vol. 35, no. 7, pp. 9297–9311,
+Jul. 2024, doi: 10.1109/TNNLS.2022.3232532.
+[54] J. E. Shore and R. M. Gray, “Minimum cross-entropy pattern
+classification and cluster analysis,” IEEE Trans. Pattern Anal. Mach.
+Intell., vol. PAMI-4, no. 1, pp. 11–17, Jan. 1982.
+[55] C. Debes et al., “Hyperspectral and LiDAR data fusion: Outcome of
+the 2013 GRSS data fusion contest,” IEEE J. Sel. Topics Appl. Earth
+Observ. Remote Sens., vol. 7, no. 6, pp. 2405–2418, Jun. 2014.
+[56] J. Xia, N. Yokoya, and A. Iwasaki, “A novel ensemble classifier of
+hyperspectral and LiDAR data using morphological features,” in Proc.
+IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP), Mar. 2017,
+pp. 6185–6189.
+[57] S. Imambi, K. B. Prakash, and G. R. Kanagachidambaresan, “PyTorch,”
+in Programming With TensorFlow: Solution for Edge Computing
+Applications. Cham, Switzerland: Springer, 2021, pp. 87–104, doi:
+10.1007/978-3-030-57077-4_10.
+[58] J. Wang, J. Li, Y. Shi, J. Lai, and X. Tan, “AM3 Net: Adaptive mutuallearning-based multimodal data fusion network,” IEEE Trans. Circuits
+Syst. Video Technol., vol. 32, no. 8, pp. 5411–5426, Aug. 2022.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+5525416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024
+
+[59] K. Ding, T. Lu, W. Fu, S. Li, and F. Ma, “Global–local transformer
+network for HSI and LiDAR data joint classification,” IEEE Trans.
+Geosci. Remote Sens., vol. 60, 2022, Art. no. 5541213.
+[60] G. Zhao, Q. Ye, L. Sun, Z. Wu, C. Pan, and B. Jeon, “Joint
+classification of hyperspectral and LiDAR data using a hierarchical CNN
+and transformer,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,
+Art. no. 5500716.
+[61] S. K. Roy, A. Deria, D. Hong, B. Rasti, A. Plaza, and J. Chanussot,
+“Multimodal fusion transformer for remote sensing image classification,”
+IEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5515620.
+[62] K. Li, D. Wang, X. Wang, G. Liu, Z. Wu, and Q. Wang, “Mixing selfattention and convolution: A unified framework for multi-source remote
+sensing data classification,” IEEE Trans. Geosci. Remote Sens., vol. 61,
+2023, Art. no. 5523216.
+[63] S. Arora, W. Hu, and P. K. Kothari, “An analysis of the t-SNE
+algorithm for data visualization,” in Proc. Conf. Learn. Theory, 2018,
+pp. 1455–1462.
+Xu Tang (Senior Member, IEEE) received the
+B.Sc., M.Sc., and Ph.D. degrees in electronic circuits
+and systems from Xidian University, Xi’an, China,
+in 2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a Joint Ph.D. Student
+along with Prof. W. J. Emery at the University
+of Colorado at Boulder, Boulder, CO, USA. He is
+currently a Full Professor with the Key Laboratory
+of Intelligent Perception and Image Understanding
+of the Ministry of Education, Xidian University.
+His research interests include remote sensing image
+content-based retrieval and reranking, hyperspectral image processing, remote
+sensing scene classification, and object detection. For more details, please refer
+to: https://web.xidian.edu.cn/tangxu/.
+Yizhou Zou received the B.E. degree in intelligent
+science and technology from Xidian University,
+Xi’an, China, in 2022, where he is currently
+pursuing the M.S. degree in computer science and
+technology with the Key Laboratory of Intelligent
+Perception and Image Understanding of the Ministry
+of Education.
+His research interests include image understanding, hyperspectral image classification, and deep
+learning.
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor with
+the Key Laboratory of Intelligent Perception and
+Image Understanding of the Ministry of Education,
+Xidian University. Her research interests include
+computational intelligence and image understanding.
+
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From January 2015 to March 2016, she was
+a Visiting Scientist with the Computer Science
+and Artificial Intelligence Laboratory, Massachusetts
+Institute of Technology, Cambridge, MA, USA. She
+is currently a Professor with the Key Laboratory of
+Intelligent Perception and Image Understanding of the Ministry of Education,
+Xidian University. Her research interests include pattern recognition, machine
+learning, and remote sensing image analysis and understanding.
+
+Fang Liu (Member, IEEE) was born in China,
+in 1990. She received the B.S. degree in information
+and computing science from Henan University,
+Kaifeng, China, in 2012, and the Ph.D. degree
+in intelligent information processing from Xidian
+University, Xi’an, China, in 2018.
+She is currently an Associate Professor with the
+Nanjing University of Science and Technology,
+Nanjing, China. Her research interests include deep
+learning, object detection, polarimetric SAR image
+classification, and change detection.
+
+Licheng Jiao (Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding of the Ministry of Education. He has authored or coauthored more than 200 scientific articles. His research interests include signal
+and image processing, nonlinear circuits and systems theory, wavelet theory,
+natural computation, and intelligent information processing.
+Dr. Jiao is a member of the IEEE Xian Section Executive Committee and
+an Executive Committee Member of the Chinese Association of Artificial
+Intelligence. He is the Chairperson of the Awards and Recognition Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:44 UTC from IEEE Xplore. Restrictions apply.
+
+

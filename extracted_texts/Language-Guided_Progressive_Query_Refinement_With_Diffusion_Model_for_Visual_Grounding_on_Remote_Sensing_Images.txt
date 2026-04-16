@@ -1,0 +1,1712 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+5647614
+
+Language-Guided Progressive Query Refinement
+With Diffusion Model for Visual Grounding on
+Remote Sensing Images
+Xu Tang , Senior Member, IEEE, Ruitao Shen , Jingjing Ma, Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, Fang Liu , Senior Member, IEEE,
+and Licheng Jiao , Life Fellow, IEEE
+Abstract—Remote sensing visual grounding (RSVG) is a lively
+research topic in the RS community. Due to the superior performance of transformers in cross-modal interaction and alignment,
+they have dominated the RSVG community, and numerous
+transformer-based methods have been developed. Although they
+have achieved success in various applications, their performance
+in visual and textual feature alignment still does not reach the
+level we expected. In addition, these methods place relatively
+limited emphasis on bounding box coordinate generation, where
+directly predicting coordinates through a decoder and grounding
+head can result in suboptimal localization accuracy. To overcome
+the above limitations, this article presents a new RSVG method,
+named language-guided progressive query refinement with diffusion model for visual grounding (LPQR-DVG). It contains a
+multiscale text-guided feature learning module (MTFLM) and an
+iterative query localization module (IQLM). MTFLM integrates
+text guidance into all stages of the visual feature extraction
+process through cross-attention layers, effectively incorporating
+textual information into the visual representation. In this way,
+text-aware visual features can be effectively obtained, which
+facilitates cross-modal interaction and target localization. IQLM
+improves cross-modal feature alignment and iterative target
+localization by introducing an RSVG-oriented reversed U-Net
+with progressive query refinement (PQR) units. Through the
+PQR units in IQLM, visual and text features are progressively
+aligned via multiple rounds of interaction, enabling the query to
+capture the target information referred to by the text gradually.
+Finally, a diffusion-based iterative training strategy is introduced
+to help LPQR-DVG map the random bounding box coordinates
+into the final predictions progressively. The encouraging results
+counted on the DIOR-RSVG and OPT-RSVG datasets confirm
+the effectiveness of LPQR-DVG. Our source codes are available
+at https://github.com/TangXu-Group/LPQR-DVG
+Received 14 July 2025; revised 8 October 2025; accepted 13 October 2025.
+Date of publication 16 October 2025; date of current version 30 October 2025.
+This work was supported in part by the National Natural Science Foundation
+of China under Grant 62571387 and Grant 62276197, in part by the Key
+Research and Development Program of Shaanxi under Grant 2024GX-YBXM125, in part by the Natural Science Basic Research Program of Shaanxi under
+Grant 2024JC-YBMS-472, and in part by Shaanxi Province Innovation Capability Support Plan under Grant 2023-CX-TD-09. (Corresponding authors:
+Xu Tang; Jingjing Ma.)
+Xu Tang, Ruitao Shen, Jingjing Ma, Xiangrong Zhang, and Licheng Jiao are
+with the Key Laboratory of Intelligent Perception and Image Understanding of
+the Ministry of Education, School of Artificial Intelligence, Xidian University,
+Xi’an 710071, China (e-mail: tangxu128@gmail.com; jjma@ieee.org).
+Fang Liu is with the Key Laboratory of Intelligent Perception and Systems
+for High-Dimensional Information of Ministry of Education, School of Computer Science and Engineering, Nanjing University of Science and Technology,
+Nanjing 210094, China.
+This article has supplementary downloadable material available at
+https://doi.org/10.1109/TGRS.2025.3622554, provided by the authors.
+Digital Object Identifier 10.1109/TGRS.2025.3622554
+
+Index Terms—Diffusion model, language guidance, progressive
+reasoning, remote sensing (RS), visual grounding.
+
+I. I NTRODUCTION
+EMOTE sensing visual grounding (RSVG) is a lively
+research topic in the RS community. It focuses on
+localizing the referred objects within RS images according
+to the textual descriptions [1], [2], which can be viewed as
+an extension of RS object detection [3]. Recently, RSVG
+has received growing attention owing to the following reasons. On the one hand, understanding RS images at the
+scene level becomes increasingly important as the resolution
+increases [4], [5], [6]. Detecting and locating the specific
+objects within RS images is an essential component of
+scene interpretation. On the other hand, the development
+of cross-modal learning techniques provides favorable conditions for RSVG [7], [8], [9]. Therefore, RSVG plays an
+essential role in many applications, such as image retrieval
+[10], [11], [12], [13], scene classification [14], [15], [16],
+[17], hyperspectral image classification [18], [19], visual
+question answering [20], [21], and semantic segmentation
+[22], [23].
+The first RSVG method may be the GeoVG proposed
+in [24]. It contains a text encoder, an image encoder with
+adaptive region attention, and a fusion module. They focus on
+learning textual features with the consideration of geospatial
+relationships, extracting rich visual features, and fully integrating the textual and visual features. By combining them, the
+positive results can be achieved. Inspired by GeoVG, many
+RSVG models have been proposed [1], [2], [3], [25]. Most
+are accustomed to using visual convolutional neural networks
+(CNNs) and language networks [3] to extract visual and textual
+features from RS images and textual descriptions. Then, they
+establish relationships between the visual and textual information by specific schemes, such as multiscale cross-attention
+[1], [2] and multistage synergistic aggregation [25], to achieve
+the localization of specific targets. Like the standard crossmodal technologies, RSVG needs to align visual and textual
+features for the final results. Unlike common cross-modal
+approaches, RSVG places equal emphasis on object- and
+scene-level clues, emphasizing the need for object recognition
+and understanding.
+Despite the remarkable results of previous works, challenges still deserve further research. First, due to the specific
+characteristics of RSVG, the expected visual features should
+
+R
+
+1558-0644 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+contain crucial textual clues hidden in descriptions. Nevertheless, previous methods [2], [25] always explore visual and
+textual features separately but overlook mining the mutual
+influence between them. Although some works (e.g., [1])
+have attempted to use textual features to assist in learning
+visual features, the results often fall short of our expectations
+due to the issue of feature misalignment. Second, generating exact bounding boxes does not receive the attention
+it deserves. Directly regressing target bounding boxes by a
+once-for-all decoder and a grounding head may result in
+an inadequate understanding of the semantic information,
+leading to mislabeling or missed detections [1], [2], [25].
+Some approaches (e.g., [3]) have proposed more effective
+bounding box regression methods; however, they primarily
+focus on visual understanding and overlook the uniqueness
+of RSVG, especially in terms of textual information comprehension. Last but not least, mining interactions between
+visual and text features during the target localization is
+insufficient. This would lead to the imprecise alignment of
+text-referred objects and introduce ambiguity in target localization. Achieving comprehensive alignment between visual
+and textual features to enable precise localization of textspecified targets remains a fundamental challenge in RSVG
+tasks.
+To address the challenges mentioned above, this article
+proposes a new RSVG method named the language-guided
+progressive query refinement with diffusion model for visual
+grounding (LPQR-DVG). It mainly contains a multiscale textguided feature learning module (MTFLM) and an iterative
+query localization module (IQLM). MTFLM aims to obtain
+visual features that perceive textual messages, which enclose a
+textual backbone, a text-guided visual feature learning block,
+and a transformer encoder. Their functions are to learn text
+features, mine text-aware visual features, and capture global
+contexts within RS images and text descriptions. IQLM is
+developed to generate accurate bounding boxes and thoroughly
+complete the visual–text interaction for detecting and locating
+explicit targets. To these ends, IQLM introduces a RSVGoriented reversed U-Net with progressive query refinement
+(PQR) units. Through constant interaction among queries,
+visual and text features, comprehensive visual–text alignment,
+and accurate localization, corresponding to textual descriptions
+can be achieved. Finally, to ensure the queries comprehensively integrate both visual and textual information, we
+introduce a progressive diffusion learning strategy that continuously refines target localization through multistep denoising.
+The main contributions of this article are summarized as
+follows.
+1) A new RSVG method named LPQR-DVG is proposed.
+By incorporating text-guided learning during the visual
+feature extraction stage and introducing query refinement cross-attention, our method progressively aligns
+visual and textual features. Furthermore, by employing
+the diffusion paradigm to refine localization iteratively,
+accurate identification of text-referred targets can be
+achieved.
+2) The MTFLM module is introduced to provide sufficient text guidance throughout the visual feature
+extraction process for detailed visual–text understanding.
+
+Specifically, we project text features into multiscale
+visual feature learning, enabling cross-attention interaction between text and visual features at different
+spatial resolutions. This way, visual features can capture
+semantic information that is more closely related to
+textual descriptions, allowing for more accurate object
+localization.
+3) The IQLM module, composed of RSVG-oriented
+reversed U-Net with PQR units, is introduced to accomplish cross-modal feature alignment and iterative target
+localization jointly. PQR units can not only integrate
+textual and visual information into the queries through
+cross-modal interaction, but also thoroughly align visual
+and text features at each unit. Thus, the queries can
+sufficiently capture the target information in the visual
+features referred to by the text.
+4) The progressive diffusion learning strategy is employed
+to train our model and ensure the accuracy of the
+results. Specifically, the strategy progressively denoises
+the random bounding box coordinates through iterative interactions with visual and textual features in
+the RSVG-oriented reversed U-Net. Through iterative
+denoising steps, the random coordinates can gradually transfer to semantically relevant regions, ultimately
+generating precise target coordinates as the final
+prediction.
+II. R ELATED W ORK
+A. Visual Grounding in Natural Scenes
+The existing natural VG models can generally be classified
+into two- and one-stage methods. Two-stage methods [26],
+[27] typically employ an object detector first to identify
+multiple candidate boxes in a natural image. Then, the optimal
+box will be selected by the ranking schemes according to
+the textural information, thereby localizing the target objects.
+For example, Yang et al. [26] proposed a dynamic graph
+attention network for VG. First, it obtains multiple object
+features in an image by using ground truth objects and an
+image backbone or employing a pre-trained object detector
+to detect objects. Meanwhile, text features are obtained from
+word embedding. Then, a dynamic graph attention network
+is used to build a graph with objects and their relationships,
+incorporating the object information and relations described
+in the text into the graph. Finally, the target is selected by
+computing the matching scores between each object and the
+textual expressions.
+In contrast, one-stage approaches directly estimate the positions of the referring objects without generating a set of
+candidate regions. Initially, CNNs were popular due to their
+strong feature learning capacity. These CNN-based models
+integrate an object detector with a carefully designed VG
+module [28], [29], [30], [31]. They use text encoders and
+CNNs to facilitate cross-modal interaction between visual
+and text features. For instance, to better understand spatial
+positional relationships in textual information, Huang et al.
+[29] proposed LBYL-Net. It uses pre-trained visual and text
+encoders to extract visual and text features, followed by
+a fusion module with an affine transformation on visual
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: LANGUAGE-GUIDED PROGRESSIVE QUERY REFINEMENT WITH DIFFUSION MODEL
+
+features guided by text to perform cross-model interaction.
+Then, a landmark feature convolution module is introduced
+to integrate contextual information and gather visual features
+from different directions. Finally, a localization module with
+a detection head is used to localize the target. Subsequently,
+owing to the ability in long-distance relationship capture and
+cross-model learning, the transformer became popular in VG
+tasks [32], [33], [34]. Yang et al. [35] proposed a VG model
+named VLTVG. It first leverages the normal transformerbased visual and textual encoders to map images and texts
+into the visual and textual embeddings. Then, based on the
+multihead self-attention mechanism, a visual-linguistic verification module, a language-guided context encoder, and a
+multistage cross-modal decoder are developed to generate textconditioned visual features and achieve the target localization.
+Another set of transformer-based methods was introduced in
+[36] and [37], which view VG as a direct set prediction
+problem [38]. Like VLTVG, they adopt transformers to capture
+valuable visual and textual representations and mine their
+relations. Unlike VLTVG, they complete the target location
+using random and multiple query strategies. Recently, diffusion
+models [39] have attracted researchers’ attention since their
+paradigm enables iterative reasoning for visual–text feature
+alignment as well as progressive target localization [40], [41].
+Chen and Li [41] applied generative diffusion models to VG
+and proposed a language-guided diffusion model, LG-DVG.
+It incorporates iterative visual–text reasoning and alignment
+while progressively refining bounding boxes for query-region
+matching. LD-DVG performs object localization by denoising
+a set of noisy boxes generated by the visual encoder. These
+boxes interact with text features extracted by the text encoder,
+progressively denoise and localize the target object.
+B. RS Visual Grounding
+Current research on RSVG predominantly focuses on onestage approaches. Sun et al. [24] first introduced VG into the
+RS community. Considering the differences between RS and
+natural images, they first collected a dataset for RSVG tasks.
+Then, a convolutional-based model, GeoVG, was developed to
+achieve target localization. Given complex geographical spatial
+relationships and the absence of visually prominent objects
+in RS images, GeoVG achieves better localization of RS
+images through a language encoder with a geospatial relation
+graph, a visual encoder with large-scale region attention, and a
+fusion module to localize targets. Another dataset (i.e., DIORRSVG) was constructed in [2]. Compared with the above
+dataset, the RS images within DIOR-RSVG have higher spatial
+resolution. Also, the volume of DIOR-RSVG is larger. Also,
+a transformer-based method named MGVLF was proposed in
+this work to address the challenges of large-scale variations,
+cluttered backgrounds, and significant scale changes in RS
+images. First, multiscale visual features and text features are
+extracted from pre-trained visual and text encoders. Following
+this, MGVLF employs cross-modal and self-attention transformers to enable interaction between multiscale visual and
+textual features while filtering out irrelevant noise to learn
+more discriminative representations. A fusion transformer and
+a localization module are further introduced to obtain the
+predicted target location. Although MGVLF performs well,
+
+5647614
+
+the insufficient feature interactions and inaccurate coordinate
+predictions still weaken its behavior. As a result, Li et al. [1]
+proposed a new transformer-based model called LPVA. Apart
+from multiscale visual–text alignment after feature extraction,
+it also pays attention to the interaction between visual and
+text features during the feature extraction process, where text
+features are introduced to progressively refine visual features
+in the visual backbone through an attention module. After
+that, a multilevel feature enhancement decoder is adopted to
+perform visual–text interaction and fusion and achieve target
+localization through a localization module.
+The above transformer-based methods focus on the design
+of visual–text alignment modules. However, they are not good
+at learning the target-oriented positional representation. To
+mitigate this issue, Lan et al. [3] proposed LQVG, inspired by
+DETR [38], which has a query-based transformer framework.
+It first extracts multiscale visual and text features using pretrained image and text encoders, respectively. Subsequently, a
+multiscale cross-modal alignment module is developed to align
+visual and text features at different scales. Next, sentencelevel text features are used as language queries to retrieve and
+aggregate the referred object representation from multiscale
+visual features in the transformer decoder. Finally, a localization module transforms these queries into target coordinates
+and category information. Meanwhile, considering the single
+fusion strategy in RSVG may limit the model’s ability to
+learn the complex associations between textual semantics and
+multiscale visual information, a new model named MSAM was
+developed in [25], in which a generative paradigm is harnessed
+to directly generate a discrete sequence of coordinates in an
+auto-regressive manner.
+C. Distinctive Features of LPQR-DVG
+The key ideas of our work are the introduction of language
+information and the diffusion module. Many methods have
+been proposed based on these two techniques, such as [1], [2],
+[3], [25], [41], and [42]. However, the proposed LPQR-DVG
+differs from them and has many of its own properties. For
+the inclusion of linguistic clues, the main difference between
+LPQR-DVG and the existing ones is the way of utilizing
+the textual knowledge. Differing from [1], which relies on
+generating language-adaptive weights and biases to guide
+visual feature extraction, and unlike [2] and [3], which exclude
+entirely textual messages during the visual feature extraction
+stage, our LPQR-DVG introduces MTFLM to achieve deeper
+visual–textual interaction during the visual feature extraction
+stage. Specifically, MTFLM projects textual features into each
+layer of the visual feature extractor, followed by direct interaction through cross-attention mechanisms. Subsequently, IQLM
+and the diffusion paradigm are incorporated to enable visual
+features to progressively adapt to target locations specified by
+the text, thereby achieving precise localization. In this manner,
+not only can the visual representations be learned with the
+guidance of textual clues, but also the final localization results
+are sensitive to textual descriptions.
+Existing diffusion-based methods [41], [42] primarily focus
+on natural scene understanding, often requiring multiple
+anchor points or pre-trained diffusion models to locate single
+or multiple simple objects. When applying them to RS images,
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+numerous challenges arise due to the complex object relationships and size variations of specific targets. For example,
+objects in RS images often lack clear boundaries and exhibit
+intricate spatial relationships. Also, these targets are diverse in
+scale, ranging from small isolated objects (e.g., “tiny vehicle”)
+to large complex areas (e.g., “expressway service area”). Our
+LPQR-DVG is developed to overcome these challenges. In
+detail, we introduce a progressive diffusion-denoising process
+within the IQLM, where noisy queries interact iteratively with
+both visual and textual information. This enables the queries to
+capture complex object characteristics and spatial contextual
+relationships gradually. Moreover, unlike methods that rely
+on multiple candidate proposals, we formulate the diffusion
+process with a single target query. This design allows LPQRDVG to focus on precisely localizing referred objects, thereby
+reducing the recognition complexity associated with extreme
+variation in object scales.
+In addition, the adoption of diffusion modeling stems from
+its distinct advantages over alternative paradigms for bounding
+box generation. Unlike nongenerative detectors that produce
+deterministic coordinates through regression [1], [3], [25],
+diffusion models probabilistically refine predictions through
+iterative denoising. Through iterative denoising steps, the
+random coordinates can gradually transfer to semantically
+relevant regions, ultimately generating precise target coordinates as the final prediction. Meanwhile, compared to other
+generative frameworks, diffusion models avoid the instability of GANs’ [43] adversarial training and the tendency of
+VAEs’ [44] to produce blurry outputs. Critically, the reverse
+diffusion process inherently emulates spatial cognition by
+progressively refining positional certainty through iterative
+denoising. This architecture proves particularly advantageous
+for language-guided localization where targets exhibit substantial inter-instance appearance variance.
+
+Fig. 1. Pipeline of LPQR-DVG. It consists of an MTFLM and an IQLM.
+MTFLM aims to extract and integrate visual and text features effectively.
+IQLM pays attention to deeply interacting with two types of features and
+locating the targets precisely. In addition, a progressive diffusion learning
+strategy is introduced to train LPQR-DVG for accurate visual grounding.
+
+Fig. 2. Illustration of MTFLM. It consists of a text-guided visual feature
+extractor and a textual feature extractor. The textual feature extractor is
+responsible for extracting text features and projecting them to multiple
+scales to match the multiscale visual features produced by the text-guided
+visual feature extractor, as well as the final visual output. The text-guided
+visual feature extractor leverages textual guidance to extract text-aware visual
+features and employs a transformer encoder to capture global contextual
+information.
+
+III. M ETHODS
+A. Overview
+The overall framework of LPQR-DVG is illustrated in
+Fig. 1. Given an RS image I ∈ RC×H×W and its corresponding
+textual description T with arbitrary length, LPQR-DVG first
+uses MTFLM to extract text-aware visual features xenc
+and
+v
+textual features xenc
+.
+Then,
+an
+IQLM
+is
+introduced
+to
+enhance
+l
+and xenc
+the interaction between xenc
+v
+l , while achieving precise target localization. Finally, we introduce a progressive
+diffusion learning strategy to fully train LPQR-DVG with the
+consideration of the visual–text feature alignment and accuracy
+of bounding boxes. Now, we will explain MTFLM, IQLM, and
+the progressive diffusion learning strategy in detail. Here, C,
+H, and W denote the channels, height, and width of the RS
+image, respectively.
+B. Multiscale Text-Guided Feature Learning Module
+As shown in Fig. 2, MTFLM encloses a text-guided visual
+feature extractor and a textual feature extractor. The textural
+feature extractor comprises a BERT [45] model, multiscale
+projection layers, and a text embedding layer. BERT is used
+to extract semantic embeddings xl ∈ R s×dl from the input texts,
+
+where s, dl represents total sequence length and dimensions.
+Multiscale projection layers are dedicated to mapping xl
+into the immediate textual features with different dimensions.
+These immediate features are responsible for transmitting
+semantic knowledge
+to the visual features. For clarity, we
+˚
+record them as xkl , k = 0, 1, 2, 3, 4 , where k represents the kth
+stage of the visual encoder. The text embedding layer aims to
+∈ R s×d , where d
+map xl into the encoded text features xenc
+l
+donates the dimensions the encoded text features. Here, the
+multiscale projection layers and the text embedding layer are
+composed of fully connected layers.
+The backbone of the text-guided visual feature extractor
+is ResNet [46]. For the specific RSVG tasks, the expected
+visual features should contain multiscale clues hidden in the
+RS image I and be aware of the semantics of the input texts. To
+this end, we embed the immediate textual features xkl achieved
+by the textual feature extractor into different stages of ResNet
+by using a simple multihead cross-attention mechanism [47]
+and the residual connection. This step corresponds to the kth
+stage of modified ResNet and it can be formulated as
+
+
+x̂kv = xkv + Reshape Attn Reshape xkv , xkl , xkl
+(1)
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: LANGUAGE-GUIDED PROGRESSIVE QUERY REFINEMENT WITH DIFFUSION MODEL
+
+5647614
+
+where xkv ∈ Rck ×hk ×wk and x̂kv ∈ Rck ×hk ×wk denote the outputs of
+the kth stage of ResNet and modified ResNet, Attn (·) indicates
+the function of the multihead cross-attention mechanism, and
+Reshape (·) means the conversion function between 2-D and
+1-D data. Here, the channels, heights, and widths of xkv and x̂kv
+are ck , hk , and wk . As a result, the text-aware visual features
+xv ∈ Rc×h×w , i.e., the final outputs of the modified ResNet,
+can be produced, which contain local visual clues and textual
+intelligence. Global context relations should also be explored
+to further understand the complex contents of RS images.
+Therefore, the transformer encoder [38] is embedded at the top
+of the modified ResNet. After passing xv through this encoder,
+sv ×d
+we can get the encoded text-aware visual features xenc
+,
+v ∈R
+enc
+where sv = h × w is the sequence length of xv , and d means
+the dimension of xenc
+v . In this article, we set sv = 625 and
+d = 256.
+C. Iterative Query Localization Module
+To jointly perform feature decoding and coordinate localization, we propose IQLM based on the reversed U-Net [48],
+[49], [50]. IQLM takes random coordinates b ∈ R1×2×2
+as inputs, aiming to predict the bounding box coordinates
+bpredict ∈ R1×2×2 in the RS image corresponding to the
+text description. Following [40], a scaling function and a
+1 × 1 convolutional layer are used to normalize b to query
+q ∈ Rc×2×2 at the beginning of IQLM.
+The standard reversed U-Net consists of four encoding
+blocks, one middle block, and four decoding blocks. The
+encoding blocks aim to extract multiscale features from the
+input query and capture detailed information essential for target localization. The middle block processes high-dimensional
+feature representations and refines them into more precise
+feature maps. The decoding blocks are used to generate
+localization outputs based on these refined features. In addition, the up- and down-sampling operations are embedded in
+the encoding and decoding blocks to control the data sizes. The
+encoding, middle, and decoding blocks are all composed of the
+residual unit, whose structure is the same as the U-Net residual
+part in Fig. 3. It primarily consists of two convolutional
+layers, two group normalization layers, and a normalization
+and projection layer, with all components connected in a
+residual manner. Suppose the input feature of the ith residual
+unit is qi , the output qemb
+can be obtained by
+i
+qemb
+= qi + Conv (GN (Conv (GN (qi ))))
+i
+
+(2)
+
+where Conv (·) and GN (·) denote the functions of the convolutional and group normalization layers. In the standard reversed
+U-Net, each encoding block contains two residual units, the
+middle block incorporates one residual unit, and each decoding
+block encompasses three residual units.
+Although the standard reversed U-Net is able to map the
+random query q into the bounding box coordinates bpredict , it
+does not take the visual and textual features (xenc
+and xenc
+v
+l )
+predict
+learned by MTFLM into account. This makes b
+less
+related to visual and textual information, so it cannot meet the
+requirement for RSVG. To address this issue, it is essential
+to incorporate both visual and textual information during the
+coordinate learning process, as well as to facilitate a thorough
+
+Fig. 3. Structure of each PQR unit in RSVG-oriented reversed U-Net. It
+consists of a U-Net residual part and a query refinement part. The U-Net
+residual part is designed to capture hierarchical feature representations from
+the input query, while the query refinement part facilitates visual–text feature
+alignment and enables interactions between the query and both visual and text
+features.
+
+interaction between visual and textual features. Therefore, we
+construct an RSVG-oriented reversed U-Net, in which a PQR
+unit is developed to replace the residual unit in the standard
+reversed U-Net. Let us take the ith PQR unit as an example
+to explain its structure and function in detail. As shown in
+Fig. 3, the PQR unit consists of a U-Net residual part and a
+query refinement part. The U-Net residual part aims to capture
+hierarchical feature representations from the input data, and the
+query refinement part focuses on refining them by employing
+the interactions between visual and textural features, ultimately
+achieving accurate target localization. For clarity, the input and
+output of the ith PQR unit are recorded as qi and qrefine
+. When
+i
+qi is input, the PQR unit first maps it into qemb
+using
+the
+i
+U-Net residual part according to (2). Then, the query refinement part is adopted to enable qemb
+to interact with xenc
+v
+i
+enc
+and xl , thereby acquiring the target referred by textual
+information. Meanwhile, xenc
+and xenc
+can be progressively
+v
+l
+aligned by the multihead attention mechanism [47], which
+enables xenc
+to highlight messages related to targets referred
+v
+by xenc
+,
+thereby
+enhancing its discriminative ability.
+l
+As presented in Fig. 3, the query refinement part first
+enc
+adds learnable position embeddings to xenc
+v and xl , allowing
+the attention mechanism to incorporate spatial and semantic
+position information. After that, a 1 × 1 convolution layer
+and reshape operation are used to project qemb
+into 2-D data,
+i
+enc
+ensuring its dimensions align with xenc
+and
+x
+v
+l .
+Next, we introduce a multihead self-attention layer and three
+multihead cross-attention layers to improve query and various
+features by interacting with their latent information. Finally,
+we obtain the final output qrefine
+of the ith PQR unit with a
+i
+reshape operation and a 1 × 1 convolution layer. The whole
+process of the query refinement part can be expressed as
+
+enc enc
+xrefine
+= CAttn xenc
+v
+v , xl , xl
+
+enc enc
+xrefine
+= SAttn xenc
+l
+l , xl , xl
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+, xrefine
+qli = CAttn Reshape (Conv (qi )) , xrefine
+l
+l
+
+
+
+
+l
+refine refine
+qvl
+, xv
+, xrefine
+, xrefine
+i = CAttn qi , xl
+v
+l
+
+qrefine
+= Conv Reshape qvl
+i
+i
+
+
+
+(3)
+
+where Conv(·) represents convolutional layers, SAttn(·) and
+CAttn(·) mean the multihead self- and cross-attention layers,
+Reshape(·) indicates the conversion function between 3-D and
+2-D data, and [·] denotes feature concatenation along the
+sequence dimension. There is another point we want to touch
+on, that is, qi is varied according to its position in the RSVGoriented reversed U-Net. In the first encoding block, qi is
+equal to the initial query q. In the following encoding and
+mid blocks, qi is the output of the (i − 1)th PQR unit qrefine
+i−1 . In
+decoding blocks, qi can be obtained from the concatenation
+of qrefine
+and the output of corresponding jth PQR encoding
+i−1
+unit qrefine
+.
+j
+Based on the PQR unit, our RSVG-oriented reversed U-Net
+is constructed. It consists of four encoding blocks, one middle
+block, and four decoding blocks. Each encoding block contains
+two PQR units, the middle block contains one PQR unit, and
+each decoding block contains three PQR units. The RSVGoriented reversed U-Net can not only improve the query with
+the assistance of visual and text features but also thoroughly
+align different features. Hence, the localization performance
+can be ensured. Note that the refined query qrefine
+from the
+i
+last PQR unit would be projected by a convolutional layer
+and then passed through a re-signal function to achieve the
+predicted bounding box bpredict .
+D. Diffusion Process and Training Loss
+This article introduces a diffusion paradigm to train the
+proposed LPQR-DVG. It progressively removes noises added
+to the query q under the guidance of xenc
+and xenc
+to push
+v
+l
+the model achieves better visual–text alignment and improved
+referred target localization. To complete the diffusion process,
+the sinusoidal positional embedding and MLP layers are used
+i
+to generate time steps temb
+∈ Rci , and these time steps would
+be added to the input query after the first convolutional layer
+of the U-Net residual part in each PQR unit. Here, ci represents
+the channels in the ith PQR unit.
+The schematic of the diffusion procedure is displayed in
+Fig. 4. In the training stage, the ground truth bounding
+box (x, y, w, h) is first used as the initial coordinate input
+b0 ∈ R1×2×2 , where (x, y) denotes the center coordinates of
+the bounding box, and (w, h) represents its width and height,
+respectively. Consistent with IQLM, a signal function is used
+to scale the input bounding box, resulting in the signal box
+signal
+b0 . Then, following the diffusion paradigm in DDPM [51],
+a Markovian chain of diffusion forward process is defined by
+gradually adding noise to the initialized coordinates, which
+can be defined as:
+ᾱt =
+
+t
+Y
+
+αs =
+
+s=0
+
+b
+
+
+
+ˇ
+
+signal ˇ signal
+bt
+ˇ b0
+
+
+
+=N
+
+
+
+t
+Y
+
+βs
+
+s=0
+
+signal
+signal ˇ √
+bt
+ˇ ᾱt b0 , (1 − ᾱt )I
+
+ˇ
+
+
+
+(4)
+
+where β s represents the noise variance schedule at step s, ᾱt
+denotes the cumulative product of noise schedule coefficients
+
+Fig. 4. Schematic of the diffusion procedure for producing the location
+bounding box. Specifically, the signal and re-signal functions are employed to
+scale the bounding box to an appropriate range. By adding noise to the signal
+box and enabling continuous interactions with visual and textual features
+within IQLM, a denoised bounding box can be obtained. Finally, the predicted
+bounding box is produced as the final output.
+
+signal
+
+signal
+
+at step t, b0
+implies the initial signal box, and bt
+illustrates the latent noisy box at diffusion step t, which can be
+obtained via sampling from the conditional normal distribution
+defined above. This forward process transforms the signal box
+signal
+signal
+b0
+to a latent noisy box bt
+by adding noise at a time t to
+signal
+b0 , where t ∈ {0, 1, . . . , T }. In this article, we set T = 1000.
+signal
+Next, bt
+is passed through a convolutional projection layer
+and fed into the IQLM. As mentioned in Section III-C, after
+we obtain the PQR last unit’s output qrefine
+from IQLM, a
+i
+convolutional projection layer transforms qrefine
+into the refined
+i
+refine
+and denoised bounding box brefine
+.
+Finally,
+b
+is passed
+0
+0
+through a re-signal function to obtain the predicted target
+predict
+bounding box b0
+. In the inference stage, following the
+diffusion paradigm, we first randomly initialize a noisy box
+signal
+b0 ∈ R1×2×2 ∼ N (0, 1), and then normalize it to b0 . Then,
+signal
+the signal box b0
+is input into the RSVG-oriented reversed
+U-Net. By progressively refining the denoised query, the final
+predict
+output b0
+can be obtained.
+The loss function Ltrain in this article consists of two
+parts, i.e., the box localization loss Lbox
+train and auxiliary box
+box
+refinement loss Laux
+.
+L
+is
+designed
+to jointly optimize
+train
+train
+precise coordinate regression and geometric consistency in the
+diffusion process, which can be defined as
+
+
+
+
+predict
+predict
++ λ2 LGIOU b0 , b0
+(5)
+Lbox
+train = λ1 Lsmooth-L1 b0 , b0
+where Lsmooth-L1 (·) and LGIOU (·) denote the smooth-L1 loss
+and generalized intersection over union (GIoU) loss [52], b0
+predict
+and b0
+indicate the ground truth coordinate and output
+denoised predict bounding box, and λ1 and λ2 mean the
+balance coefficient. Laux
+train is developed to enhance feature
+learning through deep supervision, whose definition is
+
+
+aux
+Laux
++ λ2 LGIOU b0 , baux
+0
+train = λ1 Lsmooth−L1 b0 , b0
+
+refine
+baux
+(6)
+0 = MLP avgpool qi
+where baux
+0 is the auxiliary predict bounding box of each PQR
+unit, avgpool (·) and MLP (·) illustrate the function of average
+pooling and multilayer perceptron, and λ1 and λ2 also mean
+the balance coefficient. In this article, we fix λ1 = 5 and
+λ2 = 2 according to [3]. More details related to Laux
+train can be
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: LANGUAGE-GUIDED PROGRESSIVE QUERY REFINEMENT WITH DIFFUSION MODEL
+
+5647614
+
+Fig. 6. Visual examples and their textual descriptions. Six RS scenes are
+randomly selected from OPT-RSVG, and they are located at the top of each
+cube. Their corresponding textual descriptions are exhibited at the bottom of
+each block. The green boxes in these RS scenes are the ground truths.
+Fig. 5. Visual examples and their textual descriptions. Six RS scenes are
+randomly selected from DIOR-RSVG, and they are located at the top of each
+cube. Their corresponding textual descriptions are exhibited at the bottom of
+each block. The green boxes in these RS scenes are the ground truths.
+
+found in DETR [38]. Finally, the loss function for our model
+is formulated as
+aux
+Ltrain = Lbox
+train + αLtrain
+
+(7)
+
+where α is a hyperparameter that balances the contributions
+of the two terms. In this article, we set α = 1 empirically.
+IV. E XPERIMENTS
+A. Datasets Description
+To testify to the effectiveness and robustness of our method,
+we select two popular datasets, including DIOR-RSVG [2] and
+OPT-RSVG [1]. The DIOR-RSVG dataset was constructed
+by researchers from Northwestern Polytechnical University
+in 2023. It is an extension of the DIOR dataset [53].
+DIOR-RSVG contains 17 402 high-resolution RS scenes. Their
+spatial sizes are 800 × 800, and their spatial resolutions range
+from 0.5 to 30 m. There are 38 320 textual descriptions
+in DIOR-RSVG corresponding to referred objects across 20
+classes, such as airplane and basketball court. The average
+length of these descriptions is 7.47 words. Some visual
+examples and their textual descriptions are shown in Fig. 5.
+Following [2], we fix the ratio of training, validating, and
+testing sets as 7:1:2. In other words, 26 991 (70%), 3829
+(10%), and 7500 (20%) image-language pairs are randomly
+selected to construct the training, validation, and testing sets.
+The OPT-RSVG dataset was constructed by researchers
+from Xidian University in 2024. It contains 25 452 RS scenes,
+and their spatial sizes vary from 152 × 162 to 8935 ×
+10 569. There are 48 952 text descriptions across 14 object
+categories, including crossroads, bridges, and others. The
+average length of these text descriptions is 10.10 words.
+Some visual examples and their textual descriptions are shown
+in Fig. 6. Following [1], 19 580 (40%), 4895 (10%), and
+24 477 (50%) image-language pairs are randomly selected to
+construct the training, validation, and testing sets. Compared to
+DIOR-RSVG, OPT-RSVG presents greater challenges due
+to its extreme variations in target scales, increased similar
+objects, diverse viewing angles, and complex background
+noise.
+
+B. Experimental Settings
+All experiments are conducted on a workstation equipped
+with a GeForce RTX 3090 with 24 GB of memory. The
+parameters of the ResNet backbone, transformer encoder, and
+textual backbone in MTFLM are initialized using the pretrained weights in DETR [38] and BERT [45]. Other parts
+of our LPQR-DVG are initialized randomly. The channel
+multipliers in the RSVG-oriented reversed U-Net are used
+to scale the number of channels at each layer. Specifically,
+we initialize the model with 32 base channels and employ
+multipliers [1, 2, 2, 2] to determine how the channel count
+evolves through each block of the RSVG-oriented reversed
+U-Net. The AdamW optimizer [54] is employed to update
+the LPQR-DVG’s parameters. Its initial learning rates are
+set as 1 × 10−5 and 1 × 10−4 for MTFLM and IQLM. The
+learning rate is reduced by a factor of 0.1 at the 60th epoch.
+The total number of training epochs is 100 (equivalent to
+300 000 diffusion steps), and the batch size is fixed at 9. The
+inference query sampling steps in DDPM [51] are set to ten by
+default.
+Three assessment criteria are adopted to evaluate LPQRDVG’s performance [1], [2], [3], including Precision@X
+(Pr @X), mean intersection over union (mIoU), and cumulative
+intersection over union (cIoU). Before defining them, we
+first introduce intersection over union (IoU). It calculates the
+overlaps between the predicted boxes and the ground truth
+boxes, which can be formulated as IoUi = Ii /Ui , where
+IoUi represents the IoU of ith sample, Ii is the area of
+overlap between the predicted bounding box and the ground
+truth bounding box, Ui is the total area covered by both
+the predicted and ground truth bounding boxes. Based on
+IoU, Pr @X can be defined as the percentage of IoU overlap
+exceeding a threshold X, mIoU can be interpreted as the
+average IoU values across all testing samples, and cIoU can
+be described as the cumulative IoU values over all predictions.
+Note that the threshold X ranges from 0.5 to 0.9 in the
+following experiments. Among them, the definitions of mIoU
+and cIoU are
+N
+
+1 X
+Ii /Ui ,
+mIoU =
+N
+i=1
+
+cIoU =
+
+N
+X
+i=1
+
+Ii /
+
+N
+X
+
+Ui
+
+i=1
+
+where N represents the total number of input samples.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+(8)
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE I
+P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON DIOR-RSVG
+
+TABLE II
+P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON OPT-RSVG
+
+C. Comparison With Existing Methods
+To evaluate the effectiveness of our proposed method, we
+compare it against seven existing methods, including FAOA
+[28], ReSC [30], LBYL-Net [29], TransVG [33], VLTVG
+[35], MGVLF [2], and LPVA [1]. The first three methods are
+developed based on CNN, and the last four are transformerbased approaches. Their details, such as visual and textual
+backbones, can be found in Tables I and II. Here, FAOA
+and LBYL-Net have two versions due to the different textual
+encoders. The results of them and our LPQR-DVG counted
+on DIOR-RSVG and OPT-RSVG are shown in Tables I
+and II, respectively.
+1) Analysis of Results on DIOR-RSVG: From the observation of the results in Table I, it is evident that the performance
+of all methods is acceptable. The CNN-based approaches
+estimate the positions of referred objects based on crossmodal representations, and they eliminate candidate proposals
+typically used in object detection to enhance the efficiency
+of predicting accurate target regions through an end-to-end
+paradigm. Among them, the weakest is FAOA. When its
+language encoder is BERT, its Pr @0.5, Pr @0.9, mIoU, and
+cIoU values are only 60.69%, 4.32%, 0.4925, and 0.5768,
+respectively. This is because FAOA’s spatial feature encoding
+cannot establish the complex correspondence between vision
+and language. To mitigate this issue, ReSC employs a recursive
+
+subquery to refine visual features. As a result, its various
+metrics are significantly higher than those of FAOA. Compared to FAOA and ResC, the behavior of LBYL-NET is
+more attractive since it employs a landmark-aware feature
+convolution mechanism, which is beneficial for the model to
+understand spatial-semantic relationships. However, the mIoU
+of LBYL-NET is somewhat disappointing. The problem lies in
+the landmark-aware convolution mechanism. Although it can
+establish relationships between images and text, this regionbased convolution struggles when interpreting RS images with
+varying scales and complex content.
+CNN-based methods often rely on manually designed
+visual–textual relation modeling, which limits their generalization and stability. Transformer-based methods can effectively
+solve this problem, as the attention mechanism in transformers
+is well-suited for interacting with and fusing image and
+text features, ultimately leading to accurate target localization. As illustrated in Table I, TransVG, VLTVG, MGVLF,
+and LPVA consistently outperform CNN-based approaches
+in most cases. Especially under the higher precision thresholds (e.g., Pr @0.9), the performance enhancements achieved
+by the transformer-based models are distinct. For example,
+compared with LBYL-Net-LSTM (i.e., the best CNN-based
+approach in Pr @0.9), the improvements of TransVG, VLTVG,
+MGVLF, and LPVA are 6.11%, 16.52%, 13.08%, and 13.56%,
+respectively. For mIoU, the advantages of transformer-based
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: LANGUAGE-GUIDED PROGRESSIVE QUERY REFINEMENT WITH DIFFUSION MODEL
+
+methods are also quite noticeable. For instance, TransVG,
+VLTVG, MGVLF, and LPVA are 0.0283, 0.0639, 0.0487,
+and 0.067 higher than ReSC, which is the best CNN-based
+approach in mIoU. The above positive results achieved by
+TransVG, VLTVG, MGVLF, and LPVA can be attributed to
+the transformers’ superior capacity for modeling fine-grained
+cross-modal interactions through attention mechanisms.
+Although the compared models produce good results, the
+proposed LPQR-DVG still outperforms them in all cases. Taking Pr @0.5 as an example, our LPQR-DVG achieves 78.69%,
+outperforming LPVA (the second-best model) by 3.48%. Taking mIoU as another example, LPQR-DVG achieves 0.6844,
+marking an improvement of 0.034 over LPVA. The superior
+performance of our LPQR-DVG model can be attributed to
+two points. First, the integration of text guidance throughout
+the visual feature extraction process significantly enhances
+visual–textual understanding by continuously aligning visual
+features with linguistic context. Second, the novel RSVGoriented reversed U-Net architecture enables hierarchical,
+multistage cross-modal interaction through its progressive upsampling and down-sampling pathways, which systematically
+refine visual-linguistic alignment at different spatial scales. An
+encouraging point is that there are significant performance
+gaps between LPQR-DVG and other methods. This is due to
+the incorporation of a diffusion paradigm with our RSVGoriented reversed U-Net, which revolutionizes the localization
+process by formulating it as an iterative denoising procedure.
+This approach enables the progressive refinement of noisy
+queries, leading to more accurate and robust identification of
+semantically relevant regions.
+2) Analysis of Results on OPT-RSVG: As detailed in
+Table II, similar to the results on DIOR-RSVG, the performance of different methods based on OPT-RSVG is
+appropriate. For the CNN-based methods, LBYL-Net-LSTM
+and ReSC outperform others. Their Pr @0.5 values are as
+high as 72.82% and 73.24%. However, it is worth noting
+that LBYL-NET-BERT struggles to produce stable results on
+OPT-RSVG. These observations suggest that CNN-based
+methods, which often rely on manually designed visual–textual
+relation modeling, exhibit limitations in both stability and
+accuracy due to their information mining manner.
+Transformer-based methods leverage attention mechanisms
+to effectively model interactions between image and text
+features, ultimately leading to more accurate target localization. Consequently, on the OPT-RSVG dataset, these
+methods consistently outperform CNN-based approaches in
+most cases, especially under stricter localization thresholds
+such as Pr @0.9. For example, compared to ReSC (i.e., the best
+CNN-based method in Pr @0.9), TransVG, VLTVG, MGVLF,
+and LPVA achieve improvements of 4.73%, 9.95%, 8.3%, and
+6.04%, respectively. A similar advantage is observed in mIoU.
+For example, TransVG, VLTVG, MGVLF, and LPVA exceed
+ReSC (i.e., the best CNN-based model in mIoU) by 0.0211,
+0.0364, 0.0311, and 0.0444, respectively.
+Aligning with the observations on DIOR-RSVG, the proposed LPQR-DVG consistently outperforms all compared
+methods across all evaluation metrics. Taking Pr @0.5 as an
+example, our LPQR-DVG achieves 78.26%, outperforming
+LPVA (the second-best model) by 1.83%. Taking mIoU as
+
+5647614
+
+TABLE III
+A BLATION S TUDY OF M AIN PARTS OF LPQR-DVG
+
+another example, LPQR-DVG achieves 0.6693, marking an
+improvement of 0.0237 over LPVA. Collectively, the sustained
+high performance across both DIOR-RSVG and OPT-RSVG
+datasets underscores not only the robustness of our method but
+also its superior generalization capabilities to novel contexts.
+Besides the numerical results, visual location maps achieved
+by different models are also provided and discussed. Due to
+space limitations, the detailed visual results and corresponding
+discussion can be found in the supplementary material.
+D. Ablation Studies
+As introduced in Section III, the main parts of our
+LPQR-DVG are MTFLM, IQLM, and the diffusion training
+algorithm. Meanwhile, the key components in MTFLM and
+IQLM are the multiscale text guidance and the PQR unit.
+To investigate their contributions to LPQR-DVG, this section
+outlines the design of the ablation experiments.
+First, we fix the diffusion training algorithm and examine
+the importance of multiscale text guidance and the PQR unit.
+To this end, the multiscale text guidance would be removed
+from LPQR-DVG, and the PQR unit would also be replaced
+with a standard cross-attention transformer unit. Note that
+only one of the two steps above is executed at a time. The
+results of different LPQR-DVGs counted on the two datasets
+are summarized in Table III. For clarity, we report their
+Pr @0.5 and mIoU values exclusively. When the multiscale
+text guidance and PQR unit are ablated (see the first row),
+LPQR-DVG’s performance drops significantly, achieving only
+68.59% Pr @0.5 and 0.5975 mIoU on DIOR-RSVG, and
+69.11% Pr @0.5 and 0.5955 mIoU on OPT-RSVG. Once the
+multiscale text guidance is added (see the second row), the
+model’s Pr @0.5 and mIoU values are enhanced by 9.36%
+and 0.0799 on DIOR-RSVG, and 7.96% and 0.0641 on OPTRSVG. This means that incorporating multiscale text guidance
+enables early visual–text interaction during feature extraction,
+which reduces the complexity of later-stage vision-text alignment and enhances localization accuracy. Alternatively, when
+only the PQR unit is added (see the third row), LPQR-DVG
+achieves 72.89% and 0.6369 for Pr @0.5 and mIoU on DIORRSVG, and 73.83% and 0.6356 on OPT-RSVG. This indicates
+that the PQR unit in IQLM effectively aligns visual and textual
+features, enabling efficient interaction between queries, visual
+elements, and textual features, ultimately enhancing localization accuracy. Finally, when the multiscale text guidance
+and PQR unit are both incorporated (see the fourth row),
+the complete LPQR-DVG’s behavior becomes the strongest.
+This implies that the combination of multiscale text guidance
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE IV
+
+TABLE V
+
+A BLATION S TUDY OF I NTERACTION S TAGES IN MTFLM
+
+A NALYSIS OF THE I NFLUENCE OF L ANGUAGE M ODELS ON LPQR-DVG
+
+and the PQR unit enables comprehensive vision-language
+alignment, facilitating effective cross-modal feature interaction
+and query-based feature learning, which leads to precise target
+localization.
+Second, the diffusion training algorithm is changed to
+the standard training algorithm to determine if the diffusion
+paradigm is necessary or not. The results are also exhibited in
+Table III. By analyzing the scores in the fourth and fifth rows,
+we can easily see that LPQR-DVG with diffusion outperforms
+LPQR-DVG with the standard training strategy. Specifically,
+removing the diffusion algorithm results in declines of 2.23%
+and 0.0207 in Pr @0.5 and mIoU on DIOR-RSVG, and 2%
+and 0.0292 in Pr @0.5 and mIoU on OPT-RSVG. This denotes
+that the diffusion learning paradigm can progressively align
+visual–text features through its iterative refinement process,
+enabling gradual convergence to accurate target locations.
+
+correspondences from low-level textures to high-level semantics. Therefore, our LPQR-DVG model adopts guidance from
+all five stages as the default setting. In addition to the numerical results, we still investigate the attention maps of each stage
+to analyze their distinct contributions to textual information
+processing. The details can be found in the supplementary
+material.
+2) Different Text Encoders in MTFLM: As detailed in
+Section III-B, MTFLM adopts BERT [45] as the text backbone
+of its textual feature extractor. To investigate whether this
+choice is suitable, we replace BERT with several other popular
+language models, including ALBERT [55], RoBERTa [56],
+CLIP [57], and RemoteCLIP [58]. ALBERT and RoBERTa
+focus on general language understanding, while CLIP and
+RemoteCLIP are specialized for visual–text alignment tasks.
+The Pr 0.5 and mIoU scores of LPQR-DVGs with different
+language models counted on DIOR-RSVG and OPT-RSVG
+are summarized in Table V.
+As detailed in the table, the behavior of LPQR-DVGs with
+different textual backbones is acceptable. Among the compared textual backbones, CLIP and RemoteCLIP demonstrate
+weaker performance. For DIOR-RSVG, CLIP and RemoteCLIP achieve 70.31% and 69.92% on Pr 0.5, with 0.6094
+and 0.6034 on mIoU, respectively. For OPT-RSVG, their
+Pr 0.5 scores are 69.42% and 72.24% on Pr 0.5, and their
+mIoU values are 0.5963 and 0.6170. This is because CLIP
+and RemoteCLIP pay more attention to building the relationships between RS images and scene-level semantics. Their
+capacity to interpret complex textual descriptions is relatively
+low, which limits their effectiveness in RSVG tasks. The
+strongest one is RoBERTa, with Pr 0.5 and mIoU scores of
+77.71% and 0.6762, and 78.25% and 0.6687 on DIOR-RSVG
+and OPT-RSVG, respectively. Compared to them, LPQRDVG with BERT achieves the best performance. For Pr 0.5,
+its improvements are 6.85% and 5.97% (over ALBERT),
+0.98% and 0.01% (over RoBERTa), 8.38% and 8.84% (over
+CLIP), and 8.77% and 6.02% (over RemoteCLIP) on DIORRSVG and OPT-RSVG. For mIoU, its enhancements are
+0.0687 and 0.051 (over ALBERT), 0.0082 and 0.0006 (over
+RoBERTa), 0.075 and 0.073 (over CLIP), and 0.081 and
+0.0523 (over RemoteCLIP) on the two datasets. These findings
+illustrate that choosing BERT as the textual backbone is
+suitable for our tasks.
+
+E. Further Analysis of MTFLM
+Based on the ablation study results (see Section IV-D),
+the usefulness of multiscale text guidance in MTFLM is
+confirmed. This section will investigate its significance to our
+LPQR-DVG from two perspectives: the role of text guidance
+in visual feature extraction, and the impact of different text
+encoders on the final results.
+1) Text Guidance in Visual Feature Extraction: As discussed in Section III-B, the textual clues are embedded into all
+stages of ResNet-50. Here, the multiscale text guidance would
+be analyzed by varying the incorporation stages from deep to
+shallow. The results of various LPQR-DVGs are exhibited in
+Table IV. For clarity, we only select Pr @0.5 and mIoU as the
+assessment criteria. Meanwhile, the LPQR-DVGs’ parameter
+volume (#Params.) is also chosen for the evaluation. By
+observing the table, we can see that as the number of incorporating stages increases, LPQR-DVGs’ performance improves
+with an acceptable parameter volume growth. Taking results
+on DIOR-RSVG as an example, when implementing text
+guidance at stage 4, LPQR-DVG achieves 77.56% on Pr @0.5
+and 0.6734 on mIoU, and its parameter volume is equal to
+197.65 M. When implementing text guidance at all stages, the
+model achieves 1.13% and 0.011 improvements in Pr @0.5
+and mIoU, respectively, and its parameter volume increases
+by only 6.57 M. Similarly, on OPT-RSVG, implementing
+text guidance at all stages can also yield improvements of
+0.83% in Pr @0.5 and 0.0061 in mIoU compared to implementing text guidance only at Stage 4. This indicates that
+implementing text guidance across all network stages enables
+comprehensive visual–text interaction, achieving cross-modal
+
+F. Further Analysis of IQLM
+The usefulness of the PQR unit in IQLM has been
+confirmed in Section IV-D. This section will further
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: LANGUAGE-GUIDED PROGRESSIVE QUERY REFINEMENT WITH DIFFUSION MODEL
+
+5647614
+
+TABLE VI
+A NALYSIS OF U-N ET R ESIDUAL PART IN IQLM
+
+TABLE VII
+A NALYSIS OF RSVG-O RIENTED R EVERSED U-N ET C HANNEL S ETTINGS
+
+Fig. 7. Analysis of diffusion inference sampling steps. As the number of
+inference steps increases, the performance becomes stable.
+
+investigate its significance to our LPQR-DVG. As explained in
+Section III-C, the PQR unit consists of a U-Net residual
+part and a query refinement part. The U-Net residual part
+aims to capture hierarchical feature representations from the
+input data, while the query refinement part focuses on refining these representations by leveraging interactions between
+visual and textual features, ultimately achieving accurate target
+localization. The two parts of the PQR unit perform distinct roles, providing complementary information to support
+the final location. To further study their contributions to
+LPQR-DVG, we conduct the following ablation experiments.
+First, the U-Net residual part is removed from the PQR unit. In
+other words, the query refinement part works alone. Second,
+we call back the U-Net residual part to construct a complete
+PQR unit.
+The Pr @0.5 and mIoU scores of LPQR-DVGs with only the
+query refinement part and the complete PQR unit are exhibited
+in Table VI. It is obvious that the complete PQR unit improves
+the overall performance of LPQR-DVG. Taking results on
+DIOR-RSVG as an example, when the U-Net residual part is
+removed (see the first row), LPQR-DVG’s Pr @0.5 and mIoU
+values are as low as 77.61% and 0.6734. Once the U-Net
+residual part is added to the PQR unit (see the second row), the
+model’s Pr @0.5 and mIoU values are enhanced by 1.08% and
+0.011. Similar results can be observed on OPT-RSVG, where
+incorporating the U-Net residual component into the PQR unit
+enhances the model’s Pr @0.5 and mIoU by 0.8% and 0.0081,
+respectively. These findings suggest that the inclusion of the UNet residual part enhances feature representation optimization,
+thereby improving localization accuracy. In addition, although
+the behavior of LPQR-DVG with only the query refinement
+part is weaker, its scores are still fair. This implies that the
+query refinement part’s potential for independent work.
+G. Free Settings Analysis
+1) Channel Settings for RSVG-Oriented Reversed U-Net:
+In LPQR-DVG, the RSVG-oriented reversed U-Net plays the
+crucial role in obtaining predicted coordinates. To explore the
+
+impact of different channel settings on the RSVG-oriented
+reversed U-Net’s performance, we change the channel numbers from 8 to 256. In these cases, LPQR-DVGs’ Pr @0.5
+and mIoU counted on the two datasets are summarized in
+Table VII. We can observe that as the channel number
+increases, the behavior of LPQR-DVG first strengthens and
+then weakens, and the peak values of Pr @0.5 and mIoU
+appear when the channel number equals 32. In addition, the
+model sizes grow with the number of channels. These examinations suggest that when the initial channel number is too
+small, the model suffers from inadequate feature representation
+capacity, resulting in compromised semantic understanding.
+Meanwhile, the large channel numbers would introduce unnecessary complexity, leading to overfitting and a degradation in
+localization accuracy. In summary, the number of channels
+should be carefully selected within an appropriate range. As a
+result, in this article, we set the initial channel number to 32.
+2) Inference Sampling Steps: In the inference phase, the
+DDPM [51] strategy is employed for the final prediction. Thus,
+different sampling steps may lead to varying results during
+inference. To ensure a suitable number of sampling steps for
+our LPQR-DVG, we vary it from 1 to 10 and count the mIoU
+values of LPQR-DVGs counted on the two datasets for clarity.
+The curves are drawn in Fig. 7. When the sampling steps
+are limited (e.g., the number of steps is fewer than 6), the
+model’s performance fluctuates distinctly. For example, with
+only one step, LPQR-DVG achieves merely 0.6814 mIoU on
+DIOR-RSVG, as insufficient steps prevent the full utilization
+of the diffusion paradigm’s iterative refinement capability.
+When increasing to two and four steps, the model achieves
+improvements of 0.0024 and 0.0027 on mIoU, demonstrating
+a gradual enhancement through multistage denoising. The performance eventually stabilizes when exceeding six sampling
+steps, reaching a plateau of 0.6844 mIoU with ten sampling steps, indicating convergence of the diffusion process’s
+error correction capacity. Similar results can be observed on
+OPT-RSVG. LPQR-DVG achieves 0.6677 mIoU on the
+OPT-RSVG dataset with only one sampling step. When the
+number of sampling steps is increased to 10, the model
+achieves a stable mIoU of 0.6693. As a result, in this article,
+the inference step is set to ten as the default. Following this, to
+further investigate the distinct roles of each sampling step, we
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE VIII
+PARAMETER VOLUME AND I NFERENCE S PEED OF LPQR-DVG
+
+Fig. 8. Influence of α on LPQR-DVG. The mIoU curves are counted on
+DIOR-RSVG and OPT-RSVG.
+
+conduct visualizations of the target localization results at each
+sampling step for the ten inference steps setting. Due to space
+limitations, the visual results and corresponding discussion can
+be found in the supplementary material.
+3) Loss Weight Parameters of LPQR-DVG: Our loss function Ltrain [see (7)] consists of two parts, i.e., the box
+localization loss Lbox
+train and auxiliary box refinement loss
+box
+Laux
+.
+L
+is
+designed
+to jointly optimize precise coordinate
+train
+train
+regression and geometric consistency in the diffusion process.
+Laux
+train is developed to enhance feature learning through deep
+supervision. To deeply investigate their functions, we tune the
+values of the hyperparameter α in a range of {0.1, 0.5, 1, 1.5, 2}.
+The mIoU scores of LPQR-DVGs with different loss functions
+counted on the two datasets are displayed in Fig. 8. By
+observing the curves, we can find the following points. Taking
+the DIOR-RSVG dataset as an example, when α is set to
+1, LPQR-DVG achieves the optimal mIoU of 0.6844. As α
+continues to increase, the mIoU exhibits a monotonic decrease,
+eventually reaching 0.6824 at α = 2, which corresponds to a
+reduction of 0.0020 compared to the performance at α = 1.
+Moreover, when smaller values of α are used (e.g., α = 0.5),
+mIoU declines by 0.0008, and the training process exhibits
+noticeably reduced stability under these conditions. Similar
+results can be observed on the OPT-RSVG dataset. When
+α = 1, LPQR-DVG’s mIoU reaches its maximum value of
+0.6693. When α = 0.5, 0.1 and α = 1.5, 2, the mIoU decreases
+by 0.0016, 0.0068, 0.009, and 0.0024, respectively. This trend
+confirms that both large and small values of α adversely affect
+localization performance. Based on the above discussion, we
+suggest that the optimal values of α for different tasks can be
+fixed around 1.
+
+compared methods utilize a smaller input size of 640 × 640.
+Consequently, LPQR-DVG exhibits a slight increase in model
+parameters, with 75.82 M over LPVA and 59.19 M over
+VLTVG. However, this parameter overhead is acceptable given
+the significant improvement in the model’s overall performance across the DIOR-RSVG and OPT-RSVG datasets. For
+the inference speed, LPQR-DVG spends more time compared
+to other methods, as it is significantly affected by the diffusion
+process. As shown in Table VIII, the inference time increases
+with additional inference steps. Fortunately, all of them remain
+within the millisecond range. Considering that the diffusion
+process can enhance both the precision and prediction stability
+of LPQR-DVG, the current moderate computational overhead
+is worthwhile. Speeding up the inference process is one of our
+future works.
+V. C ONCLUSION
+
+This article proposes a new model for RSVG tasks named
+LPQR-DVG. It primarily consists of an MTFLM module
+and an IQLM module. MTFLM is designed to continuously
+guide visual features with textual information throughout the
+feature extraction process, ensuring more robust and contextually aligned interactions between visual and text features.
+IQLM is developed to enable sufficient interaction between
+queries, visual, and text features during the training process in the RSVG-oriented reversed U-Net, enhancing the
+model’s understanding capabilities of discriminative details
+in both text and visual features. To train LPQR-DVG properly, we introduce a progressive diffusion learning strategy.
+H. Parameter Volume and Inference Speed of LPQR-DVG
+By progressively denoising noisy bounding box coordinates
+This section analyzes the parameter volume and inference through iterative interactions with visual and textual featime costs of our LPQR-DVG. The comparisons between tures in the RSVG-oriented reversed U-Net, more accurate
+LPQR-DVG and other methods are summarized in Table VIII. localization results can be achieved. Positive experimental
+Our model incurs moderately higher parameter sizes and results based on the DIOR-RSVG and OPT-RSVG datasets
+computational costs than efficient alternatives, such as LPVA indicate that our model shows promising results for the RSVG
+and VLTVG. The reasons behind these findings are twofold. task.
+Although our model demonstrates competitive performance,
+One is the complexity of the model, and the other is the
+there remains room for improvement. First, the visual features
+number of diffusion sampling steps.
+Regarding model parameters, LPQR-DVG employs an input used in IQLM, while capturing both local and global inforsize of 800×800 and facilitates multistage progressive interac- mation, are limited to a single scale. It would be beneficial to
+Authorized
+licensed useand
+limited
+to: XIDIAN
+UNIVERSITY.
+Downloaded
+April 16,2026
+05:50:59
+UTC from IEEE
+Xplore.
+Restrictions
+apply.
+tion through
+the MTFLM
+IQLM
+modules.
+In contrast,
+the on explore
+theatuse
+of multiscale
+visual
+features
+from
+MTFLM to
+
+TANG et al.: LANGUAGE-GUIDED PROGRESSIVE QUERY REFINEMENT WITH DIFFUSION MODEL
+
+enhance interaction with textual features. Second, compared
+with existing methods, LPQR-DVG still shows limitations in
+terms of model size and inference speed. Therefore, further
+improving the model’s performance while reducing its size
+and enhancing inference speed will be the focus of our future
+research.
+R EFERENCES
+[1]
+
+K. Li, D. Wang, H. Xu, H. Zhong, and C. Wang, “Language-guided
+progressive attention for visual grounding in remote sensing images,”
+IEEE Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no. 5631413.
+[2] Y. Zhan, Z. Xiong, and Y. Yuan, “RSVG: Exploring data and models for
+visual grounding on remote sensing data,” IEEE Trans. Geosci. Remote
+Sens., vol. 61, 2023, Art. no. 5604513.
+[3] M. Lan, F. Rong, H. Jiao, Z. Gao, and L. Zhang, “Language query-based
+transformer with multiscale cross-modal alignment for visual grounding
+on remote sensing images,” IEEE Trans. Geosci. Remote Sens., vol. 62,
+2024, Art. no. 5626513.
+[4] S. Wang, W. Han, X. Huang, X. Zhang, L. Wang, and J. Li, “Trustworthy
+remote sensing interpretation: Concepts, technologies, and applications,”
+ISPRS J. Photogramm. Remote Sens., vol. 209, pp. 150–172, Mar. 2024.
+[5] W. Zhang, M. Cai, T. Zhang, Y. Zhuang, J. Li, and X. Mao,
+“EarthMarker: A visual prompting multimodal large language model
+for remote sensing,” IEEE Trans. Geosci. Remote Sens., vol. 63, 2025,
+Art. no. 5604219.
+[6] D. Zhao et al., “Panoptic perception: A novel task and fine-grained
+dataset for universal remote sensing image interpretation,” IEEE Trans.
+Geosci. Remote Sens., vol. 62, 2024, Art. no. 5620714.
+[7] W. Bao, M. Huang, J. Hu, and X. Xiang, “Dual-dynamic cross-modal
+interaction network for multimodal remote sensing object detection,”
+IEEE Trans. Geosci. Remote Sens., vol. 63, 2025, Art. no. 5401013.
+[8] L. Zhu, Y. Wang, Y. Hu, X. Su, and K. Fu, “Cross-modal contrastive
+learning with spatiotemporal context for correlation-aware multiscale
+remote sensing image retrieval,” IEEE Trans. Geosci. Remote Sens.,
+vol. 62, 2024, Art. no. 5629821.
+[9] Z. Yang, Q. Li, Y. Yuan, and Q. Wang, “HCNet: Hierarchical feature
+aggregation and cross-modal feature alignment for remote sensing image
+captioning,” IEEE Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no.
+5624711.
+[10] C. Liu, J. Ma, X. Tang, F. Liu, X. Zhang, and L. Jiao, “Deep hash
+learning for remote sensing image retrieval,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 4, pp. 3420–3443, Apr. 2021.
+[11] Y. Wang, X. Tang, J. Ma, X. Zhang, F. Liu, and L. Jiao, “Cross-modal
+remote sensing image-text retrieval via context and uncertainty-aware
+prompt,” IEEE Trans. Neural Netw. Learn. Syst., vol. 36, no. 6,
+pp. 11384–11398, Jun. 2024.
+[12] X. Tang, D. Huang, J. Ma, X. Zhang, F. Liu, and L. Jiao, “Priorexperience-based vision-language model for remote sensing image-text
+retrieval,” IEEE Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no.
+5641913.
+[13] X. Tang, Y. Wang, J. Ma, X. Zhang, F. Liu, and L. Jiao, “Interactingenhancing feature transformer for cross-modal remote-sensing image
+and text retrieval,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,
+Art. no. 5611715.
+[14] X. Tang, M. Li, J. Ma, X. Zhang, F. Liu, and L. Jiao, “EMTCAL:
+Efficient multiscale transformer and cross-level attention learning for
+remote sensing scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5626915.
+[15] X. Tang, Q. Ma, X. Zhang, F. Liu, J. Ma, and L. Jiao, “Attention
+consistent network for remote sensing scene classification,” IEEE J. Sel.
+Topics Appl. Earth Observ. Remote Sens., vol. 14, pp. 2030–2045, 2021.
+[16] R. Du, X. Tang, J. Ma, X. Zhang, and L. Jiao, “MLMamba: A
+mamba-based efficient network for multi-label remote sensing scene
+classification,” IEEE Trans. Circuits Syst. Video Technol., vol. 35, no. 7,
+pp. 6245–6258, Jul. 2025.
+[17] R. Du, X. Tang, J. Ma, X. Zhang, F. Liu, and L. Jiao, “Semanticassisted feature integration network for multilabel remote sensing scene
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 63, 2025, Art.
+no. 5603015.
+[18] Y. Yang et al., “Semi-supervised multiscale dynamic graph convolution
+network for hyperspectral image classification,” IEEE Trans. Neural
+Netw. Learn. Syst., vol. 35, no. 5, pp. 6806–6820, May 2024.
+
+5647614
+
+[19] X. Tang et al., “Hyperspectral image classification based on
+3-D octave convolution with spatial–spectral attention network,”
+IEEE Trans. Geosci. Remote Sens., vol. 59, no. 3, pp. 2430–2447,
+Mar. 2021.
+[20] J. Wang et al., “EarthVQANet: Multi-task visual question answering for
+remote sensing image understanding,” ISPRS J. Photogramm. Remote
+Sens., vol. 212, pp. 422–439, Jun. 2024.
+[21] Y. Zhan, Z. Xiong, and Y. Yuan, “SkyEyeGPT: Unifying remote sensing vision-language tasks via instruction tuning with large language
+model,” ISPRS J. Photogramm. Remote Sens., vol. 221, pp. 64–77,
+Mar. 2025.
+[22] G. Wang et al., “Negative deterministic information-based multiple instance learning for weakly supervised object detection and
+segmentation,” IEEE Trans. Neural Netw. Learn. Syst., vol. 36, no. 4,
+pp. 1–15, Apr. 2025.
+[23] S. Lei, X. Xiao, T. Zhang, H.-C. Li, Z. Shi, and Q. Zhu, “Exploring
+fine-grained image-text alignment for referring remote sensing image
+segmentation,” IEEE Trans. Geosci. Remote Sens., vol. 63, 2025, Art.
+no. 5604611.
+[24] Y. Sun, S. Feng, X. Li, Y. Ye, J. Kang, and X. Huang, “Visual grounding
+in remote sensing images,” in Proc. 30th ACM Int. Conf. Multimedia,
+2022, pp. 404–412.
+[25] F. Wang, C. Wu, J. Wu, L. Wang, and C. Li, “Multistage synergistic
+aggregation network for remote sensing visual grounding,” IEEE Geosci.
+Remote Sens. Lett., vol. 21, pp. 1–5, 2024.
+[26] S. Yang, G. Li, and Y. Yu, “Dynamic graph attention for referring
+expression comprehension,” in Proc. IEEE/CVF Int. Conf. Comput. Vis.
+(ICCV), Oct. 2019, pp. 4644–4653.
+[27] R. Korekata et al., “Switching head-tail funnel UNITER for dual
+referring expression comprehension with fetch-and-carry tasks,” in
+Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS), Oct. 2023,
+pp. 3865–3872.
+[28] Z. Yang, B. Gong, L. Wang, W. Huang, D. Yu, and J. Luo, “A fast and
+accurate one-stage approach to visual grounding,” in Proc. Int. Conf.
+Comput. Vis., Jun. 2019, pp. 4683–4693.
+[29] B. Huang, D. Lian, W. Luo, and S. Gao, “Look before you leap:
+Learning landmark features for one-stage visual grounding,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2021,
+pp. 16883–16892.
+[30] Z. Yang, T. Chen, L. Wang, and J. Luo, “Improving one-stage visual
+grounding by recursive sub-query construction,” in Proc. Eur. Conf.
+Comput. Vis. Glasgow, U.K.: Springer, 2020, pp. 387–404.
+[31] L. Jin et al., “RefCLIP: A universal teacher for weakly supervised
+referring expression comprehension,” in Proc. IEEE/CVF Conf. Comput.
+Vis. Pattern Recognit. (CVPR), Jun. 2023, pp. 1–10.
+[32] Y. Du, Z. Fu, Q. Liu, and Y. Wang, “Visual grounding with
+transformers,” in Proc. IEEE Int. Conf. Multimedia Expo (ICME), Jul.
+2022, pp. 1–6.
+[33] J. Deng, Z. Yang, T. Chen, W. Zhou, and H. Li, “TransVG: End-toend visual grounding with transformers,” in Proc. IEEE/CVF Int. Conf.
+Comput. Vis., Oct. 2021, pp. 1769–1779.
+[34] W. Su, P. Miao, H. Dou, Y. Fu, and X. Li, “Referring expression
+comprehension using language adaptive inference,” in Proc. AAAI Conf.
+Artif. Intell., 2023, vol. 37, no. 2, pp. 2357–2365.
+[35] L. Yang, Y. Xu, C. Yuan, W. Liu, B. Li, and W. Hu, “Improving visual
+grounding with visual-linguistic verification and iterative reasoning,” in
+Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun.
+2022, pp. 9489–9498.
+[36] X. Zhu, W. Su, L. Lu, B. Li, X. Wang, and J. Dai, “Deformable
+DETR: Deformable transformers for end-to-end object detection,” 2020,
+arXiv:2010.04159.
+[37] S. Liu et al., “DQ-DETR: Dual query detection transformer for phrase
+extraction and grounding,” in Proc. AAAI Conf. Artif. Intell., 2023,
+vol. 37, no. 2, pp. 1728–1736.
+[38] N. Carion, F. Massa, G. Synnaeve, N. Usunier, A. Kirillov, and
+S. Zagoruyko, “End-to-end object detection with transformers,” in
+Proc. Eur. Conf. Comput. Vis. Cham, Switzerland: Springer, 2020,
+pp. 213–229.
+[39] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer,
+“High-resolution image synthesis with latent diffusion models,” in
+Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit., Jun. 2022,
+pp. 10684–10695.
+[40] S. Chen, P. Sun, Y. Song, and P. Luo, “DiffusionDet: Diffusion model
+for object detection,” in Proc. IEEE/CVF Int. Conf. Comput. Vis., Oct.
+2023, pp. 19830–19843.
+[41] S. Chen and B. Li, “Language-guided diffusion model for visual
+grounding,” 2023, arXiv:2308.09599.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+5647614
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+[42] X. Liu, S. Huang, Y. Kang, H. Chen, and D. Wang, “VGDIFFZERO:
+Text-to-image diffusion models can be zero-shot visual grounders,” in
+Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP), Apr.
+2024, pp. 2765–2769.
+[43] I. Goodfellow et al., “Generative adversarial networks,” Commun. ACM,
+vol. 63, no. 11, pp. 139–144, 2020.
+[44] D. P. Kingma and M. Welling, “Auto-encoding variational Bayes,” 2013,
+arXiv:1312.6114.
+[45] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training
+of deep bidirectional transformers for language understanding,” in Proc.
+Conf. North Amer. Chapter Assoc. Comput. Linguistics, Hum. Lang.
+Technol., vol. 1, Jun. 2019, pp. 4171–4186.
+[46] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for
+image recognition,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2016, pp. 770–778.
+[47] A. Vaswani et al., “Attention is all you need,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 30, 2017, pp. 5998–6008.
+[48] L. Xiong, N. Li, W. Qiu, Y. Luo, Y. Li, and Y. Zhang, “Re-UNet: A novel
+multi-scale reverse U-shape network architecture for low-dose CT image
+reconstruction,” Med. Biol. Eng. Comput., vol. 62, no. 3, pp. 701–712,
+Mar. 2024.
+[49] C. Etmann, R. Ke, and C.-B. Schönlieb, “IUNets: Learnable invertible
+up{-} and downsampling for large-scale inverse problems,” in Proc. IEEE
+30th Int. Workshop Mach. Learn. Signal Process. (MLSP), Sep. 2020,
+pp. 1–6.
+[50] B. Sun, S. Jia, X. Jiang, and F. Jia, “Double U-Net CycleGAN for 3D
+MR to CT image synthesis,” Int. J. Comput. Assist. Radiol. Surgery,
+vol. 18, no. 1, pp. 149–156, Aug. 2022.
+[51] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,”
+in Proc. NIPS, 2020, pp. 6840–6851.
+[52] H. Rezatofighi, N. Tsoi, J. Gwak, A. Sadeghian, I. Reid, and S. Savarese,
+“Generalized intersection over union: A metric and a loss for bounding
+box regression,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2019, pp. 658–666.
+[53] K. Li, G. Wan, G. Cheng, L. Meng, and J. Han, “Object detection in
+optical remote sensing images: A survey and a new benchmark,” ISPRS
+J. Photogramm. Remote Sens., vol. 159, pp. 296–307, Jan. 2020.
+[54] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,”
+2017, arXiv:1711.05101.
+[55] Z. Lan, M. Chen, S. Goodman, K. Gimpel, P. Sharma, and R. Soricut, “ALBERT: A lite BERT for self-supervised learning of language
+representations,” 2019, arXiv:1909.11942.
+[56] Y. Liu et al., “RoBERTa: A robustly optimized BERT pretraining
+approach,” 2019, arXiv:1907.11692.
+[57] A. Radford et al., “Learning transferable visual models from natural
+language supervision,” in Proc. Int. Conf. Mach. Learn., vol. 139, 2021,
+pp. 8748–8763.
+[58] F. Liu et al., “RemoteCLIP: A vision language foundation model for
+remote sensing,” IEEE Trans. Geosci. Remote Sens., vol. 62, 2024, Art.
+no. 5622216.
+
+Xu Tang (Senior Member, IEEE) received the B.Sc.,
+M.Sc., and Ph.D. degrees in electronic circuit and
+system from Xidian University, Xi’an, China, in
+2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a Joint Ph.D. Student
+along with Prof. W. J. Emery at the University
+of Colorado at Boulder, Boulder, CO, USA. He is
+currently a Full Professor with the Key Laboratory
+of Intelligent Perception and Image Understanding
+of the Ministry of Education, Xidian University.
+His research interests include remote sensing image
+content-based retrieval and reranking, hyperspectral image processing, remote
+sensing scene classification, and object detection. For more details, please refer
+to: https://web.xidian.edu.cn/tangxu/en/index.html
+
+Ruitao Shen received the B.E. degree in computer
+science and technology from Changzhou University,
+Changzhou, China, in 2023. He is currently pursuing
+the M.S. degree in computer science and technology
+with the Key Laboratory of Intelligent Perception
+and Image Understanding of the Ministry of Education, Xidian University, Xi’an, China.
+His research interests include image understanding, visual grounding, and deep learning.
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor with the
+Key Laboratory of Intelligent Perception and Image
+Understanding of the Ministry of Education, Xidian
+University. Her research interests include computational intelligence and image understanding.
+
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From January 2015 to March 2016, she was
+a Visiting Scientist with the Computer Science
+and Artificial Intelligence Laboratory, Massachusetts
+Institute of Technology, Cambridge, MA, USA. She
+is currently a Professor with the Key Laboratory of
+Intelligent Perception and Image Understanding of the Ministry of Education,
+Xidian University. Her research interests include pattern recognition, machine
+learning, and remote sensing image analysis and understanding.
+
+Fang Liu (Senior Member, IEEE) was born in
+China, in 1990. She received the B.S. degree in
+information and computing science from Henan
+University, Kaifeng, China, in 2012, and the Ph.D.
+degree in intelligent information processing from
+Xidian University, Xi’an, China, in 2018.
+She is currently an Associate Professor with Nanjing University of Science and Technology, Nanjing,
+China. Her research interests include deep learning,
+object detection, polarimetric SAR image classification, and change detection.
+
+Licheng Jiao (Life Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding of the Ministry of Education of China. He has authored
+or co-authored more than 200 scientific articles. His research interests include
+signal and image processing, nonlinear circuits and systems theory, wavelet
+theory, natural computation, and intelligent information processing.
+Dr. Jiao is a member of the IEEE Xi’an Section Executive Committee
+and an Executive Committee Member of the Chinese Association of Artificial Intelligence. He is the Chairperson of the Awards and Recognition
+Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:50:59 UTC from IEEE Xplore. Restrictions apply.
+
+

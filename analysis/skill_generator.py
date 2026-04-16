@@ -1,0 +1,427 @@
+"""
+阶段4：生成写作SKILL
+"""
+import os
+import json
+from typing import Dict, List
+
+class SkillGenerator:
+    def __init__(self, aggregation_report_file: str):
+        self.aggregation_report_file = aggregation_report_file
+        self.report = {}
+        self.load_aggregation_report()
+    
+    def load_aggregation_report(self):
+        """加载聚合分析报告"""
+        with open(self.aggregation_report_file, 'r', encoding='utf-8') as f:
+            self.report = json.load(f)
+    
+    def generate_abstract_skill(self) -> Dict:
+        """生成abstract的写作skill"""
+        return {
+            "section": "abstract",
+            "goal": [
+                "简洁概括论文的核心贡献",
+                "说明研究问题和动机",
+                "简要描述方法创新",
+                "突出主要实验结果",
+                "吸引读者兴趣"
+            ],
+            "structure": [
+                "研究背景与问题（1-2句）",
+                "方法创新（1-2句）",
+                "技术特点（1-2句）",
+                "实验结果（1-2句）",
+                "意义与贡献（1句）"
+            ],
+            "tone": [
+                "客观、简洁、准确",
+                "避免主观评价",
+                "使用专业术语",
+                "一般现在时描述方法",
+                "一般过去时描述实验"
+            ],
+            "preferred_phrases": [
+                "This paper proposes... for...",
+                "The proposed method... by...",
+                "Experimental results on... demonstrate...",
+                "Compared with... methods, our approach...",
+                "The main contributions are..."
+            ],
+            "logic_pattern": [
+                "背景 → 问题 → 方法 → 结果 → 贡献"
+            ],
+            "avoid": [
+                "主观评价：excellent, outstanding, best, superior",
+                "夸大词汇：revolutionary, groundbreaking, state-of-the-art",
+                "模糊表达：maybe, perhaps, might be",
+                "口语化表达：缩写、俚语",
+                "过度承诺：解决所有问题、完美方案"
+            ],
+            "constraints": [
+                "长度：150-250词",
+                "结构：单一段落或2-3个短段落",
+                "术语：使用领域标准术语",
+                "数据：包含关键实验结果数据",
+                "创新点：明确说明主要创新",
+                "不编造事实、数字、引用",
+                "不引入新实验结果"
+            ]
+        }
+    
+    def generate_introduction_skill(self) -> Dict:
+        """生成introduction的写作skill"""
+        rhetorical_structure = self.report.get('rhetorical_structure_aggregate', {}).get('introduction', {})
+        most_common_pattern = rhetorical_structure.get('most_common_pattern', 'background → method')
+        
+        return {
+            "section": "introduction",
+            "goal": [
+                "介绍研究领域和背景",
+                "指出现有方法的不足和问题",
+                "提出本文的方法和创新",
+                "说明论文的主要贡献",
+                "引导读者理解论文结构"
+            ],
+            "structure": [
+                "研究背景（2-3段）",
+                "现有方法的局限性（1-2段）",
+                "本文方法的提出（1-2段）",
+                "主要贡献（1段）",
+                "论文结构说明（可选）"
+            ],
+            "tone": [
+                "客观、严谨、有说服力",
+                "使用文献支持观点",
+                "避免过度批评现有方法",
+                "强调创新性和必要性"
+            ],
+            "preferred_phrases": [
+                "In recent years, ... has attracted increasing attention",
+                "However, existing methods still face challenges",
+                "To address these issues, we propose...",
+                "The main contributions of this paper are:",
+                "First, ... Second, ... Finally, ..."
+            ],
+            "logic_pattern": [
+                most_common_pattern
+            ],
+            "avoid": [
+                "过度批评现有方法",
+                "夸大研究意义",
+                "使用第一人称过多",
+                "缺乏文献支持",
+                "逻辑不连贯"
+            ],
+            "constraints": [
+                "长度：800-1200词",
+                "引用：至少15-20篇参考文献",
+                "结构：背景→问题→方法→贡献",
+                "贡献：明确列出2-4个主要贡献",
+                "不编造研究背景",
+                "不夸大方法创新性"
+            ]
+        }
+    
+    def generate_related_work_skill(self) -> Dict:
+        """生成related_work的写作skill"""
+        return {
+            "section": "related_work",
+            "goal": [
+                "全面回顾相关领域的研究",
+                "分类整理现有方法",
+                "指出现有方法的优缺点",
+                "为本文方法提供理论依据",
+                "突出本文方法的创新点"
+            ],
+            "structure": [
+                "研究领域概述（1段）",
+                "方法分类（2-4个类别）",
+                "各类方法详细分析（每类2-3段）",
+                "现有方法的总结（1段）",
+                "本文方法的定位（1段）"
+            ],
+            "tone": [
+                "客观、全面、有条理",
+                "使用文献综述的语气",
+                "避免主观评价",
+                "强调分类和比较"
+            ],
+            "preferred_phrases": [
+                "Existing methods can be categorized into...",
+                "The first category includes...",
+                "The second category focuses on...",
+                "Compared with these methods, our approach...",
+                "In summary, existing methods..."
+            ],
+            "logic_pattern": [
+                "领域概述 → 方法分类 → 各类分析 → 总结 → 本文定位"
+            ],
+            "avoid": [
+                "简单罗列文献",
+                "缺乏分类和比较",
+                "主观评价现有方法",
+                "遗漏重要文献",
+                "与introduction重复"
+            ],
+            "constraints": [
+                "长度：1000-1500词",
+                "引用：至少30-40篇参考文献",
+                "分类：至少2-3个主要类别",
+                "比较：突出各类方法的优缺点",
+                "不遗漏重要相关工作",
+                "不重复introduction内容"
+            ]
+        }
+    
+    def generate_methods_skill(self) -> Dict:
+        """生成methods的写作skill"""
+        rhetorical_structure = self.report.get('rhetorical_structure_aggregate', {}).get('methods', {})
+        most_common_pattern = rhetorical_structure.get('most_common_pattern', 'overview → technical details')
+        
+        return {
+            "section": "methods",
+            "goal": [
+                "详细描述提出的方法",
+                "说明方法的技术细节",
+                "解释方法的创新点",
+                "提供方法的理论依据",
+                "使读者能够理解和复现"
+            ],
+            "structure": [
+                "方法概述（1-2段）",
+                "整体架构（1-2段）",
+                "各个模块详细描述（每个模块2-3段）",
+                "技术细节和公式（根据需要）",
+                "训练和优化策略（1-2段）"
+            ],
+            "tone": [
+                "技术性、精确、清晰",
+                "使用被动语态描述过程",
+                "避免主观评价",
+                "强调技术细节"
+            ],
+            "preferred_phrases": [
+                "The proposed method consists of...",
+                "As shown in Fig. X, ...",
+                "The main components include...",
+                "Specifically, ...",
+                "The training process involves..."
+            ],
+            "logic_pattern": [
+                most_common_pattern
+            ],
+            "avoid": [
+                "过于简略的描述",
+                "缺乏技术细节",
+                "使用模糊表达",
+                "缺乏公式和图表",
+                "重复related work内容"
+            ],
+            "constraints": [
+                "长度：1500-2500词",
+                "图表：至少3-5个图表",
+                "公式：关键算法需要公式描述",
+                "细节：足够详细的描述以支持复现",
+                "不遗漏关键技术细节",
+                "不引入未定义术语"
+            ]
+        }
+    
+    def generate_results_skill(self) -> Dict:
+        """生成results的写作skill"""
+        rhetorical_structure = self.report.get('rhetorical_structure_aggregate', {}).get('results', {})
+        most_common_pattern = rhetorical_structure.get('most_common_pattern', 'setup → results → comparison')
+        
+        return {
+            "section": "results",
+            "goal": [
+                "展示实验结果和性能",
+                "与现有方法进行比较",
+                "分析方法的有效性",
+                "验证方法的创新点",
+                "提供定量的结果分析"
+            ],
+            "structure": [
+                "实验设置（1-2段）",
+                "数据集和评估指标（1段）",
+                "定量结果（2-3段）",
+                "定性结果（1-2段）",
+                "消融实验（1-2段）",
+                "与现有方法比较（2-3段）"
+            ],
+            "tone": [
+                "客观、准确、有说服力",
+                "使用数据和图表支持",
+                "避免主观评价",
+                "强调性能提升"
+            ],
+            "preferred_phrases": [
+                "As shown in Table X, ...",
+                "Our method achieves...",
+                "Compared with baseline methods, ...",
+                "The results demonstrate that...",
+                "From Fig. X, we can observe that..."
+            ],
+            "logic_pattern": [
+                most_common_pattern
+            ],
+            "avoid": [
+                "选择性展示结果",
+                "缺乏比较和分析",
+                "使用模糊描述",
+                "缺乏统计显著性",
+                "过度解释结果"
+            ],
+            "constraints": [
+                "长度：1500-2000词",
+                "表格：至少3-5个结果表格",
+                "图表：至少2-4个可视化结果",
+                "比较：与至少5-8个现有方法比较",
+                "消融实验：验证各模块有效性",
+                "不编造实验结果",
+                "不遗漏重要比较方法"
+            ]
+        }
+    
+    def generate_discussion_skill(self) -> Dict:
+        """生成discussion的写作skill"""
+        return {
+            "section": "discussion",
+            "goal": [
+                "解释实验结果的意义",
+                "分析方法的优缺点",
+                "讨论方法的局限性",
+                "提出未来改进方向",
+                "总结研究的主要发现"
+            ],
+            "structure": [
+                "结果分析（2-3段）",
+                "方法优势（1-2段）",
+                "方法局限性（1-2段）",
+                "未来工作（1段）",
+                "总结（1段）"
+            ],
+            "tone": [
+                "客观、分析性、反思性",
+                "使用hedge词表达谨慎",
+                "避免过度承诺",
+                "强调学习和改进"
+            ],
+            "preferred_phrases": [
+                "The results suggest that...",
+                "One possible explanation is...",
+                "However, there are still limitations...",
+                "Future work could focus on...",
+                "In conclusion, ..."
+            ],
+            "logic_pattern": [
+                "结果解释 → 优势分析 → 局限讨论 → 未来方向 → 总结"
+            ],
+            "avoid": [
+                "重复results内容",
+                "缺乏深度分析",
+                "忽略局限性",
+                "过度承诺",
+                "缺乏未来方向"
+            ],
+            "constraints": [
+                "长度：800-1200词",
+                "分析：深入解释结果原因",
+                "局限：诚实承认方法不足",
+                "未来：提出具体改进方向",
+                "不重复results数据",
+                "不夸大方法意义"
+            ]
+        }
+    
+    def generate_conclusion_skill(self) -> Dict:
+        """生成conclusion的写作skill"""
+        return {
+            "section": "conclusion",
+            "goal": [
+                "总结论文的主要贡献",
+                "强调方法的创新点",
+                "说明研究的意义",
+                "提出未来工作方向",
+                "给读者留下深刻印象"
+            ],
+            "structure": [
+                "研究总结（1-2段）",
+                "主要贡献（1段）",
+                "研究意义（1段）",
+                "未来工作（1段）",
+                "结束语（1句）"
+            ],
+            "tone": [
+                "简洁、有力、有说服力",
+                "使用现在完成时总结",
+                "避免引入新信息",
+                "强调实际应用价值"
+            ],
+            "preferred_phrases": [
+                "In this paper, we have proposed...",
+                "The main contributions include...",
+                "Experimental results demonstrate that...",
+                "Future work will focus on...",
+                "We believe that..."
+            ],
+            "logic_pattern": [
+                "总结 → 贡献 → 意义 → 未来 → 结束"
+            ],
+            "avoid": [
+                "重复abstract内容",
+                "引入新信息",
+                "过度承诺",
+                "缺乏未来方向",
+                "过于简略"
+            ],
+            "constraints": [
+                "长度：300-500词",
+                "贡献：明确列出主要贡献",
+                "意义：说明实际应用价值",
+                "未来：提出具体改进方向",
+                "不引入新实验结果",
+                "不重复详细内容"
+            ]
+        }
+    
+    def generate_all_skills(self) -> Dict:
+        """生成所有section的skill"""
+        skills = {
+            'abstract': self.generate_abstract_skill(),
+            'introduction': self.generate_introduction_skill(),
+            'related_work': self.generate_related_work_skill(),
+            'methods': self.generate_methods_skill(),
+            'results': self.generate_results_skill(),
+            'discussion': self.generate_discussion_skill(),
+            'conclusion': self.generate_conclusion_skill()
+        }
+        
+        return skills
+    
+    def save_skills(self, output_dir: str, skills: Dict):
+        """保存所有skill到文件"""
+        # 保存总体skill文件
+        overall_path = os.path.join(output_dir, "all_skills.json")
+        with open(overall_path, 'w', encoding='utf-8') as f:
+            json.dump(skills, f, indent=2, ensure_ascii=False)
+        print(f"所有skill已保存到: {overall_path}")
+        
+        # 为每个section单独保存skill文件
+        for section_name, skill in skills.items():
+            section_dir = os.path.join(output_dir, section_name)
+            os.makedirs(section_dir, exist_ok=True)
+            
+            skill_path = os.path.join(section_dir, f"skill_{section_name}.json")
+            with open(skill_path, 'w', encoding='utf-8') as f:
+                json.dump(skill, f, indent=2, ensure_ascii=False)
+            
+            print(f"{section_name} skill已保存到: {skill_path}")
+
+
+# 使用示例
+if __name__ == "__main__":
+    generator = SkillGenerator("/mnt/g/project/PaperSkill/analysis/aggregation_report.json")
+    skills = generator.generate_all_skills()
+    generator.save_skills("/mnt/g/project/PaperSkill/skills", skills)

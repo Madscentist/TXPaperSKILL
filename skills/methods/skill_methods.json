@@ -1,0 +1,48 @@
+{
+  "section": "methods",
+  "goal": [
+    "详细描述提出的方法",
+    "说明方法的技术细节",
+    "解释方法的创新点",
+    "提供方法的理论依据",
+    "使读者能够理解和复现"
+  ],
+  "structure": [
+    "方法概述（1-2段）",
+    "整体架构（1-2段）",
+    "各个模块详细描述（每个模块2-3段）",
+    "技术细节和公式（根据需要）",
+    "训练和优化策略（1-2段）"
+  ],
+  "tone": [
+    "技术性、精确、清晰",
+    "使用被动语态描述过程",
+    "避免主观评价",
+    "强调技术细节"
+  ],
+  "preferred_phrases": [
+    "The proposed method consists of...",
+    "As shown in Fig. X, ...",
+    "The main components include...",
+    "Specifically, ...",
+    "The training process involves..."
+  ],
+  "logic_pattern": [
+    "overview → technical details"
+  ],
+  "avoid": [
+    "过于简略的描述",
+    "缺乏技术细节",
+    "使用模糊表达",
+    "缺乏公式和图表",
+    "重复related work内容"
+  ],
+  "constraints": [
+    "长度：1500-2500词",
+    "图表：至少3-5个图表",
+    "公式：关键算法需要公式描述",
+    "细节：足够详细的描述以支持复现",
+    "不遗漏关键技术细节",
+    "不引入未定义术语"
+  ]
+}

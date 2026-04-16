@@ -1,0 +1,11 @@
+{
+  "paper_id": "论文标识符（如文件名）",
+  "section": "section名称（abstract, introduction, related_work, methods, results, discussion, conclusion）",
+  "function": "段落功能标签（background, problem_statement, gap, motivation, method_overview, technical_detail, experiment_setup, result_report, comparison, result_explanation, limitation, implication, contribution_summary）",
+  "text": "段落文本内容",
+  "style_notes": [
+    "风格注释1",
+    "风格注释2",
+    "..."
+  ]
+}

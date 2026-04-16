@@ -1,0 +1,48 @@
+{
+  "section": "discussion",
+  "goal": [
+    "解释实验结果的意义",
+    "分析方法的优缺点",
+    "讨论方法的局限性",
+    "提出未来改进方向",
+    "总结研究的主要发现"
+  ],
+  "structure": [
+    "结果分析（2-3段）",
+    "方法优势（1-2段）",
+    "方法局限性（1-2段）",
+    "未来工作（1段）",
+    "总结（1段）"
+  ],
+  "tone": [
+    "客观、分析性、反思性",
+    "使用hedge词表达谨慎",
+    "避免过度承诺",
+    "强调学习和改进"
+  ],
+  "preferred_phrases": [
+    "The results suggest that...",
+    "One possible explanation is...",
+    "However, there are still limitations...",
+    "Future work could focus on...",
+    "In conclusion, ..."
+  ],
+  "logic_pattern": [
+    "结果解释 → 优势分析 → 局限讨论 → 未来方向 → 总结"
+  ],
+  "avoid": [
+    "重复results内容",
+    "缺乏深度分析",
+    "忽略局限性",
+    "过度承诺",
+    "缺乏未来方向"
+  ],
+  "constraints": [
+    "长度：800-1200词",
+    "分析：深入解释结果原因",
+    "局限：诚实承认方法不足",
+    "未来：提出具体改进方向",
+    "不重复results数据",
+    "不夸大方法意义"
+  ]
+}

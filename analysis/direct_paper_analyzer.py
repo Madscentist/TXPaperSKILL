@@ -1,0 +1,264 @@
+"""
+最终版论文结构分析脚本 - 直接查找明确标题
+"""
+import os
+import re
+import json
+from typing import Dict, List, Tuple
+
+class DirectPaperAnalyzer:
+    def __init__(self, text_dir: str):
+        self.text_dir = text_dir
+        self.papers = []
+        
+    def load_paper(self, filename: str) -> str:
+        """加载论文文本"""
+        filepath = os.path.join(self.text_dir, filename)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return f.read()
+    
+    def find_section_positions(self, text: str) -> List[Tuple[str, int]]:
+        """查找所有section的位置"""
+        positions = []
+        
+        # 查找Abstract
+        abstract_match = re.search(r'Abstract\s*[—-]', text, re.IGNORECASE)
+        if abstract_match:
+            positions.append(('abstract', abstract_match.start()))
+        
+        # 查找I. INTRODUCTION（允许空格）
+        intro_match = re.search(r'I\.\s*I\s*NTRODUCTION', text)
+        if intro_match:
+            positions.append(('introduction', intro_match.start()))
+        
+        # 查找II. RELATED WORK
+        related_match = re.search(r'II\.\s*R\s*ELATED\s*W\s*ORK', text)
+        if related_match:
+            positions.append(('related_work', related_match.start()))
+        
+        # 查找III. PROPOSED METHOD
+        method_match = re.search(r'III\.\s*P\s*ROPOSED\s*M\s*ETHOD', text)
+        if method_match:
+            positions.append(('methods', method_match.start()))
+        
+        # 查找IV. EXPERIMENTS 或 IV. RESULTS
+        results_match = re.search(r'IV\.\s*(?:E\s*XPERIMENTS|R\s*ESULTS|E\s*VALUATION)', text)
+        if results_match:
+            positions.append(('results', results_match.start()))
+        
+        # 查找V. DISCUSSION
+        discussion_match = re.search(r'V\.\s*D\s*ISCUSSION', text)
+        if discussion_match:
+            positions.append(('discussion', discussion_match.start()))
+        
+        # 查找VI. CONCLUSION
+        conclusion_match = re.search(r'VI\.\s*C\s*ONCLUSION', text)
+        if conclusion_match:
+            positions.append(('conclusion', conclusion_match.start()))
+        
+        # 按位置排序
+        positions.sort(key=lambda x: x[1])
+        
+        return positions
+    
+    def extract_sections(self, text: str, positions: List[Tuple[str, int]]) -> Dict[str, str]:
+        """提取每个section的内容"""
+        sections = {}
+        
+        for i, (section_name, start_pos) in enumerate(positions):
+            if i < len(positions) - 1:
+                next_start = positions[i + 1][1]
+                content = text[start_pos:next_start]
+            else:
+                content = text[start_pos:]
+            
+            # 清理内容
+            content = self.clean_section_content(content)
+            sections[section_name] = content
+        
+        return sections
+    
+    def clean_section_content(self, content: str) -> str:
+        """清理section内容"""
+        lines = content.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            # 跳过页眉
+            if re.match(r'IEEE\s+TRANSACTIONS\s+ON', line, re.IGNORECASE):
+                continue
+            # 跳过页码
+            if re.match(r'^\d+\s*$', line.strip()):
+                continue
+            # 跳过授权信息
+            if 'Authorized licensed use limited to' in line:
+                continue
+            if 'Downloaded on' in line:
+                continue
+            if 'Restrictions apply' in line:
+                continue
+            cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines)
+    
+    def split_into_paragraphs(self, section_content: str) -> List[str]:
+        """将section内容切分为段落"""
+        # 按空行分割段落
+        paragraphs = re.split(r'\n\s*\n', section_content)
+        
+        # 清理每个段落
+        cleaned_paragraphs = []
+        for para in paragraphs:
+            para = para.strip()
+            # 过滤太短的段落和明显不是正文的段落
+            if para and len(para) > 100 and not re.match(r'^(Fig|Table|Figure|Equation)', para):
+                cleaned_paragraphs.append(para)
+        
+        return cleaned_paragraphs
+    
+    def label_paragraph_function(self, paragraph: str, section_name: str) -> str:
+        """为段落标注功能标签"""
+        paragraph_lower = paragraph.lower()
+        
+        # 定义关键词映射
+        keyword_mapping = {
+            'background': ['recently', 'in the past', 'traditional', 'existing', 'previous', 'studies have shown'],
+            'problem_statement': ['however', 'but', 'although', 'despite', 'nevertheless', 'limitation', 'challenge', 'issue'],
+            'gap': ['however', 'but', 'although', 'despite', 'nevertheless', 'few', 'little', 'lack', 'missing'],
+            'motivation': ['therefore', 'thus', 'hence', 'consequently', 'as a result', 'motivate', 'inspire'],
+            'method_overview': ['propose', 'introduce', 'develop', 'present', 'design', 'our method', 'our approach', 'framework', 'architecture'],
+            'technical_detail': ['specifically', 'in detail', 'consist of', 'comprise', 'module', 'block', 'layer', 'operation'],
+            'experiment_setup': ['dataset', 'evaluation', 'metric', 'implementation', 'training', 'testing', 'validation', 'setting'],
+            'result_report': ['achieve', 'obtain', 'show', 'demonstrate', 'performance', 'accuracy', 'improvement', 'outperform'],
+            'comparison': ['compare', 'comparison', 'baseline', 'state-of-the-art', 'existing method', 'previous work'],
+            'result_explanation': ['reason', 'because', 'since', 'due to', 'explain', 'analyze', 'observation', 'interpret'],
+            'limitation': ['limit', 'weakness', 'drawback', 'challenge', 'issue', 'problem', 'difficulty'],
+            'implication': ['future', 'extend', 'improve', 'suggest', 'imply', 'potential', 'direction'],
+            'contribution_summary': ['contribution', 'main', 'firstly', 'secondly', 'thirdly', 'finally', 'summary', 'conclude']
+        }
+        
+        # 根据section和内容判断功能
+        if section_name == 'abstract':
+            if any(word in paragraph_lower for word in keyword_mapping['method_overview']):
+                return 'method_overview'
+            elif any(word in paragraph_lower for word in keyword_mapping['result_report']):
+                return 'result_report'
+            else:
+                return 'background'
+        
+        elif section_name == 'introduction':
+            if any(word in paragraph_lower for word in keyword_mapping['problem_statement'] + keyword_mapping['gap']):
+                return 'gap'
+            elif any(word in paragraph_lower for word in keyword_mapping['method_overview']):
+                return 'method_overview'
+            elif any(word in paragraph_lower for word in keyword_mapping['contribution_summary']):
+                return 'contribution_summary'
+            else:
+                return 'background'
+        
+        elif section_name == 'related_work':
+            if any(word in paragraph_lower for word in keyword_mapping['comparison']):
+                return 'comparison'
+            else:
+                return 'background'
+        
+        elif section_name == 'methods':
+            if any(word in paragraph_lower for word in keyword_mapping['method_overview']):
+                return 'method_overview'
+            else:
+                return 'technical_detail'
+        
+        elif section_name == 'results':
+            if any(word in paragraph_lower for word in keyword_mapping['comparison']):
+                return 'comparison'
+            elif any(word in paragraph_lower for word in keyword_mapping['result_report']):
+                return 'result_report'
+            elif any(word in paragraph_lower for word in keyword_mapping['result_explanation']):
+                return 'result_explanation'
+            else:
+                return 'result_report'
+        
+        elif section_name == 'discussion':
+            if any(word in paragraph_lower for word in keyword_mapping['limitation']):
+                return 'limitation'
+            elif any(word in paragraph_lower for word in keyword_mapping['implication']):
+                return 'implication'
+            else:
+                return 'result_explanation'
+        
+        elif section_name == 'conclusion':
+            if any(word in paragraph_lower for word in keyword_mapping['contribution_summary']):
+                return 'contribution_summary'
+            elif any(word in paragraph_lower for word in keyword_mapping['implication']):
+                return 'implication'
+            else:
+                return 'contribution_summary'
+        
+        return 'background'  # 默认
+    
+    def analyze_paper(self, filename: str) -> Dict:
+        """分析单篇论文"""
+        print(f"分析论文: {filename}")
+        
+        # 加载文本
+        text = self.load_paper(filename)
+        
+        # 查找section位置
+        positions = self.find_section_positions(text)
+        
+        # 提取section内容
+        sections = self.extract_sections(text, positions)
+        
+        # 分析每个section
+        paper_analysis = {
+            'filename': filename,
+            'sections': {}
+        }
+        
+        for section_name, content in sections.items():
+            # 切分段落
+            paragraphs = self.split_into_paragraphs(content)
+            
+            # 分析每个段落
+            paragraph_analysis = []
+            for para in paragraphs:
+                function_label = self.label_paragraph_function(para, section_name)
+                paragraph_analysis.append({
+                    'text': para[:500] + "..." if len(para) > 500 else para,
+                    'function': function_label,
+                    'length': len(para),
+                    'word_count': len(para.split())
+                })
+            
+            paper_analysis['sections'][section_name] = {
+                'content_preview': content[:1000] + "..." if len(content) > 1000 else content,
+                'paragraphs': paragraph_analysis,
+                'paragraph_count': len(paragraphs)
+            }
+        
+        return paper_analysis
+    
+    def analyze_all_papers(self):
+        """分析所有论文"""
+        # 获取所有文本文件
+        txt_files = [f for f in os.listdir(self.text_dir) if f.endswith('.txt')]
+        
+        for txt_file in txt_files:
+            try:
+                analysis = self.analyze_paper(txt_file)
+                self.papers.append(analysis)
+            except Exception as e:
+                print(f"分析{txt_file}时出错: {e}")
+    
+    def save_analysis(self, output_path: str):
+        """保存分析结果"""
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(self.papers, f, indent=2, ensure_ascii=False)
+        print(f"分析结果已保存到: {output_path}")
+
+
+# 使用示例
+if __name__ == "__main__":
+    analyzer = DirectPaperAnalyzer("/mnt/g/project/PaperSkill/extracted_texts")
+    analyzer.analyze_all_papers()
+    analyzer.save_analysis("/mnt/g/project/PaperSkill/analysis/direct_papers_analysis.json")

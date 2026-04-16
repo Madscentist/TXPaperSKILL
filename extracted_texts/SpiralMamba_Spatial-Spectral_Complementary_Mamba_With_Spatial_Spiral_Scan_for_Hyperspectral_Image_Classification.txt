@@ -1,0 +1,1695 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+5510319
+
+SpiralMamba: Spatial–Spectral Complementary
+Mamba With Spatial Spiral Scan for
+Hyperspectral Image Classification
+Xu Tang , Senior Member, IEEE, Yuexi Yao, Jingjing Ma, Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, Yuqun Yang, Bo Wang,
+and Licheng Jiao , Fellow, IEEE
+
+Abstract— Hyperspectral image (HSI) classification is crucial in the remote sensing (RS) community. In recent years,
+Transformers have been popular in this field due to their
+global information modeling capabilities. However, the quadratic
+complexity limits their performance under limited computational
+resources. Fortunately, a selective structured state space model
+(SSM) named Mamba emerges. Like Transformer, it is good at
+modeling the long-distance relationships hidden in the pending
+data. Unlike Transformer, its complexity remains at a linear level.
+Therefore, a growing number of studies have been proposed to
+explore the usefulness of Mamba in HSI classification. Nevertheless, most of them only apply Mamba to HSIs directly but do not
+consider the inherent characteristics of HSIs properly. To exploit
+the potential of Mamba in HSI classification deeply, this article
+presents a new spatial–spectral complementary Mamba with a
+spatial spiral scan named SpiralMamba. It mainly encloses three
+main components: a spatial Mamba encoder (SpaME), a spectral
+Mamba encoder (SpeME), and a spatial–spectral complementary
+fusion module (SSCFM). SpaME focuses on understanding the
+spatial context within HSIs. To this end, instead of the common
+scanning, a spatial spiral scan strategy is introduced to address
+the sequence transformation of noncausal HSIs. SpeME aims to
+comprehensively extract valuable spectral features from HSIs.
+To achieve this goal, besides developing a spectral bidirectional
+scan strategy, a multilayer convolution (MLC) is also incorporated to capture local variations within spectral tokens. SSCFM
+concentrates on building the complex connections between spatial and spectral features and fusing them. For this purpose,
+a relationship learning block (RLB) and a threshold enhancement mechanism (TEM) are developed. Positive experimental
+results counted on three public HSI datasets demonstrate the
+effectiveness of SpiralMamba. Our source codes are available at https://github.com/TangXu-Group/Hyperspectral-ImagesClassification/tree/main/SpiralMamba
+Received 11 December 2024; revised 17 March 2025; accepted 2 April
+2025. Date of publication 10 April 2025; date of current version 18 April
+2025. This work was supported in part by the National Natural Science
+Foundation of China under Grant 62171332 and Grant 62276197, in part
+by the Key Research and Development Program of Shaanxi under Grant
+2024GX-YBXM-125, in part by the Natural Science Basic Research Program
+of Shaanxi under Grant 2024JC-YBMS-472, and in part by the Shaanxi
+Province Innovation Capability Support Plan under Grant 2023-CX-TD-09.
+(Corresponding author: Xu Tang.)
+Xu Tang, Yuexi Yao, Jingjing Ma, Xiangrong Zhang, and Licheng Jiao are
+with the Key Laboratory of Intelligent Perception and Image Understanding
+of Ministry of Education, School of Artificial Intelligence, Xidian University,
+Xi’an 710126, China (e-mail: tangxu128@gmail.com).
+Yuqun Yang and Bo Wang are with the Institute of Medical Equipment
+Science and Engineering, Huazhong University of Science and Technology,
+Wuhan 430074, China.
+Digital Object Identifier 10.1109/TGRS.2025.3559137
+
+Index Terms— Hyperspectral image (HSI) classification, selective structured state space model (SSM) (Mamba).
+
+I. I NTRODUCTION
+
+H
+
+YPERSPECTRAL image (HSI) processing is always
+a hot topic in the remote sensing (RS) community.
+Unlike the regular RS products, HSIs contain rich and nearly
+continuous spectral information [1], [2]. They consist of hundreds of narrow bands with different manifestations on diverse
+objects [3]. Therefore, HSIs can reflect the physical properties
+of objects at a fine-grained level and provide richer information
+for Earth observation [4], [5]. Owing to this property, HSIs
+can be applied to a wide range of applications, such as
+agricultural monitoring [6], [7], [8], urban planning [9], [10],
+environmental monitoring [11], [12], mineral exploration [13],
+[14], and plants classification [15], [16], [17]. In view of the
+broad application of HSI, designing a suitable and accurate
+HSI classification model remains a primary and urgent task.
+HSI classification aims to assign the semantic labels to
+pixels according to their spectral characteristics and spatial
+structure [18], [19]. In the current deep era, the popular HSI
+classification methods are mainly developed based on convolutional neural networks (CNNs) [20] and Transformer [21].
+The CNN-based methods [22], [23], [24], [25], [26] are good
+at capturing the local information from HSIs due to their
+fixed receptive fields. Along with other successful techniques,
+such as visual attention [27], they achieve good performance.
+However, since CNN-based approaches cannot fully explore
+the long-range dependencies hidden in HSIs, their behavior is
+not as good as expected. In this case, Transformer-based methods [28], [29], [30], [31], [32] stand out for their advantages.
+With the strong capacities of Transformer in global knowledge
+modeling, they enhance the HSI classification results to a
+new degree. Considering the inherent benefits of CNNs and
+Transformers, researchers intend to combine them for HSI
+classification [33], [34], [35], [36], [37], [38]. This way, the
+local and global clues within HSIs can be analyzed thoroughly to ensure the precision of the final classification maps.
+Although the above methods perform well, they are confronted
+with an issue, i.e., the quadratic computational complexity
+of Transformers caused by the self-attention mechanism [39].
+
+1558-0644 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence
+and similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Due to this shortcoming, its generalization in practical applications is limited. Therefore, there is a need to develop an HSI
+classification method that can discover valuable HSIs clues
+with a relatively low computational complexity.
+Recently, with the emergence and popularity of the selective
+structured state space model (SSM) (Mamba) [39], [40],
+a favorable solution to the need mentioned above has become
+available. Like Transformers, Mamba has strong global modeling capabilities. Unlike Transformers, Mamba’s computational
+complexity stays at the linear level. Especially when vision
+Mamba [41], [42] comes out, many new Mamba-based models
+have been proposed and perform well in various computer
+vision and RS tasks, such as image classification [43], [44],
+semantic segmentation [45], [46], change detection [47], [48],
+and so on [49], [50]. Mamba has also attracted scholars in
+HSI classification [51], [52], [53], [54], [55], [56]. Although
+their behavior is good, there is still room for improvement.
+The first challenge is how to convert noncausal HSIs into
+the sequence for the SSM [39] reasonably. The Mamba-based
+approaches in [51], [54], [57], [58], [59], and [60] usually
+leverage simple flatten (sequential scan) or cross scan [42]
+to achieve HSIs’ sequence transformation. Although feasible,
+they do not consider the spatial characteristics of HSI patches
+that expand around the center pixel, leading to information
+discontinuity at the edges. As a result, some positional information would be lost, and spatial clues could not be accurately
+expressed. Second, there is insufficient local modeling within
+the spectral tokens. Current methods [54], [55], [57], [58]
+focus on extracting global clues among spectral tokens using
+Mamba. However, they neglect local correlations within these
+tokens. Since adjacent features within spectral tokens are
+often more correlated, the lack of local perception results
+in incomplete spectral feature extraction. Third, independent
+spatial/spectral learning or inadequate feature-level fusion.
+Some Mamba-based methods [53], [56], [57] explore spatial or
+spectral messages from HSIs separately, limiting their ability
+to understand the HSI data fully. Even some methods [55],
+[58], [59] take spatial and spectral aspects at the same time,
+their fusion strategies are often insufficient, which lack deep
+relational modeling and are sensitive to anomalous conditions,
+e.g., different spectra for the same material and the same
+spectra for different materials.
+To overcome the challenges mentioned above, we propose
+a spatial–spectral complementary Mamba with spatial spiral
+scan for HSI classification named SpiralMamba. It mainly
+consists of a spatial Mamba encoder (SpaME), a spectral
+Mamba encoder (SpeME), and a spatial–spectral complementary fusion module (SSCFM). First, under the Mamba
+framework, we tailor a spatial spiral scan strategy to maintain
+the spatial structure relative to the center pixel as much as
+possible. Therefore, SpaME can reduce the information loss in
+the sequence transition and better understand spatial information. Second, SpeME is introduced to strengthen SpiralMamba
+from the spectral perspective. In SpeME, rather than multilayer
+perceptron (MLP), we combine Mamba with multilayer convolution (MLC) to complete the global information interaction
+and the local feature extraction. This way, the spectral clues
+hidden in HSIs can be fully and appropriately interpreted.
+
+Third, SSCFM is developed to ensure that SpiralMamba can
+adequately fuse the spatial and spectral features. SSCFM
+involves a relationship learning block (RLB) and a threshold
+enhancement mechanism (TEM), which aim to learn the
+complex relationships between different features and refine the
+learned relationship weights. The spatial and spectral features
+can be integrated accordingly in this progressive learning and
+optimization manner. It is important to note that the choice
+of Mamba rather than Transformer for HSIs is due not only
+to its lower computational complexity but also to its inherent
+inductive bias as a sequence model, which is more suitable
+for investigating continuous spectral sequences. What is more,
+since Mamba selectively explores the relationships between
+the current and historical tokens instead of all tokens [42]
+and does not have complex attention calculations, it has a
+lower risk of overfitting on HSIs with limited sample and high
+spectral dimensions.
+Our main contributions are summarized as follows.
+1) A new HSI classification network named SpiralMamba,
+which has a dual-branch architecture, is proposed to
+comprehensively capture the spatial–spectral information hidden in HSIs. The learned features are then
+integrated through a delicately designed fusion module. This spatial–spectral complementary cooperation
+enables the accuracy of the results.
+2) In the spatial branch, the spatial spiral scan strategy
+is developed considering the characteristics of HSIs.
+Unlike traditional flatten or cross scan, the spiral scan
+preserves spatial continuity and positional information
+relative to the center pixel during the sequence transformation. It emphasizes the importance of the center pixel,
+allowing Mamba to capture spatial information better.
+3) Adequate local modeling within spectral tokens in the
+spectral branch. The introduction of MLC in SpeME
+enhances local perceptual ability within spectral tokens
+by leveraging convolutions to capture internal correlations. This local modeling within the token complements
+Mamba’s global information extraction among spectral
+tokens, leading to a more comprehensive representation
+of spectral features.
+4) Accurate and elaborated feature-level fusion. Unlike
+simple fusion operations, e.g., addition or concatenation,
+SSCFM uses RLB to fully model the hidden relationships between spatial and spectral features and applies
+TEM to refine feature weights further, enhancing reliable
+features while filtering out unreliable ones to avoid
+inaccurate fusion.
+The rest of this article is structured as follows. Section II
+reviews existing HSI classification methods, including nonMamba- and Mamba-based approaches. Section III explains
+SpiralMamba in detail. The experiments and discussion are
+exhibited in Section IV. Finally, Section V offers a brief
+conclusion.
+II. R ELATED W ORK
+For clarity, the existing HSI classification methods would
+be roughly categorized into two groups according to whether
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+there is a Mamba or not, and we record them as non-Mambaand Mamba-based methods.
+A. Non-Mamba-Based Methods
+In the last few years, CNNs have dominated the HSI
+classification community due to their powerful feature representation ability. Early CNN-based methods leverage 2-D
+convolutions to mine local spatial information from HSIs. For
+example, a contextual deep CNN was proposed in [61], which
+embeds the residual connections into a normal CNN to deepen
+and widen the network. This way, the discriminative local
+features can be obtained using the limited training samples.
+Considering the specific structure of HSIs (i.e., 3-D cube data),
+Zheng et al. [62] developed a mixed CNN network in which
+the 2-D and 3-D convolutions are used simultaneously. This
+model mitigates the shortcomings of 2-D convolution in
+exploring spectral knowledge and greatly improves the HSI
+classification results. Later, with the boom of the attention
+mechanism [63], an increasing number of CNN-based methods have been presented with the help of various attention
+mechanisms. For instance, Hang et al. [64] proposed an
+attention-aided CNN network. It respectively adopts the spatial
+and spectral attention module to help CNN capture the discriminative spatial positions and bands. Thus, more accurate
+classification results can be obtained.
+Although CNN-based methods perform well, the longdistance information hidden in HSIs cannot be fully explored,
+which limits their behavior more or less. To overcome this
+problem, Transformer [21], [27] enters into the field of HSI
+classification. Benefiting from its powerful global modeling capabilities, Transformer has quickly gained popularity
+in HSI classification tasks, and Transformer-based methods
+have also become the mainstream approaches. Hong et al.
+[65] proposed a network called SpectralFormer to complete
+HSI classification. It may be the first Transformer-based
+method, and its contributions lie in breaking the limitation of the receptive field of traditional CNNs and using
+multihead self-attention to fully model the long-distance
+dependency between spectra. Another network named morphological Transformer (MorphFormer) was developed under
+the Transformer architecture in [66]. It first combines the
+dilation and erosion operations to construct a morphological convolution to explore the rich local clues. Then, along
+with the self-attention mechanism, MorphFormer can better
+realize the information interaction of structure and shape to
+enhance the results. To further investigate the spatial–spectral
+information within HSIs, Jiang et al. [67] introduced graph
+generative structure-aware Transformer (GraphGST) with the
+assistance of Transformer. Instead of using HSI patches or
+pixel embeddings, GraphGST adopts the graph to generate
+the tokens for the multihead self-attention. In this fashion,
+the non-Euclidean structural relationships between tokens can
+be captured, improving the discrimination of spatial–spectral
+features. Unlike the above methods, the method published
+in [68] reconsiders the role of central pixels in HSIs and
+proposes a relative position encoding scheme to avoid information interference caused by absolute position. Based on
+
+5510319
+
+this scheme, a spectral–spatial center attention (SSCA) is
+developed, which uses the spectral features in the center
+pixel to query the spatial features in adjacent pixels for more
+accurate classification.
+Recognizing the unique advantages of CNN and Transformer, researchers tend to combine them for HSI classification. Such methods have local and global modeling abilities,
+which is good for comprehensively extracting spatial–spectral
+features. For example, Xu et al. [69] proposed a dual-branch
+network named double branch convolution-transformer network (DBCTNet), where CNN and Transformer are combined
+in parallel. On the one hand, a convolution-improved Transformer encoder captures long-distance dependencies. On the
+other hand, a 3-D-CNN is used to model local spatial–spectral
+information. Both global and local information are taken
+into account to achieve more accurate classification results.
+Similarly, a convolutional transformer dual-branch network
+with efficient interactive self-attention (EISA) was introduced
+in [70] named dual-branch convolutional transformer network
+(DCTN). The Transformer branch uses efficient interactive
+selfattention (ESIA) to interactively fuse the features of height,
+width, and depth to fully extract global features, while the
+CNN branch uses 2-D convolution to enhance local features.
+In this way, the accuracy of HSI classification is further
+improved.
+B. Mamba-Based Methods
+Recently, Mamba [39], [40] has become an effective alternative to Transformer due to its advantages in the global
+receptive field and linear complexity. Many scholars are
+attempting to apply Mamba to the HSI classification. The
+first work is an HSIMamba proposed in [57]. It designs a
+bidirectional SSM to model the global spectral sequences
+with lower computational complexity, breaking through the
+dilemma of Transformer under limited computing resources.
+Yao et al. [56] developed another Mamba-based method named
+SpectralMamba. It uses a piecewise sequential scanning (PSS)
+strategy to divide high-dimensional spectral bands into shorter
+sequences, enabling SSM to fully explore the spectrum’s local
+information and long-term context. In addition, while reducing
+the computational scale, it also breaks the dimensionality
+curse of HSIs. The above methods mainly focus on modeling
+spectral features. In contrast, Mamba-in-Mamba architecture
+(MiM) [53] pays more attention to spatial feature extraction.
+It first develops a centralized Mamba cross-scan scheme based
+on cross scan to help Mamba better understand the spatial
+context. Then, a tokenized Mamba (T-Mamba) encoder with a
+Gaussian decay mask (GDM), a semantic token learner (STL),
+and a semantic token fuser (STF) are created and integrated
+to improve the classification accuracy further.
+Unlike the mentioned methods that only apply Mamba to
+explore the spatial or spectral messages from HSIs, some other
+works use Mamba to extract features from space and spectrum.
+For example, Wang et al. [54] proposed a spatial-spectral
+state space model (S2 Mamba) for HSI classification. It first
+uses Mamba to explore long-range dependencies in space and
+spectrum dimensions. Then, a spatial–spectral mixture gate is
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 1. Overall framework of SpiralMamba. It primarily consists of three components: a SpaME, a SpeME, and an SSCFM. An HSI patch X is initially
+embedded using a 1 × 1 convolution. Then, SpaME and SpeME are used to encode the spatial contextual information and the spectral long-range dependencies,
+resulting in spatial and spectral features Fspa and Fspe , respectively. Next, they are simultaneously input into SSCFM to obtain the spatial–spectral fused feature
+Ffuse . Finally, a simple classifier is used to predict the final classification results.
+
+constructed to fuse the extracted spatial–spectral features adaptively. Using these valuable features, satisfactory classification
+maps can be produced. For another example, a spectral–
+spatial Mamba (SS-Mamba) was presented in [55], which also
+focuses on learning useful spatial–spectral features from HSIs.
+An SS-Mamba block (SS-MB) is developed to mine and
+interact with the spatial and spectral information. By stacking
+multiple SS-MBs, the high-level features can be extracted.
+Unlike normal Mamba-based networks, SS-Mamba uses position encoding instead of a scanning mechanism to ensure
+position information during sequence transition. This can
+avoid considering the scanning order, and the combination
+with spatial and spectral tokens can also achieve accurate
+information representation. Not surprisingly, combining CNN
+and Mamba is also a helpful solution for HSI classification. Sheng et al. [51] constructed a DualMamba, where a
+lightweight CNN and Mamba are incorporated in a parallel
+architecture. DualMamba uses the Mamba branch to model
+the spatial and spectral features from the global aspect and
+leverages the CNN branch to improve the local perception
+ability. This way, the HSI classification results are further
+improved.
+III. M ETHOD
+A. Overall Framework
+The overall architecture of SpiralMamba is shown in Fig. 1,
+mainly enclosing three parts: a SpaME, a SpeME, and an
+SSCFM. Consistent with the usual HSI classification networks [65], [71], [72], our SpiralMamba’s inputs are the HSI
+patches. For an HSI patch X ∈ R P×P×B (where P and B
+represent the patch size and the number of spectral bands,
+respectively), SpiralMamba first uses a 1 × 1 convolution
+to embed it into Xemb ∈ R P×P×N , where N means the feature dimension. This step can maintain spatial information
+and help the model better process and understand highdimensional HSIs. Then, SpaME and SpeME are respectively
+
+applied on Xemb to fully extract spatial context information
+and long-range spectral dependencies and generate the spatial
+feature Fspa ∈ R P×P×N and spectral feature Fspe ∈ R P×P×N .
+Next, SSCFM is used to fuse Fspa and Fspe with the consideration of their hidden relationships. When we get the fused
+spatial–spectral feature Ffuse ∈ R P×P×N , a simple classifier is
+adopted to produce the final classification results.
+B. Spatial Mamba Encoder
+SpaME aims to comprehensively explore discriminative
+spatial features. As shown in Fig. 1, SpaME consists of a
+spatial spiral Mamba (SpaSM), an MLP (composed of two
+linear layers and a GELU layer [73]), two layer normalization
+(LN) layers, and two residual modules. The whole procedure
+of SpaME can be formulated as follows:
+XSM = SpaSM(LN(Xemb )) + Xemb
+Fspa = MLP(LN(XSM )) + XSM
+
+(1)
+
+where XSM and Fspa indicate the outputs of SpaSM and
+SpaME, and SpaSM(·), MLP(·), and LN(·) denote the functions of SpaSM, MLP, and LN, respectively. Among them,
+SpaSM is responsible for mining the contextual relationship
+between spatial tokens, while MLP focuses on modeling the
+spatial features within the spatial tokens. In this way, SpaME
+to fully understand the spatial information.
+The core part of SpaME is SpaSM, which is developed
+based on an improved Mamba [42] since it is more suitable
+for modeling 2-D visual data. The flowchart of SpaSM is
+displayed in Fig. 2, whose basic components are two linear
+layers, a depthwise convolution (DWConv) layer [74], a sigmoid linear unit (SiLU) layer [75], an SSM layer [39], and an
+LN layer. Besides, we develop a spatial spiral scan strategy and
+a spatial spiral merge scheme, and embed them before/after the
+SSM layer. For clarity, we will refer to them as spiral scan and
+spiral merge in the following explanation. Unlike usual flatten
+or cross scan, the spiral scan fully considers the characteristics
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+Fig. 2. Flowchart of the SpaSM. The input data is first passed through a
+linear layer, a DWConv layer, and a SiLU layer to obtain 2-D features Xspa .
+Then, the spatial spiral scan is used to convert Xspa into eight different 1-D
+spatial sequences. The spatial clues can be explored using these sequences
+along with eight unshared SSMs. Next, the spiral merge is used to restore the
+processed sequences into 2-D versions and combine them. Finally, the output
+of SpaSM can be obtained by passing the restored and integrated feature
+through an LN layer and a linear layer. ①–⑧ in the figure refer to the eight
+different spatial spiral scan paths.
+
+of HSI patches and unfolds along the central pixel. It can
+ensure the position of the neighborhood pixels relative to
+the central pixel as much as possible during the sequence
+transition, which avoids the SSM’s misunderstanding of spatial
+information due to the loss of position information. In addition,
+the spatial sequence obtained by spiral scan will not have
+the problem of abrupt changes in edge pixels, and spatially
+adjacent pixels are still adjacent in the sequence, which helps
+SSM better capture spatial contextual relationships.
+As shown in Fig. 2, spiral scan uses eight different spiral
+scanning paths to convert 2-D spatial features into eight 1-D
+spatial sequences with different orders. Suppose Xemb has been
+mapped into Xspa ∈ R P×P×N by passing through the LN,
+linear, DWConv, and SiLU layers. The definition of Xspa is
+
+
+x1,1
+x1,2 · · · x1,P
+ x2,1
+x2,2 · · · x2,P 
+
+
+Xspa =  .
+(2)
+..
+.. 
+..
+ ..
+.
+.
+. 
+x P,1
+
+x P,2
+
+···
+
+x P,P
+
+where xi, j ∈ R N represents the spectral features of the pixel
+in the ith row and jth column. The central pixel of Xspa can
+be represented as xc,c ∈ R N , where c = ((P + 1)/2). The
+eight spiral paths of spiral scan for Xspa and the generated
+2
+eight 1-D spatial sequences {Si spa , i = 1, . . . , 8} ∈ R P ×N are
+summarized as follows.
+1) Path ①: Starting from the upper left corner pixel x1,1 ,
+scan each pixel in a clockwise spiral until the scan ends
+
+5510319
+
+at the center pixel xc,c . Thus, the first 1-D sequence
+S1spa = [x1,1 , x1,2 , . . . , xc,c ] is obtained.
+2) Paths ②–④: Same as path ①, except that the
+starting point is replaced by the upper right corner pixel x1,P , the lower left corner pixel x P,1 ,
+and the lower right corner pixel x P,P , respectively. The endpoint is still the center pixel xc,c .
+Thus, the second to fourth 1-D sequences S2spa =
+[x1,P , x2,P , . . . , xc,c ], S3spa = [x P,1 , x P,2 , . . . , xc,c ], and
+S4spa = [x P,P , x P,P−1 , . . . , xc,c ] are obtained.
+3) Paths ⑤–⑧: These four paths are the reversal of the
+previous paths ①–④, forming a counterclockwise spiral
+path with the center pixel as the starting point and
+the four vertex pixels x1,1 , x1,P , x P,1 , and x P,P as the
+endpoints. Thus, S5spa = [xc,c , . . . , x1,2 , x1,1 ], S6spa =
+[xc,c , . . . , x2,P , x1,P ], S7spa = [xc,c , . . . , x P,2 , x P,1 ], and
+S8spa = [xc,c , . . . , x P,P−1 , x P,P ] are obtained.
+The reasons for setting the scanning path this way are
+summarized as follows.
+1) Emphasizing the Importance of the Center Pixel: Due
+to Mamba’s sequential processing mechanism, it tends
+to focus more on the end of the sequence. The positive
+spiral paths (i.e., ①–④) end at the center pixel, ensuring
+that Mamba pays more attention to the most crucial
+position (the center pixel) and captures the HSI patch’s
+core information.
+2) Bidirectional Context Capture: The positive spiral paths
+traverse in the clockwise direction, while the reverse
+spiral paths (i.e., ⑤–⑧) follow the counterclockwise
+direction. By combining them, SpaSM can capture the
+spatial context in both directions, free from the constraints of a single direction.
+3) Preserving Spatial Continuity: Flatten operation and
+cross scan often disturb the spatial clues at edge pixels.
+The proposed spiral scan ensures the continuity of
+spatial information, avoiding sudden discontinuities.
+4) Maintain the Positions Relative to the Center Pixel: HSI
+patches are generated according to the center pixel. Our
+spiral scan can preserve neighboring pixels’ positions
+relative to the center pixel throughout the sequence
+conversion. This minimizes the loss of positional information that could lead to misinterpretation by the
+model.
+When we get various sequences, we will input them into
+eight unshared SSMs to model the relationship between spatial
+pixels. This step can be expressed as follows:
+
+
+hij = Āspa hij−1 + B̄spa Sispa
+j
+
+
+
+
+i
+i
+i
+(3)
+Qspa = Cspa h j + Sspa
+j
+
+j
+
+where Āspa , B̄spa , and Cspa represent the learnable parameters
+in SSM, hij represents the jth hidden state of the ith sequence,
+2
+and Qispa ∈ R P ×N implies the output of SSMs. In this fashion,
+the spatial clues hidden in HSIs can be fully analyzed from
+the global aspects.
+To facilitate subsequent feature processing, {Qi spa , i =
+1, . . . , 8} should be restored into 2-D version and inte-
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Therefore, the bidirectional scan first flattens Xspe along the
+spatial dimension. After the forward and reverse scanning,
+2
+two different spectral sequences {S1spe , S2spe } ∈ R N ×P can be
+achieved. Then, the two spectral sequences obtained are input
+into two unshared SSMs to extract the contextual information
+between spectra from a global perspective. The following
+formula can express this process:
+
+
+h̃ij = Āspe h̃ij−1 + B̄spe Sispe
+j
+
+
+
+
+i
+i
+i
+Qspe = Cspe h̃ j + Sspe
+(5)
+j
+
+Fig. 3. Flowchart of the SpeBiM. The input features are first processed
+by the linear, DWConv, and SiLU layers to generate Xspe . Then, a spectral
+bidirectional scan is applied on Xspe to convert them into two 1-D spectral
+sequences in forward and reverse directions. The long-range spectral dependencies can be mined by two unshared SSMs. Next, a spectral bidirectional
+merge combines sequences and reshapes them into a 2-D version. Finally, the
+output of SpeBiM can be obtained through an LN layer and a linear layer.
+
+grated. To this end, we develop a spiral merge. Specifically,
+the eight sequences are first returned along their respective scanning paths to achieve eight 2-D features with
+the original spatial shape. Then, we integrate them into
+a spatial feature Yspa ∈ R P×P×N by adding them element by
+element.
+
+j
+
+where h̃ij represents the jth hidden state of the ith sequence,
+Āspe , B̄spe , and Cspe represent the learnable parameters of SSM,
+and {Q1spe , Q2spe } represent the output sequences of the SSMs.
+Next, bidirectional merge is used to reverse Q2spe and add it to
+Q1spe at element level, and then reshape the summation result
+to Yspe ∈ R P×P×N . Finally, Yspe passes through an LN layer,
+a linear layer, and a residual connection to obtain the SpeBiM
+output XBiM .
+When we get XBiM , MLC instead of MLP is used to refine
+it by analyzing the value messages within spectral tokens.
+MLC involves a 3 × 3 convolution layer and a 3 × 3 dilated
+convolution layer. Also, each comes with a ReLU layer and
+a batch normalization (BN) layer. Assume that XBiM has
+been mapped into X0MLC through an LN layer. X0MLC is first
+passed through the 3 × 3 convolution layer with ReLU and
+BN to obtain the intermediate feature X1MLC . Next, X1MLC is
+passed through the 3 × 3 dilated convolution with ReLU and
+BN further to capture discriminative information in a larger
+receptive field and achieve the output of MLC X2MLC .
+
+C. Spectral Mamba Encoder
+SpeME aims to extract complex spectral features from the
+global and local perspectives. As shown in Fig. 1, SpeME
+consists of a spectral bidirectional Mamba (SpeBiM), an MLC,
+two LN layers, and two residual modules. Its formula is
+expressed as follows:
+XBiM = SpeBiM(LN(Xemb )) + Xemb
+Fspe = MLC(LN(XBiM )) + XBiM
+
+(4)
+
+where XBiM and Fspe represent the outputs of SpeBiM and
+SpeME, and SpeBiM(·), MLC(·), and LN(·) denote the functions of SpeBiM, MLC, and LN, respectively. Here, SpeBiM
+is used to model the global long-term dependencies between
+spectral tokens, and MLC focuses on extracting local features
+within spectral tokens. With the cooperation of SpeBiM and
+MLC, SpeME can encode high-dimensional spectral features
+comprehensively and accurately.
+The structure of SpeBiM is shown in Fig. 3. Like SpaME,
+it mainly encloses two linear layers, a DWConv layer, a SiLU
+layer, an SSM layer, and an LN layer. Before and after the
+SSM layer, a spectral bidirectional scan and a spectral bidirectional merge are embedded. For simplicity, we refer to them as
+bidirectional scan and bidirectional merge. Suppose Xemb has
+been mapped into Xspe ∈ R P×P×N by the LN, linear, DWConv,
+and SiLU layers. Since the spectral bands of HSIs are continuous, the spectral features can be regarded as sequences.
+
+D. Spatial–Spectral Complementary Fusion Module
+The target of SSCFM is to fully integrate spatial and spectral
+features extracted by two Mamba Encoders. As shown in
+Fig. 1, this module can be divided into three steps, i.e.,
+relationship modeling, weight enhancement, and fusion.
+There is an RLB in the relationship modeling step,
+which aims to mine the complex spatial–spectral relationships
+between Fspa ∈ R P×P×N and Fspe ∈ R P×P×N . After concatenating Fspa and Fspe into Fcat ∈ R P×P×2N , the relationship
+weight W ∈ R P×P can be obtained by the RLB, which consists
+of two 3 × 3 convolutions, an LN layer, a GELU layer, and a
+sigmoid layer. Here, W can be regarded as the spatial weight
+Wspa ∈ R P×P . Thus, 1 − W can be deemed as the spectral
+weight Wspe ∈ R P×P . The following formula can represent
+the above process:
+
+W = RLB Cat Fspa , Fspe
+Wspa = W, Wspe = 1 − W
+(6)
+where RLB(·) represents the function of RLB, and Cat(·)
+implies the concatenation operation.
+In the weight enhancement step, considering the potential
+anomalies of same-object with different-spectral or samespectral with different-object situations in HSIs, not all features are trustworthy. Therefore, TEM is applied to refine
+the spatial and spectral weights, which can be expressed
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+5510319
+
+as follows:
+
+
+Wspa i j > λ
+
+ 1,
+
+Wspa i j < 1 − λ
+W′spa
+= 0,
+
+ij
+
+
+Wspa i j , otherwise
+
+
+Wspe i j > λ
+
+ 1,
+
+
+
+Wspe i j < 1 − λ
+= 0,
+W′spe
+
+ij
+
+
+Wspe i j , otherwise
+
+
+
+
+
+(7)
+
+where (Wspa )i j , (Wspe )i j , (W′spa )i j , and (W′spe )i j indicate
+the values of the ith row and jth column in the spatial and
+spectral weights before and after refinement, and λ denotes
+a threshold with a value range of [0.5, 1]. In this way, lower
+values in the relationship weight can be filtered, and higher
+values can be enhanced, which allows our model to trust
+the party with higher credibility and eliminates redundant
+erroneous information.
+In the fusion step, the refined relationship weights W′spa ∈
+P×P
+R
+and W′spe ∈ R P×P are used to perform a weighted sum
+of the spatial and spectral features for the fused feature Ffuse ∈
+R P×P×N , which can be defined as follows:
+Ffuse = W′spa · Fspa + W′spe · Fspe .
+
+Fig. 4. Examples of the IP dataset. (a) False-color image. (b) and (c) Ground
+truth of the training and testing sets. The bottom icons show the specific
+categories represented by each color.
+
+TABLE I
+DATA D IVISION ON IP
+
+(8)
+
+E. Classifier
+At the top of SpiralMamba, a simple classifier is used to
+generate the final classification probability distribution Ŷ by
+using the fused features Ffuse . As shown in Fig. 1, the classifier
+consists of an LN layer, an average pooling layer, a linear
+layer, and a softmax layer. This article adopts the ordinary
+cross-entropy loss to supervise model learning. Its formula is
+C
+X
+
+
+L ce Y, Ŷ = −
+Yi log Ŷi
+
+(9)
+
+i=1
+
+where C is the number of class, Y is the ground truth, and Ŷi
+is the probability of category i.
+IV. E XPERIMENT
+A. Datasets
+The following four datasets are selected to verify our SpiralMamba, including Indian Pines (IP),1 Pavia University (PU),1
+Houston 2013 (HUS2013),2 and Houston 2018 (HUS2018).3
+1) IP: It is a vegetation coverage map of Indiana,
+USA, which contains 16 different vegetation categories.
+The collected HSI consists of 145 × 145 pixels and
+220 spectral bands. To improve IP’s quality and usability, 20 noisy and water absorption bands are removed
+from the original HSI. Fig. 4 shows its false-color image
+and the ground truth of the training and testing sets. The
+division of this dataset is shown in Table I.
+2) PU: This HSI depicts the land cover of the University
+of Pavia and surrounding regions, with nine different
+1 http://lesun.weebly.com/hyperspectral-data-set.html
+2 http://www.grss-ieee.org/community/technical-committees/data-fusion
+3 https://ieee-dataport.org/open-access/2018-ieee-grss-data-fusionchallenge-%E2%80%93-fusion-multispectral-lidar-and-hyperspectral-data
+
+land object categories. It has 610 × 340 pixels and
+115 bands. Twelve noisy bands are removed from
+the data to enhance PU’s usability and quality. The
+false-color image and the ground truth of the training
+and testing sets are exhibited in Fig. 5. The data division
+of PU is shown in Table II.
+3) HUS2013: This dataset shows the land cover of the
+University of Houston and the surrounding areas. It contains 15 different landform categories. The collected
+data contains 349 × 1905 pixels and 144 spectral bands.
+Fig. 6 presents the false-color image and the ground truth
+of the training and testing sets. Table III summarizes the
+specific data division.
+4) HUS2018: This dataset, sourced from the 2018 IEEE
+GRSS Data Fusion Contest [76], captures ground objects
+of Houston city with a 1-m spatial resolution and
+48 spectral bands. Its spatial size is 601 × 2384, and
+504 856 pixels are labeled with 20 semantic categories.
+We randomly select 100 samples for each category to
+construct the training set, and the rest samples are used
+to establish the testing set. The detailed split is presented
+in Table IV. Fig. 7 illustrates HUS2018’s false-color
+image and the ground truth for the training and test sets.
+Compared to the above three datasets, HUS2018 offers
+a larger scale of ground object information and richer
+categories.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE III
+DATA D IVISION ON HUS2013
+
+Fig. 5. Examples of the PU dataset. (a) False-color image. (b) and (c) Ground
+truth of the training and testing sets. The bottom icons show the specific
+categories represented by each color.
+TABLE II
+DATA D IVISION ON PU
+
+Fig. 7. Examples of the HUS2018 dataset. (a) False-color image. (b) and
+(c) Ground truth of the training and testing sets. The bottom icons show the
+specific categories represented by each color.
+
+Fig. 6. Examples of the HUS2013 dataset. (a) False-color image. (b) and
+(c) Ground truth of the training and testing sets. The bottom icons show the
+specific categories represented by each color.
+
+Note that the data partition schemes for IP, PU, and HUS2013
+are in accordance with SprectralFormer [65], and HUS2018
+conforms to [77].
+B. Implementation Details
+1) Experimental Environment and Settings: The experiments are conducted on a GeForce RTX 3090 with
+24 GB video memory. The experimental environment is
+
+Python 3.10 and PyTorch 2.1. We adopt the adaptive moment
+estimation with weight decay (AdamW) algorithm [78] as
+the optimizer to train our model. The initial learning rate,
+training epochs, and batch size are set to 0.0001, 500, and
+64, respectively. The above settings are consistent on the four
+datasets. As mentioned in Section III-A, the input data of
+SpiralMamba is HSI patches. In the following experiments,
+the patch sizes of IP, PU, HUS2013, and HUS2018 are set to
+15, 15, 11, and 17, respectively. In addition, the threshold λ
+(see Section III-D) should be set in advance. Its empirically
+optimal values for IP, PU, HUS2013, and HUS2018 are
+0.95, 0.90, 0.70, and 0.85, respectively. The influence of
+patch size and λ will be analyzed in detail in Section IV-E.
+All experiments are repeated five times randomly to avoid
+randomness affecting the experimental results. The average
+results and their variances are reported in this article.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+TABLE IV
+DATA D IVISION ON HUS2018
+
+2) Evaluation Metrics: Three evaluation metrics [69],
+overall accuracy (OA), average accuracy (AA), and Kappa
+coefficient, are used to measure the performance of SpiralMamba quantitatively. OA is the overall accuracy of all
+categories, which aims to evaluate the model’s overall performance. AA is the average accuracy of each category, which
+reflects the average performance of each category and the
+degree of category imbalance. Kappa coefficient is a measure
+of observed and expected consistency.
+C. Comparison to Existing Methods
+Eleven models are selected to comprehensively assess the
+performance of SpiralMamba, including SpectralFormer [65],
+MorphFormer [66], spectral query spatial transformer (SQSFormer) [68], GraphGST [67], DBCTNet [69], HSIMamba [57], S2 Mamba [54], MiM [53], MambaHSI [58],
+local-to-global Mamba (MambaLG) [59], and interval group
+spatial -spectral Mamba framework (IGroupSS-Mamba) [60].
+The first five methods are Transformer-based models, in which
+SpectralFormer, MorphFormer, and SQSFormer are purely
+developed based on the Transformer, GraphGST is proposed
+with the help of graph and Transformer, and DBCTNet is
+constructed with the assistance of the combination of CNN and
+Transformer. The last six methods are Mamba-based models.
+All compared approaches are implemented using their opensource codes, and their specific hyperparameters follow the
+original papers. To be fair, the compared models’ data division
+and experimental environment are consistent with ours, which
+are discussed in Section IV-B1.
+1) Comparison of Numerical Results: Table V presents the
+results of different methods counted on the IP dataset. We can
+find that the weakest model is SpectralFormer. This is because
+it only leverages the vanilla Transformer to complete HSI classification, which can be regarded as an initial attempt to apply
+Transformers in the HSI community. The Mamba-based models (i.e., S2 Mamba, MiM, MambaHSI, and IGroupSS-Mamba)
+
+5510319
+
+outperform the Transformer-based networks. This happens
+because SSM in Mamba uses continuous-time dynamic
+equations to describe the state evolution of the system,
+which allows Mamba to study the spectral sequence more
+directly and efficiently and enhances the discriminability of
+spectral features. However, the performance of HSIMamba
+and MambaLG does not meet our expectations. The reasons behind this are as follows. HSIMamba explores hidden
+features in the spectral dimension while neglecting spatial
+modeling. Although MambaLG can extract spatial and spectral
+features from local to global contexts, its simple feature
+fusion scheme leads to the loss of essential features. Although
+the compared models’ results are good, our SpiralMamba
+still performs best in OA, AA, and Kappa coefficient, with
+values of 97.76%, 98.76%, and 97.43. Taking OA as an
+example, our method outperforms SpectralFormer and HSIMamba, which initially explore Transformer and Mamba,
+by 14.56% and 10.59%. This is because our dual-branch fusion
+architecture is more effective at capturing spatial–spectral
+clues. Compared to other Transformer-based models (i.e.,
+MorphFormer, SQSFormer, GraphGST, and DBCTNet), our
+model surpasses them by 1.25%, 1.5%, 2.87%, and 0.91%.
+This demonstrates that our designed SpaME and SpeME can
+accurately encode spatial context and spectral sequences with
+inherent continuity. Furthermore, compared with S2 Mamba,
+MiM, MambaHSI, MambaLG, and IGroupSS-Mamba, the
+improvements achieved by SpiralMamba are 0.58%, 0.64%,
+1.06%, 6.67%, and 0.78%. This illustrates the usefulness of
+the proposed spiral scan, facilitating SpiralMamba’s ability
+to capture hidden spatial information and achieve optimal
+classification results.
+Table VI records the experimental results for all models on
+the PU dataset. As expected, our model achieves the highest
+OA, AA, and Kappa coefficient scores, which are 98.27%,
+97.84%, and 97.66. Besides the positive results mentioned
+above, there is an encouraging observation: SpiralMamba is
+the most stable model for this dataset. In contrast, other
+models exhibit greater variation in performance across different categories. For example, MambaLG performs best in
+classes 4 and 8 but poorly in classes 1, 2, and 3. For
+another example, IGroupSS-Mamba can accurately classify the
+samples in class 5. However, its performance for classes 1
+and 3 is weak. By comparison, although our SpiralMamba
+does not achieve the best in some categories, it consistently
+maintains a competitive level. These positive results are primarily attributed to the following factors. First, SpiralMamba’s
+comprehensive spatial–spectral modeling plays a key role.
+Spatially, the eight distinct spiral scan paths cover spatial information from various directions, allowing SpaME to encode
+spatial features more thoroughly. Spectrally, the complementary cooperation between bidirectional Mamba and MLC
+captures global bidirectional spectral information between
+tokens while locally perceiving detailed variations within each
+token, thus enabling comprehensive spectral feature modeling. Second, the effective spatial–spectral fusion provided
+by SSCFM further reduces the misclassification. By deeply
+modeling the relationships within the spatial–spectral information and refining the spatial–spectral weights, SSCFM ensures
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE V
+P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON IP, I NCLUDING THE R ESULTS OF E ACH C LASS AND THE OA,
+AA, AND K APPA C OEFFICIENT VALUES . T HE B EST R ESULTS A RE B OLDED (M EAN ± VARIANCE )
+
+TABLE VI
+P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON PU, I NCLUDING THE R ESULTS OF E ACH C LASS AND THE OA,
+AA, AND K APPA C OEFFICIENT VALUES . T HE B EST R ESULTS A RE B OLDED (M EAN ± VARIANCE )
+
+more accurate complementary fusion, reducing misclassifications in uncommon conditions.
+The results of various models counted on HUS2013 are
+shown in Table VII. This dataset is large in pixel volume and
+intricate in land cover distribution, which increases classification difficulty. Consequently, there is a substantial variation
+in the performance across different models. Even so, SpiralMamba still delivers the optimal performance. For example,
+for the Kappa coefficient, our enhancements are 7.68 (over
+SpectralFormer), 1.89 (over MorphFormer), 6.98 (over SQSFormer), 4.33 (over GraphGST), 3.28 (over DBCTNet), 5.06
+(over HSIMamba), 1.11 (over S2 Mamba), 5.16 (over MiM),
+0.87 (over MambaHSI), 4.64(over MambaLG) and 3.13 (over
+IGroupSS-Mamba). These encouraging results demonstrate the
+advantages of SpiralMamba and capability to handle complex
+data. However, we cannot ignore a notable investigation, that
+is, SpiralMamba does not achieve the highest accuracy in
+some categories. Especially for class 1 (“Healthy Grass”) and
+class 3 (“Synthetic Grass”), the gaps between the proposed
+model and the optimal methods are distinct. The main reason behind this is the insufficient local feature exploration
+of SpiralMamba in spatial contexts. Particularly, the classes
+mentioned above are spatially adjacent and similar to visual.
+Therefore, the difficulty of recognizing them is inherently high.
+To successfully classify them, more local details should be
+captured. However, our SpiralMamba pays more attention to
+
+extracting spatial global context information. The local spatial
+clues do not receive the attention they deserve, resulting in
+unsatisfactory results in these categories. We plan to improve
+this aspect in future work to achieve better performance across
+more categories.
+The results of all methods on HUS2018 are summarized in
+Table VIII. Our SpiralMamba achieves the best performance
+across three metrics, reaching 84.03% (OA), 89.67% (AA),
+and 79.69 (Kappa), respectively. Compared to Transformerbased methods, our approach outperforms the best-performing
+DBCTNet by 2.55% and the lowest-performing SpectralFormer by 15.29% in OA. These improvements stem from
+two factors. First, SpiralMamba adopts the sequence model
+Mamba, which is better suited for directly capturing spectral
+sequences, enhancing efficiency and performance. Second,
+our dual-branch fusion architecture can comprehensively
+extract spatial–spectral information and achieve more accurate
+fusion. Compared to Mamba-based methods, SpiralMamba
+surpasses the best-performing MambaHSI by 2.4% and the
+lowest-performing HSIMamba by 12.27% in OA. This success
+can be attributed to the spiral scan and the MLC module,
+which effectively convey spatial information and perceive local
+details within spectral tokens. Together, these components
+enable more accurate and comprehensive modeling of spatial and spectral features, leading to superior classification
+results.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+5510319
+
+TABLE VII
+P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON HUS2013, I NCLUDING THE R ESULTS OF E ACH C LASS AND THE
+OA, AA, AND K APPA C OEFFICIENT VALUES . T HE B EST R ESULTS A RE B OLDED (M EAN ± VARIANCE )
+
+TABLE VIII
+P ERFORMANCE OF D IFFERENT M ETHODS C OUNTED ON HUS2018, I NCLUDING THE R ESULTS OF E ACH C LASS AND THE
+OA, AA, AND K APPA C OEFFICIENT VALUES . T HE B EST R ESULTS A RE B OLDED (M EAN ± VARIANCE )
+
+Fig. 8. Ground truth and classification maps of different methods on IP. (a) Ground truth. (b) SpectralFormer. (c) MorphFormer. (d) SQSFormer. (e) GraphGST.
+(f) DBCTNet. (g) HSIMamba. (h) S2 Mamba. (i) MiM. (j) MambaHSI. (k) MambaLG. (l) IGroupSS-Mamba. (m) Ours.
+
+2) Comparison of Visual Results: To further study SpiralMamba, we visualize its classification maps for the four
+datasets in Figs. 8–11. The results of the compared methods
+are also exhibited for reference. For IP (see Fig. 8), the classi-
+
+fication maps of SpectralFormer, HSIMamba, GraphGST, and
+MambaLG differ significantly from the ground truth, showing dense artifacts of misclassification. Although the visual
+results of MorphFormer, SQSFormer, DBCTNet, S2 Mamba,
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 9. Ground truth and classification maps of different methods on PU. (a) Ground truth. (b) SpectralFormer. (c) MorphFormer. (d) SQSFormer. (e) GraphGST.
+(f) DBCTNet. (g) HSIMamba. (h) S2 Mamba. (i) MiM. (j) MambaHSI. (k) MambaLG. (l) IGroupSS-Mamba. (m) Ours.
+
+Fig. 10. Ground truth and classification maps of different methods on HUS2013. (a) Ground truth. (b) SpectralFormer. (c) MorphFormer. (d) SQSFormer.
+(e) GraphGST. (f) DBCTNet. (g) HSIMamba. (h) S2 Mamba. (i) MiM. (j) MambaHSI. (k) MambaLG. (l) IGroupSS-Mamba. (m) Ours.
+
+MiM, MambaHSI, and IGroupSS-Mamba are better, they still
+exhibit misclassification errors at the land cover boundaries.
+In contrast, our SpiralMamba shows the highest similarity with
+the ground truth, achieving relatively accurate classifications
+in smooth and boundary regions. For PU (see Fig. 9), all
+compared models perform weakly in distinguishing the “Bare
+Soil” (light blue in the center) and “Meadows” (light green
+at the bottom). The distinct errors can be found in SQSFormer, GraphGST, DBCTNet, HSIMamba, and MambaLG’s
+
+maps, where the “Bare Soil” is misclassified into “Meadows,” “Shadows,” “Metal Sheets,” or “Bricks.” SpectralFormer,
+MorphFormer, S2 Mamba, MiM, MambaHSI, and IGroupSSMamba’s maps are better but fail to reach satisfactory results.
+In comparison, our SpiralMamba exhibits the fewest misclassifications and presents the most similar predictions to the
+ground truth. For HUS2013 (see Fig. 10), SpectralFormer,
+SQSFormer, DBCTNet, and HSIMamba show the powerless
+performance. In the enlarged detail sections, these models
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+5510319
+
+Fig. 11. Ground truth and classification maps of different methods on HUS2018. (a) Ground truth. (b) SpectralFormer. (c) MorphFormer. (d) SQSFormer.
+(e) GraphGST. (f) DBCTNet. (g) HSIMamba. (h) S2 Mamba. (i) MiM. (j) MambaHSI. (k) MambaLG. (l) IGroupSS-Mamba. (m) Ours.
+
+misclassify “Highway” (olive green) as “Soil” (pink) or
+“Road” (dark blue). MorphFormer, GraphGST, S2 Mamba,
+MiM MambaHSI, MambaLG, and IGroupSS-Mamba perform
+slightly better but still struggle with edge areas. In contrast,
+our SpiralMamba produces the best prediction results. For
+HUS2018 (see Fig. 11), methods, such as SpectralFormer,
+GraphGST, DBCTNet, HSIMamba, and MiM, exhibit suboptimal classification maps. Particularly in zoomed-in regions, flat
+“Commercial” areas are misclassified as “Residential,” “Cars,”
+or “Trains.” In contrast, MorphFormer, SQSFormer, S2 Mamba,
+MambaHSI, MambaLG, and IGroupSS-Mamba show fewer
+misclassifications. SpiralMamba produces a classification map
+that is most similar to the ground truth. Although minor
+misclassifications remain in the central zoomed-in region,
+these are limited to similar categories like “Residential” rather
+than dissimilar ones like “Cars.” This is because our method
+leverages Mamba’s global modeling capability to accurately
+interpret flat and concentrated regions (e.g., “commercial”)
+from a global perspective, minimizing the impact of local noise
+and yielding a satisfactory classification map.
+Overall, in challenging scenarios, such as boundary regions
+and confusable classes, most models struggle to make accurate
+distinctions, which negatively impacts overall classification
+performance. However, our model maintains a relatively
+
+superior classification ability, achieving predictions similar to
+the ground truth. This is attributed not only to the advanced
+spatial modeling capability of SpaME and the powerful spectral feature extraction ability of SpeME but also to the accurate
+and effective spatial–spectral fusion by SSCFM. The synergy
+of these components enables SpiralMamba to deliver satisfactory classification results.
+D. Ablation Studies
+To validate the contributions of different components of
+SpiralMamba, a series of ablation experiments are conducted
+under the same experimental environment and settings as
+described in Section IV-B1. These experiments include overall ablation, scanning strategy ablation, and fusion module
+ablation.
+1) Overall Ablation: We performed an incremental ablation
+for the proposed spiral scan, MLC, and SSCFM by either using
+or excluding each component. When spiral scan and SSCFM
+are not used, the simplest operations (flatten and addition) are
+applied as replacements. Table IX shows the detailed experimental results. It can be observed that there is the same pattern
+in four datasets. The baseline without these components yields
+the lowest performance. Using spiral scan, MLC, or SSCFM
+individually improves results, combining any two components
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE IX
+√
+OVERALL A BLATION E XPERIMENTAL R ESULTS OF E ACH C OMPONENT ON IP, PU, HUS2013, AND HUS2018. M EANS THE
+C OMPONENT I S U SED , AND B LANK M EANS I T I S N OT U SED . T HE B EST R ESULT I S B OLDED (M EAN ± VARIANCE )
+
+TABLE X
+E XPERIMENTAL R ESULTS OF D IFFERENT S CANNING S TRATEGIES ON IP, PU, HUS2013, AND HUS2018.
+T HE B EST R ESULT I S B OLDED (M EAN ± VARIANCE )
+
+TABLE XI
+E XPERIMENTAL R ESULTS OF S PIRAL S CAN W ITH D IFFERENT S CANNING D IRECTIONS . T HE B EST R ESULT I S B OLDED
+
+further enhances performance, and employing all three (the
+complete SpiralMamba) achieves optimal performance. This
+is because spiral scan is well-suited for HSIs, accurately
+transforming spatial information into the 1-D sequence, aiding Mamba in understanding spatial context. Additionally,
+MLC’s fine-grained local modeling within spectral tokens and
+SSCFM’s enhanced spatial–spectral relationship modeling and
+refined fusion contribute to superior performance.
+2) Scanning Strategy Ablation: To further validate the effectiveness of the proposed spiral scan, we only change the spatial
+scanning strategy based on the complete SpiralMamba. Expect
+the flatten operation, the comparisons with the cross scan [42]
+and random scan are also conducted. The experimental results
+are shown in Table X. It is obvious that SpiralMamba with
+spiral scan achieves the best performance across four datasets.
+This is because flatten has a single scanning direction and
+suffers from information discontinuities at the edge pixels.
+Although cross scan has more directions, its performance
+cannot even exceed flatten, which means that it may introduce
+more spatial discontinuities, causing nonadjacent pixels to
+become adjacent in the sequence. Random scan is more
+flexible, but its randomness disrupts the spatial locations,
+interfering with the model’s learning. In contrast, our spiral
+scan covers all scanning directions and ensures the continuity of spatial information. More importantly, it takes into
+account the characteristics of HSI patches expanding from
+the center pixel, emphasizes the importance of the center
+
+pixel, and preserves the relative positions of neighboring
+pixels to the center pixel. This allows Mamba to understand the spatial layout better, improving HSI classification
+performance.
+To study the impacts of the spiral scan direction on the
+model’s performance, we conducted experiments with four
+types of spiral scans: single, positive, reverse, and all spiral
+scan. The single spiral scan follows one direction, starting
+from the top-left pixel and ending at the central pixel. The
+positive and reverse spiral scans involve four directional
+paths, starting from the four corners and the central pixel.
+All spiral scan represents the complete SpiralMamba with
+eight directional paths. The results counted on four HSIs
+are summarized in Table XI. By observing it, we find that
+all spiral scan produced the best performance, followed by
+the positive spiral scan, then the reverse spiral scan, and
+the single spiral scan yielding the lowest performance. The
+reasons behind these findings are summarized as follows.
+First, the single-direction scan has only one fixed traversal
+path, which limits Mamba from fully understanding spatial
+information. Second, the four-direction positive/reverse spiral
+scan increases the number of paths, providing Mamba with
+more spatial awareness and leading to some performance
+improvement. Third, when combining positive and reverse
+spiral scans, all spiral scan grants SpiralMamba the ability to
+capture spatial context bidirectionally. This accounts for the
+encouraging classification results.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+5510319
+
+TABLE XII
+C OMPARISON OF THE T IME C OMPLEXITY AND P ERFORMANCE OF S PIRAL S CAN AND F LATTEN ON S PIRAL M AMBA . T HE B EST R ESULT I S B OLDED
+
+TABLE XIII
+E XPERIMENTAL R ESULTS R ELATED TO MLC ON IP, PU, HUS2013, AND HUS2018. T HE B EST R ESULT I S B OLDED (M EAN ± VARIANCE )
+
+TABLE XIV
+E XPERIMENTAL R ESULTS OF D IFFERENT F USION M ETHODS ON IP, PU, HUS2013, AND HUS2018. T HE B EST R ESULT I S B OLDED (M EAN ± VARIANCE )
+
+In addition, to study if the proposed spiral scanning
+technique increases the computational complexity or not,
+we replace it with flatten and count the new model’s parameters (Params), memory usage in the training phase (Memory),
+average training times per epoch (Training), and the inference
+time costs (Inference). The results counted on different HSIs
+are summarized in Table XII. The values of different criteria of
+the original SpiralMamba are exhibited for comparison. Also,
+the two models’ OA, AA, and Kappa values are displayed
+for reference. Unsurprisingly, spiral scan increases the computational complexity in all cases. The reason is that there
+are eight scanning paths in spiral scan, while flatten only has
+one. However, we believe this growth is worthwhile due to
+the two following points. First, the increase in complexity
+is not dramatic. Compared to SpiralMamba with flatten, the
+metric increases caused by spiral scan are acceptable. For
+example, the Params of SpiralMamba with flatten and spiral
+scan counted on HUS2018 are 0.14 and 0.15 MB. Considering
+the eightfold increase in the scan path, the growth in these
+parameters is minimal and tolerable. Second, the multipath
+spiral scan provides higher performance gains. The OA, AA,
+and Kappa values of SpiralMamba with spiral scan are higher
+than that of SpiralMamba with flatten. For instance, compared
+with flatten, the enhancements in OA achieved by spiral scan
+are 0.20% (IP), 0.24% (PU), 0.51% (HUS2013), and 1.30%
+(HUS2018).
+3) MLC Ablation: To further prove the effectiveness of
+the MLC, we conduct the following experiments. First, three
+
+models are constructed, and they are named “with None,”
+“with MLP,” and “with MLC.” Here, “with None” means that
+we remove MLC from SpiralMamba, “with MLP” indicates
+that MLC is replaced by MLP, and “with MLC” is our
+SpiralMamba. Their performance counted on different HSIs
+is summarized in Table XIII. By observing the results, we can
+easily find that the behavior of “with None” is the weakest.
+This indicates that the lack of spectral token internal information extraction in SpeME reduces the model’s classification
+performance. When adding MLP and MLC, the models’
+behavior is strengthened, and “with MLC” outperforms “with
+MLP” in all cases. This highlights that MLC is more suitable
+for modeling within spectral tokens than MLP. MLP struggles
+to capture the local correlations within spectral tokens as a
+global component. In contrast, MLC using convolution can
+more finely perceive local variations.
+4) Fusion Module Ablation: To further verify the effectiveness of SSCFM, we perform additional experiments, including
+the single branch and the dual branch using addition or
+concatenation fusion. The experimental results are listed in
+Table XIV. It can be observed that the SpeME only performs
+better than the SpaME only on the IP dataset, indicating
+that spectral features are learned more effectively than spatial features. For the dual-branch fusion, the performance of
+both addition and concatenation fusion is similar, and both
+outperform SpaME only but are inferior to SpeME only. This
+suggests that simple addition or concatenation fusion does not
+significantly improve performance. On the PU, HUS2013, and
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 12.
+
+OA curves of different SpiralMambas with various patch sizes on four datasets. (a) IP. (b) PU. (c) HUS2013. (d) HUS2018.
+
+Fig. 13.
+
+OA curves of different SpiralMambas with different λ on four datasets. (a) IP. (b) PU. (c) HUS2013. (d) HUS2018.
+
+HUS2018, SpaME outperforms SpeME only, implying that
+spatial features are more discriminative for these datasets.
+In the case of dual-branch fusion, while the addition and
+concatenation fusion show improvements over single branch,
+there is still room for further enhancement. The dual-branch
+fusion with SSCFM consistently performs best across all four
+datasets. This is because SSCFM effectively captures the
+complex relationships between spatial and spectral features
+by RLB and uses TEM to enhance high-confidence features
+while filtering out low-confidence features, resulting in more
+accurate fusion.
+E. Sensitivity Study
+As mentioned in Section IV-B1, two free parameters should
+be set in advance, they are the patch size and threshold λ.
+In this section, we study their influence in detail. For clarity,
+we only count OA values here.
+1) Impact of Patch Size: To investigate the impact of patch
+size on SpiralMamba, we vary it from 5 × 5 to 19 × 19 and
+count the results of different SpiralMambas on four datasets.
+The results are shown in Fig. 12. Overall, as patch size
+increases, the OA first increases and then decreases for all
+four datasets. This trend can be attributed to smaller patch
+sizes containing less spatial context information. As the patch
+size increases, spatial information becomes richer. However,
+when the patch size is too large, more noise and redundant
+information may be introduced to hinder the model’s learning.
+Additionally, it can be observed that the best performance
+on the IP, PU, HUS2013, and HUS2018 datasets is achieved
+with patch sizes of 15 × 15, 15 × 15, 11 × 11, and 17 × 17,
+respectively. This suggests that SpiralMamba performs better
+with larger patch sizes, demonstrating its strong capability
+for long-range dependency modeling. Even with a larger
+patch size, it can efficiently capture spatial–spectral clues and
+achieve satisfactory classification results.
+However, there is a non-negligible fluctuation phenomenon
+(patch size 11 × 11 for IP and 13 × 13 for HUS2013).
+
+In IP, the distribution of land cover categories is relatively
+regular and concentrated, and a larger field of view enables
+a better overall understanding of the targets. Meanwhile, our
+SpiralMamba, which has strong global perception capabilities,
+tends to favor larger patch sizes. When the patch size is
+11 × 11 (the fluctuation point), SpiralMamba’s field of view
+is not large enough, potentially failing to fully activate its
+global modeling ability, leading to suboptimal performance.
+As the patch size increases, the field of view becomes broader,
+improving performance, with the optimal result appearing
+at 15 × 15. In HUS2013, the land cover is more complex,
+with a more redundant background. As patch size increases,
+the model’s performance peaks at 11 × 11. However, as it
+increases further to 13 × 13 (the fluctuation point), excessive
+redundant information may be introduced, leading to a decline
+in performance. Although performance slightly improves at
+15 × 15 (likely because useful spatial information outweighs
+redundant information at this size), it still remains below the
+peak at 11 × 11 due to the continued impact of redundancy,
+and the performance shows a downward trend thereafter.
+2) Impact of Threshold λ: To study the effect of the threshold λ on our model, we change its values from 0.5 to 1 with
+an interval of 0.05. The performance of SpiralMamba with
+different λ counted on four datasets is shown in Fig. 13. The
+OA curves show a trend of increasing first and then decreasing
+as λ increases, with peak values occurring at 0.95 (IP), 0.90
+(PU), 0.70 (HUS2013), and 0.85 (HUS2018). When λ is set
+to its minimum value of 0.5, all values in the relationship
+weights are filtered (set to 0) or enhanced (set to 1) by the
+TEM, resulting in a simple combination of spatial and spectral
+features and the lowest OA values. When λ exceeds 0.5, the
+obtained features contain spatial, spectral, and spatial–spectral
+messages, and the proportion of spatial–spectral clues would
+be increased as λ grows. This integration pushes the models
+to achieve optimal performance. When λ reaches 1, TEM
+will not refine the relationship weights. Unreliable features
+may contaminate reliable features during fusion, and accurate
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+TABLE XV
+PARAMETER S IZE , M EMORY U SAGE , AVERAGE T RAINING T IME
+PER E POCH , AND I NFERENCE T IME OF A LL M ETHODS ON IP
+
+5510319
+
+spectral tokens, compensating for the limitations of SpeBiM
+in modeling within the spectral token itself. In this fashion,
+SpiralMamba is able to comprehensively model complex spectral features, leading to discriminative spectral representations.
+Finally, SSCFM is designed to complete the spatial–spectral
+information fusion. Unlike common modules, it first deeply
+mines the intricate relationships between the two features.
+Then, the generated relationship weights are refined by TEM
+to ensure the spatial and spectral features can be considered
+thoroughly. Extensive experiments counted on three publicly
+available datasets validate the effectiveness of SpiralMamba.
+R EFERENCES
+
+fusion cannot be achieved. Therefore, the behavior of the
+model becomes weaker.
+F. Complexity Analysis
+To better understand SpiralMamba’s complexity, we count
+its Params, Memory, Training, and Inference on the IP dataset
+and summarize them in Table XV. The results of the compared
+methods are also exhibited for reference. To be fair, the HSI
+patch size is fixed as 15 × 15 for all models, consistent with
+SpiralMamba. From Table XV, we can observe the following
+points. First, compared to the methods with similar parameter
+sizes (i.e., SQSFormer, GraphGST, and MiM), SpiralMamba
+not only has the shortest average training time per epoch but
+also cuts inference time by half. Additionally, it demonstrates
+better memory efficiency (except for GraphGST, which uses
+fewer nodes in its graph structure, resulting in the least
+memory usage). This shows that our model is more efficient with a similar parameter size. Second, compared to
+all Transformer-based methods, SpiralMamba, despite having
+more parameters, achieves comparable memory usage and
+training time while consuming the least inference time. This is
+due to the efficient Mamba structure. It has linear complexity
+with the same sequence length, which leads to significant
+time savings. Furthermore, all Mamba-based methods have
+faster inference times than Transformer-based ones, further
+highlighting Mamba’s efficiency.
+V. C ONCLUSION
+This article proposes a new HSI classification method
+based on Mamba, called SpiralMamba. It has a dual-branch
+fusion architecture and aims to fully explore spatial context
+and rich spectral features from HSIs for classification. First,
+a SpaME is developed to mine spatial knowledge. SpaME
+introduces a spatial spiral scan strategy to traverse HSI pixels
+effectively at the spatial aspect. This way, HSI can be transformed into a reasonable sequence for SSM, thus enhancing
+SpiralMamba’s ability to understand spatial context. Second,
+a SpeME is constructed to capture spectral clues. Besides
+SpeBiM, which focuses on analyzing the spectral relations,
+an MLC is introduced to capture local variations within
+
+[1] S. Qian, “Overview of hyperspectral imaging remote sensing from
+satellites,” in Advances in Hyperspectral Image Processing Techniques.
+Hoboken, NJ, USA: Wiley, 2023, pp. 41–66.
+[2] B. Tu, Q. Ren, J. Li, Z. Cao, Y. Chen, and A. Plaza, “NCGLF2: Network
+combining global and local features for fusion of multisource remote
+sensing data,” Inf. Fusion, vol. 104, Apr. 2024, Art. no. 102192.
+[3] N. Audebert, B. Le Saux, and S. Lefevre, “Deep learning for classification of hyperspectral data: A comparative review,” IEEE Geosci. Remote
+Sens. Mag., vol. 7, no. 2, pp. 159–173, Jun. 2019.
+[4] S. Li, W. Song, L. Fang, Y. Chen, P. Ghamisi, and J. A. Benediktsson,
+“Deep learning for hyperspectral image classification: An overview,”
+IEEE Trans. Geosci. Remote Sens., vol. 57, no. 9, pp. 6690–6709,
+Sep. 2019.
+[5] N. Wambugu et al., “Hyperspectral image classification on insufficientsample and feature learning using deep neural networks: A review,” Int.
+J. Appl. Earth Observ. Geoinf., vol. 105, Dec. 2021, Art. no. 102603.
+[6] B. Lu, P. Dao, J. Liu, Y. He, and J. Shang, “Recent advances of hyperspectral imaging technology and applications in agriculture,” Remote
+Sens., vol. 12, no. 16, p. 2659, Aug. 2020.
+[7] A. Khan, A. D. Vibhute, S. Mali, and C. H. Patil, “A systematic review
+on hyperspectral imaging technology with a machine and deep learning
+methodology for agricultural applications,” Ecol. Informat., vol. 69,
+Jul. 2022, Art. no. 101678.
+[8] M. Ahmad et al., “Hyperspectral image classification—Traditional to
+deep models: A survey for future prospects,” IEEE J. Sel. Topics Appl.
+Earth Observ. Remote Sens., vol. 15, pp. 968–999, 2022.
+[9] A. Nisha and A. Anitha, “Current advances in hyperspectral remote
+sensing in urban planning,” in Proc. 3rd Int. Conf. Intell. Comput.
+Instrum. Control Technol. (ICICICT), Aug. 2022, pp. 94–98.
+[10] J. Yuan, S. Wang, C. Wu, and Y. Xu, “Fine-grained classification of
+urban functional zones and landscape pattern analysis using hyperspectral satellite imagery: A case study of Wuhan,” IEEE J. Sel. Topics Appl.
+Earth Observ. Remote Sens., vol. 15, pp. 3972–3991, 2022.
+[11] M. B. Stuart, A. J. S. McGonigle, and J. R. Willmott, “Hyperspectral
+imaging in environmental monitoring: A review of recent developments
+and technological advances in compact field deployable systems,” Sensors, vol. 19, no. 14, p. 3071, Jul. 2019.
+[12] H. Flores et al., “UAS-based hyperspectral environmental monitoring of
+acid mine drainage affected waters,” Minerals, vol. 11, no. 2, p. 182,
+Feb. 2021.
+[13] S. Peyghambari and Y. Zhang, “Hyperspectral remote sensing in
+lithological mapping, mineral exploration, and environmental geology:
+An updated review,” J. Appl. Remote Sens., vol. 15, no. 3, Jul. 2021,
+Art. no. 031501.
+[14] A. Guha, “Mineral exploration using hyperspectral data,” in Hyperspectral Remote Sensing. Amsterdam, The Netherlands: Elsevier, 2020,
+pp. 293–318.
+[15] A. Hennessy, K. Clarke, and M. Lewis, “Hyperspectral classification of
+plants: A review of waveband selection generalisability,” Remote Sens.,
+vol. 12, no. 1, p. 113, Jan. 2020.
+[16] K.-H. Liu, M.-H. Yang, S.-T. Huang, and C. Lin, “Plant species
+classification based on hyperspectral imaging via a lightweight convolutional neural network model,” Frontiers Plant Sci., vol. 13, Apr. 2022,
+Art. no. 855660.
+[17] F. Ullah, I. Ullah, R. U. Khan, S. Khan, K. Khan, and G. Pau, “Conventional to deep ensemble methods for hyperspectral image classification:
+A comprehensive survey,” IEEE J. Sel. Topics Appl. Earth Observ.
+Remote Sens., vol. 17, pp. 3878–3916, 2024.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+5510319
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+[18] D. Hong et al., “SpectralGPT: Spectral remote sensing foundation
+model,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 46, no. 8,
+pp. 5227–5244, Aug. 2024.
+[19] M. Imani and H. Ghassemian, “An overview on spectral and spatial
+information fusion for hyperspectral image classification: Current trends
+and challenges,” Inf. Fusion, vol. 59, pp. 59–83, Jul. 2020.
+[20] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for
+image recognition,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2016, pp. 770–778.
+[21] A. Vaswani, “Attention is all you need,” in Proc. Adv. Neural Inf.
+Process. Syst., 2017, pp. 1–11.
+[22] M. E. Paoletti, S. Moreno-Álvarez, Y. Xue, J. M. Haut, and A. Plaza,
+“AAtt-CNN: Automatic attention-based convolutional neural networks
+for hyperspectral image classification,” IEEE Trans. Geosci. Remote
+Sens., vol. 61, pp. 1–18, May 2023, doi: 10.1109/TGRS.2023.3272639.
+[23] M. Esmaeili, D. Abbasi-Moghadam, A. Sharifi, A. Tariq, and
+Q. Li, “ResMorCNN model: Hyperspectral images classification using
+residual-injection morphological features and 3DCNN layers,” IEEE
+J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 17, pp. 219–243,
+2024.
+[24] J. Zhang, Y. Zhang, and Y. Zhou, “Quantum-inspired spectral–spatial
+pyramid network for hyperspectral image classification,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2023,
+pp. 9925–9934.
+[25] Y. Li, Q. Xu, W. Li, and J. Nie, “Automatic clustering-based two-branch
+CNN for hyperspectral image classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 9, pp. 7803–7816, Sep. 2021.
+[26] Y. Shen et al., “Efficient deep learning of nonlocal features for
+hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 59, no. 7, pp. 6029–6043, Jul. 2021.
+[27] A. Dosovitskiy et al., “An image is worth 16×16 words: Transformers
+for image recognition at scale,” 2020, arXiv:2010.11929.
+[28] W. Zhou, S.-I. Kamata, H. Wang, and X. Xue, “Multiscanningbased RNN–transformer for hyperspectral image classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 61, pp. 1–19, May 2023, doi:
+10.1109/TGRS.2023.3277014.
+[29] C. Fu, B. Du, and L. Zhang, “ReSC-Net: Hyperspectral image classification based on attention-enhanced residual module and spatial-channel
+attention,” IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–15,
+May 2024, doi: 10.1109/TGRS.2024.3402364.
+[30] J. Ma, Y. Zou, X. Tang, X. Zhang, F. Liu, and L. Jiao, “Spatial pooling
+transformer network and noise-tolerant learning for noisy hyperspectral
+image classification,” IEEE Trans. Geosci. Remote Sens., vol. 62, pp.
+1–19, Feb. 2024, doi: 10.1109/TGRS.2024.3368079.
+[31] C. Zhao et al., “Hyperspectral image classification with multi-attention
+transformer and adaptive superpixel segmentation-based active learning,”
+IEEE Trans. Image Process., vol. 32, pp. 3606–3621, 2023.
+[32] S. Cheng, R. Chan, and A. Du, “CACFTNet: A hybrid cov-attention
+and cross-layer fusion transformer network for hyperspectral image
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–17,
+Mar. 2024, doi: 10.1109/TGRS.2024.3374081.
+[33] J. Zhao, J. Wang, C. Ruan, Y. Dong, and L. Huang, “Dual-branch
+spectral–spatial attention network for hyperspectral image classification,”
+IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–18, Jan. 2024, doi:
+10.1109/TGRS.2024.3351997.
+[34] Q. Yu, W. Wei, D. Li, Z. Pan, C. Li, and D. Hong, “HyperSINet: A synergetic interaction network combined with convolution and transformer for
+hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 62, pp. 1–18, Feb. 2024, doi: 10.1109/TGRS.2024.3362471.
+[35] Z. Zhao, X. Xu, S. Li, and A. Plaza, “Hyperspectral image classification
+using groupwise separable convolutional vision transformer network,”
+IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–17, Mar. 2024, doi:
+10.1109/TGRS.2024.3377610.
+[36] X. Wang, L. Sun, C. Lu, and B. Li, “A novel transformer network with
+a CNN-enhanced cross-attention mechanism for hyperspectral image
+classification,” Remote Sens., vol. 16, no. 7, p. 1180, Mar. 2024.
+[37] Y. Wang, X. Yu, X. Wen, X. Li, H. Dong, and S. Zang, “Learning a
+3-D-CNN and convolution transformers for hyperspectral image classification,” IEEE Geosci. Remote Sens. Lett., vol. 21, pp. 1–5, 2024.
+[38] J. Chen et al., “TCCU-Net: Transformer and CNN collaborative unmixing network for hyperspectral image,” IEEE J. Sel. Topics Appl. Earth
+Observ. Remote Sens., vol. 17, pp. 8073–8089, 2024.
+[39] A. Gu and T. Dao, “Mamba: Linear-time sequence modeling with
+selective state spaces,” 2023, arXiv:2312.00752.
+[40] T. Dao and A. Gu, “Transformers are SSMs: Generalized models and
+efficient algorithms through structured state space duality,” in Proc. 41st
+Int. Conf. Mach. Learn., 2024, pp. 1–52.
+
+[41] L. Zhu, B. Liao, Q. Zhang, X. Wang, W. Liu, and X. Wang, “Vision
+Mamba: Efficient visual representation learning with bidirectional state
+space model,” in Proc. 41st Int. Conf. Mach. Learn., 2024, pp. 1–14.
+[42] Y. Liu et al., “VMamba: Visual state space model,” 2024,
+arXiv:2401.10166.
+[43] K. Chen, B. Chen, C. Liu, W. Li, Z. Zou, and Z. Shi, “RSMamba:
+Remote sensing image classification with state space model,” IEEE
+Geosci. Remote Sens. Lett., vol. 21, pp. 1–5, 2024.
+[44] Y. Yue and Z. Li, “MedMamba: Vision Mamba for medical image
+classification,” 2024, arXiv:2403.03849.
+[45] H. Ding et al., “A novel Mamba architecture with a semantic transformer
+for efficient real-time remote sensing semantic segmentation,” Remote
+Sens., vol. 16, no. 14, p. 2620, Jul. 2024.
+[46] X. Ma, X. Zhang, and M.-O. Pun, “RS3 Mamba: Visual state space model
+for remote sensing image semantic segmentation,” IEEE Geosci. Remote
+Sens. Lett., vol. 21, pp. 1–5, 2024.
+[47] H. Zhang, K. Chen, C. Liu, H. Chen, Z. Zou, and Z. Shi,
+“CDMamba: Remote sensing image change detection with Mamba,”
+2024, arXiv:2406.04207.
+[48] J. N. Paranjape, C. de Melo, and V. M. Patel, “A Mamba-based Siamese
+network for remote sensing change detection,” 2024, arXiv:2407.06839.
+[49] M. Zhou et al., “DMM: Disparity-guided multispectral Mamba for
+oriented object detection in remote sensing,” 2024, arXiv:2407.08132.
+[50] H. Zhou, X. Wu, H. Chen, X. Chen, and X. He, “RSDehamba:
+Lightweight vision Mamba for remote sensing satellite image dehazing,”
+2024, arXiv:2405.10030.
+[51] J. Sheng, J. Zhou, J. Wang, P. Ye, and J. Fan, “DualMamba:
+A lightweight spectral–spatial Mamba-convolution network for hyperspectral image classification,” 2024, arXiv:2406.07050.
+[52] Y. He, B. Tu, B. Liu, J. Li, and A. Plaza, “3DSS-Mamba: 3Dspectral–spatial Mamba for hyperspectral image classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 62, pp. 1–16, Oct. 2024, doi:
+10.1109/TGRS.2024.3472091.
+[53] W. Zhou, S.-I. Kamata, H. Wang, M. S. Wong, and H. Hou, “Mambain-Mamba: Centralized Mamba-cross-scan in tokenized Mamba model
+for hyperspectral image classification,” Neurocomputing, vol. 613,
+Jan. 2025, Art. no. 128751.
+[54] G. Wang, X. Zhang, Z. Peng, T. Zhang, and L. Jiao, “S2 Mamba:
+A spatial–spectral state space model for hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens., early access, Jan. 17, 2025,
+doi: 10.1109/TGRS.2025.3530993.
+[55] L. Huang, Y. Chen, and X. He, “Spectral–spatial Mamba for hyperspectral image classification,” 2024, arXiv:2404.18401.
+[56] J. Yao, D. Hong, C. Li, and J. Chanussot, “SpectralMamba:
+Efficient Mamba for hyperspectral image classification,” 2024,
+arXiv:2404.08489.
+[57] J. X. Yang, J. Zhou, J. Wang, H. Tian, and A. W. C. Liew, “HSIMamba:
+Hyperpsectral imaging efficient feature learning with bidirectional state
+space for classification,” 2024, arXiv:2404.00272.
+[58] Y. Li, Y. Luo, L. Zhang, Z. Wang, and B. Du, “MambaHSI:
+Spatial–spectral Mamba for hyperspectral image classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 62, pp. 1–17, Jul. 2024, doi:
+10.1109/TGRS.2024.3430985.
+[59] Z. Pan, C. Li, A. Plaza, J. Chanussot, and D. Hong, “Hyperspectral
+image classification with Mamba,” IEEE Trans. Geosci. Remote Sens.,
+vol. 63, pp. 1–14, Dec. 2025, doi: 10.1109/TGRS.2024.3521411.
+[60] Y. He, B. Tu, P. Jiang, B. Liu, J. Li, and A. Plaza, “IGroupSSMamba: Interval group spatial–spectral Mamba for hyperspectral image
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–17,
+Nov. 2024, doi: 10.1109/TGRS.2024.3502055.
+[61] H. Lee and H. Kwon, “Going deeper with contextual CNN for hyperspectral image classification,” IEEE Trans. Image Process., vol. 26,
+no. 10, pp. 4843–4855, Oct. 2017.
+[62] J. Zheng, Y. Feng, C. Bai, and J. Zhang, “Hyperspectral image
+classification using mixed convolutions and covariance pooling,”
+IEEE Trans. Geosci. Remote Sens., vol. 59, no. 1, pp. 522–534,
+Jan. 2021.
+[63] S. K. Roy, S. Manna, T. Song, and L. Bruzzone, “Attentionbased adaptive spectral–spatial kernel ResNet for hyperspectral image
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 59, no. 9,
+pp. 7831–7843, Sep. 2021.
+[64] R. Hang, Z. Li, Q. Liu, P. Ghamisi, and S. S. Bhattacharyya, “Hyperspectral image classification with attention-aided CNNs,” IEEE Trans.
+Geosci. Remote Sens., vol. 59, no. 3, pp. 2281–2293, Mar. 2021.
+[65] D. Hong et al., “SpectralFormer: Rethinking hyperspectral image classification with transformers,” IEEE Trans. Geosci. Remote Sens., vol. 60,
+pp. 1–15, 2021.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: SpiralMamba: SPATIAL–SPECTRAL COMPLEMENTARY MAMBA WITH SPATIAL SPIRAL SCAN
+
+[66] S. K. Roy, A. Deria, C. Shah, J. M. Haut, Q. Du, and A. Plaza, “Spectral–
+spatial morphological attention transformer for hyperspectral image
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 61, pp. 1–15,
+Feb. 2023, doi: 10.1109/TGRS.2023.3242346.
+[67] M. Jiang et al., “GraphGST: Graph generative structure-aware
+transformer for hyperspectral image classification,” IEEE Trans.
+Geosci. Remote Sens., vol. 62, pp. 1–16, Jan. 2024, doi:
+10.1109/TGRS.2023.3349076.
+[68] N. Chen, L. Fang, Y. Xia, S. Xia, H. Liu, and J. Yue, “Spectral
+query spatial: Revisiting the role of center pixel in transformer for
+hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 62, pp. 1–14, Feb. 2024, doi: 10.1109/TGRS.2024.3361652.
+[69] R. Xu, X.-M. Dong, W. Li, J. Peng, W. Sun, and Y. Xu, “DBCTNet:
+Double branch convolution-transformer network for hyperspectral image
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–15,
+Feb. 2024, doi: 10.1109/TGRS.2024.3368141.
+[70] Y. Zhou, X. Huang, X. Yang, J. Peng, and Y. Ban, “DCTN:
+Dual-branch convolutional transformer network with efficient interactive self-attention for hyperspectral image classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 62, pp. 1–16, Feb. 2024, doi:
+10.1109/TGRS.2024.3364143.
+[71] S. Jia, Y. Wang, S. Jiang, and R. He, “A center-masked transformer for
+hyperspectral image classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 62, pp. 1–16, Feb. 2024, doi: 10.1109/TGRS.2024.3369075.
+[72] F. Xu, S. Mei, G. Zhang, N. Wang, and Q. Du, “Bridging CNN and
+transformer with cross-attention fusion network for hyperspectral image
+classification,” IEEE Trans. Geosci. Remote Sens., vol. 62, pp. 1–14,
+Jun. 2024, doi: 10.1109/TGRS.2024.3419266.
+[73] D. Hendrycks and K. Gimpel, “Gaussian error linear units (GELUs),”
+2016, arXiv:1606.08415.
+[74] F. Chollet, “Xception: Deep learning with depthwise separable convolutions,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit. (CVPR),
+Jul. 2017, pp. 1251–1258.
+[75] S. Elfwing, E. Uchibe, and K. Doya, “Sigmoid-weighted linear units
+for neural network function approximation in reinforcement learning,”
+Neural Netw., vol. 107, pp. 3–11, Nov. 2018.
+[76] B. Le Saux, N. Yokoya, R. Hansch, and S. Prasad, “2018 IEEE
+GRSS data fusion contest: Multimodal land use classification [technical
+committees],” IEEE Geosci. Remote Sens. Mag., vol. 6, no. 1, pp. 52–54,
+Mar. 2018.
+[77] J. Yang, B. Du, and L. Zhang, “From center to surrounding:
+An interactive learning framework for hyperspectral image classification,” ISPRS J. Photogramm. Remote Sens., vol. 197, pp. 145–166,
+Mar. 2023.
+[78] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,”
+in Proc. Int. Conf. Learn. Represent., 2018, pp. 1–19.
+
+Xu Tang (Senior Member, IEEE) received the
+B.Sc., M.Sc., and Ph.D. degrees in electronic circuit
+and system from Xidian University, Xi’an, China,
+in 2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a Joint Ph.D. Student
+along with Prof. W. J. Emery with the University
+of Colorado at Boulder, Boulder, CO, USA. He is
+currently a Full Professor with the Key Laboratory
+of Intelligent Perception and Image Understanding, Ministry of Education, Xidian University. His
+research interests include remote sensing image
+content-based retrieval and reranking, hyperspectral image processing, remote
+sensing scene classification, and object detection. For more details, please refer
+to: https://web.xidian.edu.cn/tangxu/en/index.html
+
+Yuexi Yao received the B.E. degree in intelligent
+science and technology from Wuhan Institute of
+Technology, Wuhan, China, in 2023. She is currently
+pursuing the M.S. degree in computer science and
+technology with the Key Laboratory of Intelligent
+Perception and Image Understanding of the Ministry
+of Education, Xidian University, Xi’an, China.
+Her research interests include image understanding, hyperspectral image classification, and deep
+learning.
+
+5510319
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor with the
+Key Laboratory of Intelligent Perception and Image
+Understanding, Ministry of Education, Xidian University. Her research interests include computational
+intelligence and image understanding.
+
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From January 2015 to March 2016, she was
+a Visiting Scientist with the Computer Science
+and Artificial Intelligence Laboratory, Massachusetts
+Institute of Technology, Cambridge, MA, USA. She
+is currently a Professor with the Key Laboratory of
+Intelligent Perception and Image Understanding of the Ministry of Education,
+Xidian University. Her research interests include pattern recognition, machine
+learning, and remote sensing image analysis and understanding.
+
+Yuqun Yang received the B.S. degree in information
+and computing science from Xi’an University of
+Technology, Xi’an, China, in 2019, and the Ph.D.
+degree in computer science and technology from
+Xidian University, Xi’an, in 2024.
+He is currently a Post-Doctoral Researcher with
+the Huazhong University of Science and Technology,
+Wuhan, China. His research interests include deep
+learning, change detection, and image segmentation,
+among others.
+
+Bo Wang received the B.S. degree in communication engineering from Xidian University, Xi’an,
+China, in 2017, and the Ph.D. degree in instrument
+science and technology from Tsinghua University,
+Beijing, China, in 2023.
+He is currently an Associate Researcher with
+the Huazhong University of Science and Technology, Wuhan, China. His research interests include
+medical image segmentation, surgical planning, and
+the application of artificial intelligence in medical
+instrumentation.
+
+Licheng Jiao (Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding of Ministry of Education of China. He has authored or
+co-authored more than 200 scientific articles. His research interests include
+signal and image processing, nonlinear circuits and systems theory, wavelet
+theory, natural computation, and intelligent information processing.
+Dr. Jiao is also a member of the IEEE Xian Section Executive Committee
+and an Executive Committee Member of the Chinese Association of Artificial Intelligence. He is the Chairperson for the Awards and Recognition
+Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:51:40 UTC from IEEE Xplore. Restrictions apply.
+
+

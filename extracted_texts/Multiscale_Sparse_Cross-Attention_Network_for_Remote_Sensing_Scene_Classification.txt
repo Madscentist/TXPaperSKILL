@@ -1,0 +1,1469 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+5605416
+
+Multiscale Sparse Cross-Attention Network for
+Remote Sensing Scene Classification
+Jingjing Ma, Member, IEEE, Wei Jiang, Xu Tang , Senior Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE,
+and Licheng Jiao , Fellow, IEEE
+
+Abstract— Remote sensing (RS) scene classification (RSSC) is
+a prominent research topic in the RS community. Multilevel
+feature fusion is an important way of addressing RSSC, and
+many methods have been proposed in recent years. Although they
+succeed, current methods can still be improved, particularly in
+distinguishing the contributions of different multilevel features
+and fully and effectively fusing them. To address the above
+issues and fully exploit the potential of multilevel features for
+RSSC tasks, we propose a new model named multiscale sparse
+cross-attention network (MSCN). It not only focuses on the effectiveness of feature learning but also emphasizes the rationality of
+feature fusion. In detail, MSCN first extracts multilevel features
+using a pretrained ResNet50. Also, these features are divided
+into high- and low-level features according to the clues they are
+involved. Then, a multiscale sparse cross-attention (MSC) module
+is developed to cross-fuse the high-level feature with various
+low-level features, thereby effectively mining helpful information
+from multilevel features. In the fusion process, MSC not only
+explores the multiscale messages in RS scenes but also mitigates
+the negative impact of irrelevant information by employing
+sparse operations. Third, a group convolutional block attention
+module (CBAM) enhancer (GCE) is presented to enhance the
+representation of classification features. GCE detects local salient
+information within classification features using grouped CBAM
+and further enhances crucial details by readjusting the CBAM
+attention weights. This way, the classification features’ discrimination can be improved. We conducted extensive experiments
+on three public RSSC datasets. The exceptional experimental
+results indicate that our proposed MSCN achieves superior classification accuracy, surpassing many existing methods. Our source
+codes are available at https://github.com/TangXu-Group/RemoteSensing-Images-Classification/tree/main/MSCN.
+Index Terms— Feature enhancement, remote sensing scene
+classification (RSSC), sparse cross-attention.
+
+Received 8 July 2024; revised 29 October 2024 and 12 December 2024;
+accepted 31 December 2024. Date of publication 3 January 2025; date of
+current version 16 January 2025. This work was supported in part by the
+National Natural Science Foundation of China under Grant 62171332, Grant
+62276197, and Grant 62471236; in part by the Key Research and Development
+Program of Shaanxi under Grant 2024GX-YBXM-125; in part by the Natural
+Science Basic Research Program of Shaanxi under Grant 2024JC-YBMS-472;
+and in part by Shaanxi Province Innovation Capability Support Plan under
+Grant 2023-CX-TD-09. (Corresponding author: Xu Tang.)
+Jingjing Ma, Wei Jiang, Xu Tang, Xiangrong Zhang, and Licheng Jiao are
+with the Key Laboratory of Intelligent Perception and Image Understanding
+of Ministry of Education, School of Artificial Intelligence, Xidian University,
+Xi’an 710071, China (e-mail: tangxu128@gmail.com).
+Fang Liu is with the Key Laboratory of Intelligent Perception and Systems
+for High-Dimensional Information of Ministry of Education, School of Computer Science and Engineering, Nanjing University of Science and Technology,
+Nanjing 210000, China.
+Digital Object Identifier 10.1109/TGRS.2025.3525582
+
+I. I NTRODUCTION
+
+R
+
+EMOTE sensing (RS) scene classification (RSSC) refers
+to assigning the specific semantics to RS images according to their scene-level contents. It is an important research
+topic in the RS image processing community, and it plays
+a crucial role in various applications, including land use
+investigation, environmental protection, and so on [1], [2], [3].
+In the early stages, handcrafted features, such as geometry
+textural [4] and color histogram [5], are popular in RSSC
+due to their simple implementation. Along with the machinelearning-based classifiers, acceptable results can be achieved.
+However, with the improvement in spatial resolution, the
+contents of RS scenes are more and more complex. The
+combination of handcrafted features and traditional classifiers
+is becoming increasingly inadequate. To obtain reliable classification predictions, the deep learning models, especially
+convolutional neural networks (CNNs) [6], [7], [8], enter the
+RSSC field [9], [10], [11], [12]. Benefiting from their powerful
+feature learning capability and end-to-end learning manner, the
+classification accuracy of RSSC has been elevated to a new
+height.
+Numerous successful CNN-based methods have been proposed [13], [14], [15], [16]. They apply a series of convolution
+and downsampling operations to RS scenes to extract
+high-level features for classification. Although the CNN-based
+methods perform well, some issues are also introduced. For
+example, small-sized targets tend to disappear as the number
+of convolutional layers increases, which leads to information
+loss and interferes with the final decision. To further illustrate
+this problem, we adopt ResNet50 [17] to extract an RS
+scene’s features and visualize them orderly in Fig. 1. Here,
+the RS scene is randomly selected from the UC Merced land
+use [18] dataset, and it contains planes with various sizes.
+The chosen RS scene and visual feature maps (from low to
+high level) are exhibited in the figure below. We can easily
+find that the five small planes in the middle and bottom parts
+gradually disappear as the convolutional layers increase. When
+the high-level feature map is used, the generated classification
+result may be incorrect. To address the above trouble, the
+direct and effective solution is to leverage multilevel feature information simultaneously. In other words, exploring
+the multiscale knowledge hidden in RS scenes is important
+for classification, which is also our crucial motivation. One
+common approach is to employ dense connections [19] to
+
+1558-0644 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence
+and similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 1. RS scene and its visual feature maps extracted by ResNet50. The
+RS scene is selected from the UC Merced land use dataset, and it contains
+planes with various sizes. (a) RS scene. (b)–(e) Visual feature maps output
+by the first, second, third, and fourth residual blocks.
+
+preserve information from each stage of the CNN. However,
+densely connected networks require substantial computational
+and memory resources, limiting the models’ generalization
+ability in practical tasks [20]. Another way involves hierarchical feature fusion [21], which focuses on effectively merging
+the extracted hierarchical features. Common fusion techniques
+include the feature addition [22], multiplication [23], and channel splicing [24]. Although these methods perform well, they
+do not consider the redundant information and the intricate
+relationships among these multilevel features [25]. Recently,
+transformer-based models like vision transformer (ViT) [26]
+and generative pretrained transformer (GPT) [27] models have
+emerged and achieved significant success in RSSC [28], [29].
+The key of transformer is the self-attention mechanism (SAM),
+which focuses on exploring the global relationships within
+the input data [30]. When the input data covers different
+sources, SAM would be transformed into the cross-attention
+mechanism (CAM) [30] smoothly, and many works use it
+to fuse multilevel features to generate discriminative feature
+representations [31], [32], [33]. With the help of these features,
+satisfactory classification results can be produced.
+The above-mentioned RSSC works have achieved impressive results; however, there is still room for improvement.
+First, the multilevel features extracted by CNNs contain
+diverse clues. High-level features are rich in semantics, while
+low-level features contain much detailed knowledge, such as
+texture and edges [34]. From the perspective of the nature
+of the clues they contain, these two features complement
+each other. However, many methods use them directly without
+considering their contributions, which leads to an incomplete
+understanding of the contents across different scales in RS
+images. Second, fusing the low- and high-level features with
+the specific attention mechanism [30] is a common and valuable solution to enhance the visual representation for RSSC
+tasks. Nevertheless, since the contents within RS images are
+complex, the details within low-level features would be huge
+in volume and diverse in type. Among these details, not all
+of the knowledge is beneficial for RSSC tasks. Therefore,
+it is important to identify useful information and discard
+interference items during the feature fusion to improve the
+results of RSSC. Finally, after the feature fusion, there is
+always a feature enhancement step for the final classification
+features. Current methods [35], [36] usually adopt the feature
+analysis tool to achieve this from the global aspect, such as
+convolutional block attention module (CBAM) [37]. However,
+they may disrupt the representation of information among
+different local channels, limiting the classification features’
+discrimination.
+
+This article develops an RSSC model named multiscale
+sparse cross-attention network (MSCN) to address the above
+problems. First, MSCN utilizes a pretrained ResNet50 network [17] to extract multilevel features from RS images. The
+outputs of the first three blocks within ResNet50 are treated as
+shallow features, and the output of the last block is regarded
+as a high-level feature. Considering that the contributions of
+various shallow features are different, instead of fusing them
+into the high-level feature together, we combine them with the
+high-level feature individually. This way, the valuable clues
+hidden in the multilevel features can be highlighted for the
+classification. Second, rather than adopting SAM or CAM
+directly, a multiscale sparse cross-attention (MSC) mechanism
+is proposed for multilevel feature fusion. On the one hand,
+MSC can explore complex content with various scales hidden in RS scenes. On the other hand, it typically ignores
+irrelevant information by the sparse scheme, reducing the
+impact of interference items. Third, a group CBAM enhancer
+(GCE) is introduced to enhance the feature representations.
+GCE divides the fused feature into several parts along the
+channel dimension and applies CBAM to each part to find
+the salient messages locally. Then, all local clues are concatenated to generate the classification feature. This local-to-global
+enhancement scheme ensures the discrimination of obtained
+representation.
+The main contributions of this article are as follows.
+1) We propose an RSSC network named MSCN. It considers the varying contributions of multilevel features
+extracted by CNN and cross-integrates the high-level
+feature with each shallow feature. This approach effectively mines the useful information embedded within the
+multilevel features.
+2) MSC is introduced to fuse multilevel features effectively.
+On the one hand, it focuses on exploring complex
+content at various scales hidden in RS scenes. On the
+other hand, it typically reduces the impact of irrelevant
+information through a sparse scheme, thereby minimizing the influence of interfering items.
+3) GCE is developed to enhance the representation of the
+classification feature. It identifies local salient information within the classification feature by employing
+a group of CBAM. Additionally, GCE enhances key
+information by readjusting CBAM attention weights,
+making the classification feature more discriminative.
+4) Comprehensive experiments are conducted on three
+datasets, and the positive results indicate the effectiveness of MSCN in RSSC tasks.
+The rest of this article is summarized as follows. The
+published RSSC works on multilevel feature fusion and sparse
+representation in SAM are reviewed in Section II. Section III
+describes the proposed MSCN. We present the experimental
+results and analysis in Section IV. At last, a short conclusion
+is drawn in Section V.
+II. R ELATED W ORK
+A. Background of RSSC
+RSSC involves interpreting the content of a given RS
+image and assigning a corresponding semantic label to the
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+Fig. 2. RS scene selected from Northwestern Polytechnical University-RS
+image scene classification 45 (NWPU) dataset. Its semantic label is Airplane.
+There are four planes in this picture, and their scales are varied. Meanwhile,
+besides the airplanes, many other land covers exist, such as trees, building, and
+runway, which are considered “irrelevant” in single-label classification tasks.
+Thus, capturing multiscale clues and depressing the “irrelevant” contents are
+important to RSSC.
+
+identified scene [38]. The key challenge in this task lies in
+feature extraction, which typically includes texture, spectral,
+and semantic features [39]. Unlike natural scene classification,
+RS scenes often encompass many land covers, and they are
+diverse in type and scale, thereby complicating the classification process [40]. Although the models [13], [14], [15], [16]
+developed based on CNN, ViT [41], and Mamba [42], [43],
+[44] achieve remarkable results in RSSC tasks, further improving classification accuracy requires a deeper consideration of
+the unique characteristics of RS images.
+First, the scale clues hidden in RS scenes are abundant.
+Taking Fig. 2 as an example, which is chosen from the
+Northwestern Polytechnical University-RS image scene classification 45 (NWPU) dataset [38], its semantic label is
+Airplane. There are four airplanes, and their sizes are varied
+dramatically. Ensuring that information from larger planes
+can be captured entirely and smaller planes would not be
+lost during feature learning is a key challenge when using
+deep networks for RSSC tasks. Second, the single labels
+cannot cover the generous contents within RS scenes. For
+instance, although the semantic label of the RS scene in
+Fig. 2 is Airplane, many other land covers exist, such as
+trees, building, and runway. These “irrelevant” contents would
+disturb the deep networks, leading to misclassification. Based
+on the discussion above, a useful RSSC model should be
+capable of capturing multiscale messages from the RS image,
+effectively integrating them, and suppressing the influence of
+“irrelevant” information. These are precisely the key issues
+that the proposed MSCN aims to address.
+B. Multilevel Feature Fusion for RSSC
+Multilevel feature fusion is a helpful technique for RSSC,
+in which the features from different scales are integrated
+subtly to describe the complex contents hidden in RS images.
+With the assistance of these intact representations, good RSSC
+results can be achieved. In this section, we divide the popular
+methods into two groups for review, i.e., feature-combinationand CAM-based models.
+Feature-combination-based fusion methods combine different features according to some specific rules, such as
+concatenation, addition, and multiplication. For example,
+Bi et al. [19] proposed a multiple instance densely connected
+
+5605416
+
+convolution network (MIDC-Net) for RSSC. MIDC-Net first
+develops a densely connected CNN to learn low- and mid-level
+features from RS images. The proposed network simplifies the
+structure of the dense net [45] to reduce the computational
+load and effectively preserve the shallow and middle features.
+Then, various features are fused by the simple concatenation
+for classification. The reported results confirm the usefulness
+of the densely connected CNN and the feasibility of multilevel
+feature fusion. However, the fusion scheme is too simple,
+so the final performance cannot meet what we expected.
+To solve this problem, another feature-combination-based
+model was introduced in [41] named spatial–frequency multiscale transformer (SF-MSFormer). It extracts spatial features
+through the feature pyramid network (FPN) [46] and spatial
+transformer. In addition, it utilizes the multilevel adaptive
+wavelet transform and frequency multiscale transformer to
+capture global frequency texture features. To facilitate effective
+fusion, SF-MSFormer employs adaptive convolutional operations to adjust their sizes before concatenating them along
+the channel dimension. A similar work was published in [23],
+in which a feature correlation enhancement module is first
+developed to discover the relations between features from
+different levels. Then, a channel splicing strategy is proposed
+to combine these features. In addition, considering the spatial
+differences in the fused features, a spatial refinement module is introduced to reduce differences between shallow and
+deep features further. The encouraging results demonstrate the
+work’s effectiveness. To deeply investigate the relationships
+among the multilevel features for fusion, Chen et al. [32]
+proposed a hierarchical feature fusion of transformer with
+patch dilating (HFFT-PD). By whittling down the semantic
+gaps between different features and ensuring the important
+channels in various features, the multilevel features can be
+integrated completely, enhancing the final classification performance. Chen et al. [42] proposed an RSSC model based on
+Mamba, named RSMamba. It utilizes three scanning strategies
+to model the global relationships in RS scenes. Subsequently,
+the features obtained from different path scanning strategies
+are fused by simple additions for the final classification.
+RSMamba overcomes the limitation of the Mamba in spatial
+position perception, and its experimental results demonstrate
+its effectiveness.
+Compared to these methods, MSCN accounts for the varying contributions of the local features at different levels.
+MSCN adopts a progressive feature fusion strategy rather
+than combining multilevel features directly, incrementally
+extracting complementary information from features at different levels, which effectively focuses on targets that are
+prone to being lost in deeper layers, thereby enriching
+the feature representation. Furthermore, compared to simple
+feature-combination-based fusion strategies, MSCN utilizes
+the attention mechanism to fuse features, enabling it to model
+long-range dependencies between different features. It dynamically selects key information for fusion, generating more
+discriminative and representative fused features.
+CAM-based fusion methods integrate the features under the
+paradigm of SAM. The different features are first mapped into
+the Keys, Queries, and Values. Then, they are fused according
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+to the SAM’s rule. Compared to the feature-combinationbased methods, the models in this group can globally explore
+the relations within different features, enhancing the capacity of fused representations. Chen et al. [47] introduced a
+two-branch network called CrossViT to investigate the effectiveness of multiscale features within ViT networks. Each
+branch of CrossViT processes image patches of varying sizes.
+Leveraging the CAM, CrossViT selectively fuses information
+from one branch only with the classification token from
+another branch, thereby reducing computational requirements
+while ensuring sufficient information interaction. The favorable results obtained with CrossViT serve as evidence of
+its effectiveness. Another CAM-based model was introduced
+in [48] named efficient multiscale transformer and cross-level
+attention learning (EMTCAL). On the one hand, EMTCAL
+adopts ResNet [17] to extract multilevel features from the
+local aspect. On the other hand, EMTCAL designs an efficient
+ViT to mine contextual information hidden in these features.
+Finally, the features across various levels are fused by a
+CAM. The positive results illustrate that EMTCAL is helpful
+in RSSC tasks. Similarly, Yuan and Wang [49] proposed an
+RSSC network that integrates CNN and ViT, which is called
+a hierarchical contextual feature-preserved network (HCFPN).
+First, HCFPN extracts multilevel features from RS scenes
+using CNN. Then, it captures contextual features from the first
+two multilevel features using ViT. Finally, HCFPN leverages
+CAM to combine different clues with high-level semantic
+features for classification. The promising results confirm it is
+helpful for RSSC.
+Unlike these methods, MSCN improves upon the CAM to
+suit RS scenes better. Specifically, MSCN extracts multiscale
+information through pooling operations at different scales,
+enabling the capture of the abundant scale clues hidden in
+RS scenes. Additionally, MSCN employs a sparse fusion
+strategy to select more critical information from local features,
+effectively reducing the negative impact of “irrelevant” clues
+detrimental to single-label classification tasks.
+C. Sparse Representation in SAM
+SAM typically requires computing attention weights for all
+sequences to analyze the input data. This is a time-consuming
+process, and it would be influenced by the interference information from less correlated sequences, thereby limiting its
+applicability. To mitigate these challenges, researchers try
+introducing the idea of sparse representation [50] into the
+attention mechanism. For example, Liu et al. [51] proposed
+the shifted window (SWin) Transformer, which restricts the
+attention mechanism to local windows and shifts the window
+at different stages to ensure understanding of global contextual
+relationships. Compared to full attention, the SWin Transformer significantly improves computational efficiency while
+ensuring a comprehensive understanding of image information.
+Inspired by the SWin Transformer, a sparse attention network called cross-shaped window (CSWin) Transformer was
+proposed in [52], which performs local attention calculations
+on the input features within horizontal and vertical stripes.
+It enables the model to focus on important features in the intersection area while reducing the computational complexity of
+
+full attention, maintaining a balance between global and local
+information. The excellent results indicate that the CSWin
+Transformer performs better with reduced computational load.
+Likewise, Zhu et al. [53] introduced a sparse network called
+bi-level transformer (BiFormer), which innovatively employs
+dual-path attention. Specifically, BiFormer initially conducts
+attention calculation at a coarser granularity to filter out
+irrelevant key-value pairs for each query. Then, token-totoken attention is applied to these filtered key-value pairs.
+Compared to full-attention networks, BiFormer has a smaller
+computational load and reduces the impact of interference
+information in the image. The outstanding performance exhibit
+its effectiveness. To improve the downstream tasks efficiency,
+Ye et al. [54] presented a candidate elimination mechanism in
+ViT. This mechanism preserves the attention scores between
+templates and patches in the search region, subsequently
+discarding search region patches with low scores at each stage.
+As a result, the computational burden is reduced, and interference from irrelevant search region patches is minimized.
+III. P ROPOSED M ETHOD
+The overall framework of MSCN is depicted in Fig. 3.
+It comprises four main components: a multilevel feature
+extraction module (MFEM), a multilevel feature cross-fusion
+module (MFCM), a GCE, and a classification module (CM).
+MFEM aims to learn multilevel features from RS images.
+MFCM is developed to fuse the high-level feature with different low-level features to obtain classification features. GCE
+is employed to enhance the classification features further.
+CM completes the final classification. Now, we introduce them
+in detail.
+A. Multilevel Feature Extraction Module
+MFEM first leverages ResNet50, a widely used CNN
+model in the RS community, to extract the multilevel features
+from RS images. ResNet50 has four residual blocks, each
+of which outputs a feature map corresponding to a certain
+level. For convenience, we record these multilevel outputs
+F1 ∈ R H1 ×W1 ×C1 , F2 ∈ R H2 ×W2 ×C2 , F3 ∈ R H3 ×W3 ×C3 , and
+F4 ∈ R H4 ×W4 ×C4 , where Hi , Wi , and Ci stand for the height,
+width, and channel of Fi . From F1 to F4 , features undergo
+a gradual transformation from low to high level, with their
+content shifting gradually from texture details to advanced
+semantic information.
+Then, MFEM employs convolution operations on
+{F1 , F2 , F3 } to adjust their channels to C2 and reduce
+the size of them to their half. Reducing their size aims to
+reduce the computational costs in the subsequent fusion stage,
+and utilizing 3 × 3 convolution for size reduction helps to
+retain more useful feature information. This progress can be
+formulated as follows:
+Fi′ = Conv3×3 (Fi ), i = 1, 2, 3
+
+(1)
+
+where Conv3×3 (·) indicates the 3 × 3 convolution with a stride
+of 2 and padding of 1. For F4 , we only adjust its channels to
+C2 by a 1 × 1 convolution, which is defined as follows:
+F′4 = Conv1×1 (F4 )
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+(2)
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+Fig. 3.
+
+5605416
+
+Framework of MSCN. It consists of four parts: an MFEM, an MFCM, a GCE, and a CM.
+
+Fig. 4. Schematic of MSC. It first employs varying window sizes for average
+pooling to capture multiscale clues in the input data. Then, two TopK sparse
+operations are adopted to fuse the different features considering the irrelevant
+information.
+
+where Conv1×1 (·) indicates the 1 × 1 convolution with a
+stride of 1 and padding of 0.
+So far, we obtained the multilevel features F′1 ∈
+(H1 /2)×(W1 /2)×C2
+R
+, F′2
+∈
+R(H2 /2)×(W2 /2)×C2 , F′3
+∈
+′
+(H3 /2)×(W3 /2)×C2
+H4 ×W4 ×C2
+R
+, and F4 ∈ R
+from RS images.
+B. Multilevel Feature Cross-Fusion Module
+F′1 ,
+
+F′2 ,
+
+In MFEM, we obtain the multilevel features
+F′3 , and F′4 . The high-level feature F′4 contains advanced
+semantic information, while the low-level features {F′1 , F′2 , F′3 }
+enclose much detailed knowledge. They complement each
+other. Therefore, we hope to extract information from various
+low-level features to enrich the representation of high-level
+feature, making it more comprehensive and discriminative for
+the final classification. However, how to fuse these features
+effectively is a key problem. The contents of RS images
+are diverse in type and varied in scale, and the land covers
+with different scales provide varying levels of semantic and
+structural details. Therefore, considering these multiscale clues
+during the fusion process is the first challenge. Additionally,
+not all information hidden in the multilevel features is useful. The interference messages can affect the fusion results
+negatively. Hence, identifying and eliminating them in the
+fusion step is another challenge. To address these challenges,
+we propose MSC in this section.
+The schematic of MSC is shown in Fig. 4. The key idea of
+MSC comes from CAM [30], which combines the different
+inputs by using the attention mechanism. Unlike CAM, the
+proposed MSC not only considers multiscale clues in RS
+
+scenes but also effectively suppresses irrelevant information
+interference through sparse operations, resulting in more accurate feature fusion outcomes. Suppose there are two inputs
+X ∈ Rh 1 ×w1 ×c and Y ∈ Rh 2 ×w2 ×c , where h 1 and h 2 , w1 and w2 ,
+and c represent the heights, widths, and channels. To obtain
+multiscale clues hidden in the input data, MSC first applies
+three average pooling operations with different windows to
+Y to generate Y1 , Y2 , and Y3 . Note that their shapes are
+consistent with Y. The larger pooling window can capture the
+overall structural information in RS images, while the smaller
+one can capture detailed information. Then, these pooled
+features are added together to produce Ŷ , which contains
+abundant multiscale information. The details of the average
+pooling operations can be found in Section IV-C1. Next, X
+and Ŷ are flattened and mapped into Q ∈ R N1 ×d , K ∈ R N2 ×d ,
+and V ∈ R N2 ×d (N1 equals h 1 × w1 , N2 equals h 2 × w2 , and
+d equals c) according to the following formula:
+Q = Flatten(X) · W1
+
+
+K, V = Split LN Flatten Ŷ · W2
+
+(3)
+
+where Flatten(·) is the flatten operation, Split(·) is the uniformly split operation along the channel dimension, LN(·) is
+layer-norm function, and W1 and W2 are linear projection
+parameters. Also, the attention map M ∈ R N1 ×N2 can be
+obtained by
+KT
+M=Q× √
+c
+
+(4)
+
+where c is the dimension of Q.
+Here, M illustrates the similarity relationships between
+patches in Q and K, and determines how to allocate attention
+weights to V. Specifically, the item m ij in M stands for the
+correlation between the ith element in Q and the jth one in K.
+The smaller the value, the lower the correlation, indicating
+the jth element is irrelevant. The ith row of M signifies the
+similarity between all elements in K and the ith item in Q.
+To reduce the negative impacts of irrelevant elements, we use
+a TopK sparse operation [55] to abandon the lowest elements
+with a proportion of 1−k and reserve the highest k proportion
+in each row of M. This progress is shown in Fig. 5. Note
+that we replace the irrelevant elements’ values by −∞ rather
+than removing them. This way, these values are transformed
+into 0 through the softmax operation. The operation discussed
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 5. Illustration of TopK sparse operation. Black color represents the
+value of −∞, while gray indicates the value of 0.
+Fig. 6. Flowchart of the proposed GCE, which applies CBAM in a grouped
+manner to identify local salient information. Additionally, it readjusts the
+CBAM weights to highlight critical information further.
+
+above can be formulated as follows:
+M′ = Softmax(Topk(M))
+
+(5)
+
+′
+
+where M is an adjusted attention map, Softmax(·) is the
+softmax activation function, and Topk(·) is the TopK sparse
+operation. Compared to M, M′ sheds light on more related
+elements and neglects those irrelevant. Thus, the neglected
+elements are not considered, while the weights of the relevant
+ones can be enlarged. Based on the TopK sparse operation,
+we perform two separate TopK operations with different values
+of k (represented as k1 and k2 ) on each M. Subsequently, two
+learnable parameters are introduced to automatically adjust
+the ratio of these two TopK operations, enabling the model
+to capture diverse feature information during the fusion stage
+and enhancing the model’s perceptual capability. To ensure
+that MSC can automatically select them, (5) can be rewritten
+as follows:
+
+
+M′ = α · Softmax Topk1 (M) + β · Softmax Topk2 (M)
+(6)
+where α and β are learnable parameters, and Topk1 (·) and
+Topk2 (·) are the functions of the TopK sparse operations with
+k1 and k2 . Finally, the adjusted attention map M′ is assigned
+to V by
+A = M′ × V
+
+(7)
+
+N1 ×d
+
+where A ∈ R
+is the output of MSC, which integrated
+information from the two inputs.
+Based on MSC, MFCM fuses {F′1 , F′2 , F′3 } with F′4 one by
+one, and then obtains the classification feature F ∈ R H4 ×W4 ×4C2
+through a simple concatenation. This step can be formulated
+as follows:
+
+Ai = MSC F′4 , Fi′ , i = 1, 2, 3
+
+F = Concat A1 , A2 , A3 , F′4
+(8)
+where MSC(·) means the function of MSC, and Concat(·)
+indicates the concatenation. Here, the reason for gradual fusion
+is that F′4 can extract information from various low-level
+features, making it more comprehensive and discriminative.
+C. Group CBAM Enhancer
+Although F can be used to complete the classification
+directly, it still includes redundant clues that limit its discrimination. Thus, we propose GCE to enhance F from the local
+
+and global aspects simultaneously. It is primarily based on
+CBAM, but it enhances the extraction of local salient features
+by introducing a grouping strategy. Furthermore, it reallocates
+weights based on this, improving the focus on critical regions.
+The architecture of GCE is illustrated in Fig. 6. For the input F,
+we first uniformly split it into g groups {F1 , F2 , . . . , Fg } along
+the channel dimension. Then, independent CBAMs are applied
+to them respectively to get the local attention weights
+Wi = CBAM(Fi ), i = 1, 2, . . . , g
+
+(9)
+
+where CBAM(·) implies the function of CBAM, and Wi ∈
+R H4 ×W4 ×(4C2 /g) is the CBAM weights for the ith part Fi . The
+values in Wi range from 0 to 1, and a higher value means the
+corresponding information is more important. When we get
+Wi , Fi can be reweighted by multiplying it. Here, to highlight
+the key clues in RS images, we readjust the CBAM weights.
+Specifically, we first calculate the mean of each weight Wi .
+Then, the elements that are higher than the mean value are set
+to be 1. For the elements that are lower than the mean value,
+their values remain. After this process, the upgraded weights
+{W′1 , . . . , W′g } can be obtained. Subsequently, we multiply
+them with {F1 , F2 , . . . , Fg }, followed by a residual connection.
+This step can be defined as follows:
+Fi′ = Fi · Wi′ + Fi , i = 1, 2, . . . , g.
+
+(10)
+
+Finally, we concatenate them along the channel dimension to
+produce the enhanced feature F̂ ∈ R H4 ×W4 ×4C2 .
+D. Classification Module
+When we get F̂, a global average pooling operation is
+applied to reduce its dimension. Then, a fully connected layer
+is employed to produce the classification outputs Ffinal ∈ RC ,
+where C represents the number of classification categories.
+Next, we select the cross-entropy loss function [56] to optimize
+our network. It can be defined as follows:
+N
+C
+
+1 XX
+L=−
+yi,c log pi,c
+(11)
+N i=1 c=1
+where N represents the number of samples, C denotes
+the number of classification categories, yi,c represents the
+ground-truth category of the ith sample as c, while pi,c
+represents the probability that the ith sample is predicted as
+the cth category.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+5605416
+
+Fig. 7. Examples of the UCM dataset. The corresponding categories are also
+provided for convenience.
+
+Fig. 9. Examples of the NWPU dataset. The corresponding categories are
+also provided for convenience.
+
+Fig. 8. Examples of the AID dataset. The corresponding categories are also
+provided for convenience.
+
+IV. E XPERIMENT
+
+was introduced by Northwestern Polytechnical University.
+There are 31 500 RS scenes in NWPU, which are divided into
+45 classes equally. The RS scenes have 256 × 256 pixels,
+and their pixel resolutions range from 30 to 0.2 m. Examples
+of the NWPU dataset are illustrated in Fig. 9. NWPU presents
+a greater challenge for accurate classification due to its large
+volume and complex classes compared to the UCM and AID
+datasets. For model performance estimation, we randomly
+choose 10% and 20% scenes to establish the training sets,
+and the rest of the scenes are used to count the results.
+
+A. Dataset Introduction
+This article selects three public datasets to study the usefulness of MSCN.
+1) UCM Land Use Dataset: The UC Merced (UCM)
+dataset [18] was constructed and released by the UC Merced
+computer vision laboratory. It encompasses 21 categories,
+such as “agricultural,” “dense residential,” and “storage tanks.”
+There are 100 RS scenes in each category. Their spatial sizes
+and pixel resolutions are 256 × 256 and 1 foot. Examples of
+the UCM dataset are depicted in Fig. 7. To comprehensively
+evaluate our model’s performance, we randomly select 50%
+and 80% RS scenes from UCM to establish the training sets,
+and the remaining RS scenes are regarded as the testing sets.
+2) Aerial Image Dataset: The Aerial Image Dataset (AID)
+[57] was constructed jointly by Wuhan University and
+Huazhong University of Science and Technology in 2017.
+It comprises 30 classes, each of which contains approximately
+220 to 420 RS scenes, resulting in a total of 10 000 scenes.
+Their spatial sizes are 600 × 600, and their spatial resolutions
+range from 0.5 to 8 m. Examples and the corresponding class
+names from the AID dataset are illustrated in Fig. 8. To assess
+the proposed model completely, we create two training sets,
+which randomly contain 20% and 50% scenes. The remaining
+scenes are deemed as the testing data.
+3) Northwestern Polytechnical University-RS Image Scene
+Classification 45 (NWPU) Dataset: The NWPU dataset [38]
+
+B. Experimental Settings
+All experiments are conducted on a workstation equipped
+with a GeForce RTX 3090 GPU, using the PyTorch platform
+with a version of 1.13.1. ResNet50 of MSCN is initialized
+using the pretrained parameters from ImageNet [58], and the
+other parts are initialized randomly. We select AdamW [59]
+as the optimizer to train the proposed MSCN. The epochs
+and batch size are set to be 200 and 128, respectively. The
+first five epochs are warm-up processes, and their learning
+rate equals 1e − 6. For other epochs, the initial learning rate
+is 1e − 4, and a cosine decay strategy is applied to adjust
+the learning rate automatically. The minimum learning rate is
+set as 1e − 6. To ensure the stability of the training stage,
+we adopt the same data augmentation methods as described
+in [47], including rand augmentation [60] and mixup [61]. All
+RS scenes are resized to 224 × 224 before feeding them into
+our model. For MSC, we adopt the multihead strategy [30] to
+better capture the relationship between different input features,
+and the number of heads is set to eight. Overall accuracy
+(OA) [56] is used as the evaluation metric, which represents
+the proportion of correctly classified scenes among the total
+images in the dataset. We repeat each experiment five times
+and report the mean and standard deviation (STD) values.
+Additionally, we plot confusion matrices [56] to visualize
+category-specific performance.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 10. OA values of different MSCNs with various pooling window sizes
+counted on the UCM, AID, and NWPU datasets.
+
+C. Parameters Analysis
+Several free parameters in our MSCN should be set in
+advance, they are the pooling window sizes in MSC, the
+threshold k1 and k2 in the TopK operation, and the group
+number g in GCE. In this section, we aim to empirically find
+their optical values for the three datasets.
+1) Analysis of Pooling Window Sizes in MSC: As mentioned in Section III-B, MSC applies three average pooling
+operations with different window sizes to the input data to
+explore the multiscale clues. To find a proper set of pooling
+window sizes for different datasets, we vary the window sizes
+from 1 to 11 and make four combinations, i.e., [1, 3, 5],
+[3, 5, 7], [5, 7, 9], and [7, 9, 11]. Additionally, to perform a
+more comprehensive analysis of the impact of pooling windows, we select larger window intervals, i.e., [1, 5, 9] and
+[3, 7, 11]. Then, different MSCNs are trained with them by
+using different RS scenes, and their classification results are
+summarized in Fig. 10.
+By observing the bars, we find that MSCN achieves the best
+performance for different datasets when the pooling window
+sizes are [3, 5, 7]. This is because the window size of 3 corresponds to a smaller receptive field, aiding in capturing local
+details. On the other hand, the window size of 7 corresponds
+to a larger receptive field, facilitating the capture of a broader
+range of overall information. While the window size of 5,
+being in the middle, helps to balance the capture of local and
+overall information. Combining these three values enables a
+more comprehensive exploration of multiscale information in
+RS images. Relatively, the smaller or larger pooling windows
+would result in information loss and a decline in classification
+performance. Moreover, as the window intervals increase (such
+as [1, 5, 9] and [3, 7, 11]), the performance of MSCN does
+not improve. This is because larger intervals result in greater
+differences between the pooled feature maps, leading to less
+effective feature fusion. Based on the above analysis, we select
+[3, 5, 7] as the optimal pooling window sizes.
+2) Analysis of Threshold k1 and k2 in the TopK Operation:
+We apply the TopK sparse operation in MSC to fuse useful
+information from shallow to deep features. There are two
+parameters to control the fusion results, i.e., k1 and k2 . We tune
+their values simultaneously to determine their optimal values.
+Considering that the functions of k1 and k2 are to remove
+the interference information and retain enough valuable clues,
+
+we set the ranges of k1 and k2 as [(1/2), (1/4), (1/8), (1/16)]
+and [(1/3), (1/6), (1/9)]. The classification results of different
+MSCNs with various k1 and k2 across the three datasets are
+shown in Fig. 11.
+We can observe that classification accuracies decrease for
+the UCM and AID datasets as the value of k1 decreases. When
+k2 is greater than (1/6), the experimental results increase as the
+value of k2 decreases. Conversely, when the value of k2 continuously decreases, the accuracies would decline. For the NWPU
+dataset, when the values of k1 and k2 are greater than (1/8) and
+(1/6), respectively, the experimental results increase as their
+values decrease. However, classification accuracies decrease
+as their values continuously decrease. This is because lower
+values of k1 and k2 make MSCN exclude more interference
+information so that the results can be improved. Nevertheless,
+once their values are lower than those of [(1/2), (1/6)] for
+UCM and AID datasets and [(1/8), (1/6)] for NWPU dataset,
+too many messages, including some important details, will
+be eliminated. Thus, the classification results will get worse
+and worse. Finally, as suggested by Fig. 11, the optimal
+k1 and k2 values for the UCM, AID, and NWPU datasets are
+[(1/2), (1/6)], [(1/2), (1/6)], and [(1/8), (1/6)], respectively.
+To visually demonstrate the effectiveness of MSC in reducing the influence of interference areas during the feature fusion
+stage, we visualize the information discarded and retained by
+F′4 and F′3 at different k values, as shown in Fig. 12. The
+red dot area in the figure represents the query information,
+the semitransparent masked regions indicate the discarded
+information, and the remaining information is retained for
+feature fusion. The results indicate that a larger k1 value retains
+more information, whereas a smaller k2 value discards more
+irrelevant information while preserving more relevant data.
+Additionally, the retained information varies depending on the
+query. For example, when the sample is “Bridge,” the query
+is related to the bridge, and more information related to the
+bridge is retained. In contrast, more information relevant to
+the water body can be preserved when the query is about the
+water body.
+3) Analysis of g in GCE: In GCE, we split the input feature
+into g parts along the channel dimension, and then the local
+CBAM operation is applied to different parts to get the diverse
+attention weights. This way, the critical information hidden in
+the input data can be highlighted accordingly. To examine the
+impact of g on our model, we change its value at a range
+of [1, 2, 4, 8, 16]. The classification results of MSCNs trained
+by different datasets under varied g are displayed in Fig. 13.
+Note that when g equals 1, GCE is a global CBAM enhancer.
+From the observation of the bars, it is easy to find that the
+performance of MSCNs rises when g varies from 1 to 8.
+This indicates that the group partition strategy is useful in
+exploring the essential clues. However, the behavior of MSCNs
+weakens when g increases to 16. The main reason is that
+when g becomes too large, the originally correlated channel
+information is disrupted, leading to poor classification results.
+Another interesting observation is that when using the AID
+dataset and the ratio of training to testing samples is 5:5, the
+impact of different values of g on the model is negligible. This
+is because the AID dataset has a large enough sample size.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+5605416
+
+Fig. 11. OA values of MSCN with different k1 and k2 in MSC counted on the UCM, AID, and NWPU datasets. We fit the experimental results into a 3-D
+graph, where the data points corresponding to different values of k1 and k2 are indicated by blue dots. The maximum value is highlighted with a red dot, and
+its coordinates are annotated.
+
+Fig. 12. Visualization results of TopK in MSC. The red dot area in the figure represents the query information, the semitransparent masked regions indicate
+the discarded information, and the remaining information is retained for feature fusion.
+
+With equal ratios of training and testing samples, the model
+can learn features effectively during training and evaluate its
+generalization ability adequately during testing. Thus, feature
+enhancement has a minimal impact on the model. Overall,
+we suggest the optimal value of g is eight.
+D. Comparisons of State-of-the-Art Models
+To evaluate our proposed MSCN, we compare it with
+fifteen existing methods, and their detailed information
+can be found in Table I. Here, CrossViT-15-D [47] and
+Swin-T [51] are general-purpose models, while others are
+proposed in the RS community. MF2CNet, EMTCAL,
+EFCOMFF-Net, and MGML [62] are multilevel feature
+fusion-based models. TCNN [63], AGOS(ResNet-50) [64],
+MSGNet [65], SAGN [66], HFAM [67], and Upetu [68] are
+
+Fig. 13. OA values of different MSCNs with various g values counted on
+the UCM, AID, and NWPU datasets.
+
+deep feature-based models. SKAL [69] and CGINet [70] are
+global and local feature fusion-based models. The backbones
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+TABLE I
+D ETAILED I NFORMATION OF THE C OMPARED M ETHODS
+
+TABLE II
+OA VALUES AND STD S (%) OF VARIOUS A PPROACHES C OUNTED ON
+UCM DATASET. T HE B EST VALUES A RE H IGHLIGHTED IN B OLD
+
+of MF2CNet [71] and UPetu [68] are octave convolution [72] and ConvNexXt [73], respectively, while others use
+ResNet [17]. All compared models are accomplished using
+the released codes by the authors. Their free parameters
+are set according to the original literature, and their experimental settings are consistent with the contents described in
+Section IV-B.
+1) Results on UCM: The results of all the models counted
+on the UCM dataset are shown in Table II. All methods achieve
+commendable classification results. Two general-purpose models (especially Swin-T) perform well, which illustrates the
+effectiveness of the Transformer. Even without considering the
+characteristics of RS images, the Transformer still helps them
+achieve good classification results. However, the proposed
+MSCN outperforms them in all cases, demonstrating our
+model’s superiorities. Among the multilevel feature fusion
+methods, EFCOMFF-Net and MGML demonstrate the most
+vital behavior, primarily since they reduce discrepancies
+between multilevel features during the fusion stage. Even so,
+our MSCN outperforms them, achieving OA improvements of
+0.15% and 0.09% over EFCOMFF-Net and 0.19% and 0.14%
+
+over MGML at 50% and 80% training ratios, respectively. For
+the deep feature-based methods, AGOS (ResNet-50) performs
+the best, with results only 0.02% and 0.24% lower than our
+approach. The strongest global and local feature fusion-based
+model is CGINet. This is because its specific integration
+scheme leads to the obtained features that can comprehensively
+represent RS scenes. Even so, our MSCN’s OA values are
+still 0.12% and 0.11% higher than CGINet’s. Overall, MSCN
+outperforms other methods in all cases. These encouraging
+findings can be attributed to the following three points.
+First, MSCN fuses multilevel features step by step, which
+is beneficial for integrating the different clues thoroughly so
+that a comprehensive feature representation can be generated.
+Second, the MSC-based fusion strategy not only extracts
+multiscale information from RS scenes but also reduces the
+negative impacts of interfering knowledge. Finally, GCE further emphasizes the key messages within the classification
+features, leading to better predictions.
+Furthermore, we present the confusion matrices achieved
+by MSCN in Fig. 14. Note that these two confusion matrices
+are counted by the best results among the five repeated experiments. Analysis of Fig. 14(a) reveals that MSCN correctly
+classifies almost all categories, with only several samples
+from “golf course” and “medium residential” scenes being
+incorrectly classified. When the training ratio is 80%, all
+classes are correctly classified, demonstrating the powerful
+classification ability of MSCN.
+2) Results on AID Dataset: The results of different methods
+counted on the AID dataset are shown in Table III. Similarly, the OA values of our MSCN are the highest among
+all compared models in all cases. When the training ratio
+equals 20%, MSCN’s OA value is 95.86%, while Swin-T,
+MF2CNet, MSGNet, EFCOMFF-Net, and MGML’s OA values
+are 95.45%, 95.54%, 95.46%, 95.76%, and 95.47, respectively.
+Compared to other models, our advantages are clear, surpassing CrossViT-15-D by 0.55%, TCNN by 1.31%, EMTCAL
+by 1.17%, SKAL by 1.48%, AGOS (ResNet-50) by 0.87%,
+SAGN by 0.69%, HFAM by 1.15%, CGINet by 0.52%, and
+UPetu by 0.53%. When the training ratio comes to 50%, our
+model surpasses the second-best Swin-T and EFCOMFF-Net
+by over 0.22%. The performance of MSGNet is also good,
+which is only 0.28% less than ours. However, the performance gaps between MSCN and other models are distinct,
+surpassing CrossViT-15-D by 0.50%, MF2CNet by 0.44%,
+TCNN by 0.74%, EMTCAL by 1.05%, SKAL by 0.70%,
+AGOS (ResNet-50) by 0.45%, SAGN by 0.69%, EMSCNet
+by 0.50%, MGML by 0.41%, HFAM by 0.73%, CGINet
+by 0.36%, and UPetu by 0.42%. The AID dataset contains
+more scenes and a wider variety of categories than the UCM
+dataset, making it more challenging to classify accurately. The
+leading performance of MSCN discussed above demonstrates
+its strong stability and generalization capability.
+The confusion matrices of MSCN for AID are depicted in
+Fig. 15. Whether the proportion of training samples is 20% or
+50%, most samples from different categories can be classified
+accurately by our model. For instance, all scenes corresponding to “river” are correctly classified. However, we also find
+that MSCN performs weakly in the “pond” category, with most
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+5605416
+
+Fig. 14. Confusion matrices of MSCN counted on UCM dataset. The scene categories corresponding to the numbers are consistent with Fig. 7. (a) Confusion
+matrix for 50% training. (b) Confusion matrix for 80% training.
+
+TABLE III
+OA VALUES AND STD S (%) OF VARIOUS A PPROACHES C OUNTED ON AID
+DATASET. T HE B EST VALUES A RE H IGHLIGHTED IN B OLD
+
+TABLE IV
+OA VALUES AND STD S (%) OF VARIOUS A PPROACHES C OUNTED ON
+NWPU DATASET. T HE B EST VALUES A RE H IGHLIGHTED IN B OLD
+
+images misclassified as “forest.” This is because the water
+bodies in “pond” scenes often reflect the “forest” features, such
+as grass banks or shrub forests. Consequently, the network
+tends to misclassify them as “forest.” This is an area where
+MSCN requires further improvement.
+3) Results on NWPU Dataset: Compared to UCM and
+AID, the RS scenes in NWPU are large in volume and
+diverse in the category, enhancing the difficulties for accurate
+classification. The classification results of our MSCN and
+other compared models counted on NWPU are summarized
+in Table IV. The performance of MSCN maintains a leading
+position across various training ratios, demonstrating its powerful classification capabilities. When using 10% samples to
+train models, MSCN surpasses the second-best EFCOMFFNet by 0.20%. Compared to other methods, the improvements
+achieved by MSCN are 0.69% (over CrossViT-15-D), 0.57%
+
+(over Swin-T), 0.57% (over MF2CNet), 2.39% (over TCNN),
+1.01% (over EMTCAL), 2.60% (over SKAL), 0.29% (over
+AGOS (ResNet-50)), 0.24% (over MSGNet), 0.91% (over
+SAGN), 0.48% (over EMSCNet), 0.38% (over MGML),
+1.83% (over HFAM), 0.36% (over CGINet), and 0.44% (over
+UPetu). When using 20% samples to train models, MSCN still
+performs best. It surpasses CrossViT-15-D by 0.56%, Swin-T
+by 0.45%, MF2CNet by 0.74%, TCNN by 1.54%, EMTCAL
+by 0.94%, SKAL by 1.80%, AGOS (ResNet-50) by 0.31%,
+SAGN by 1.10%, EMSCNet by 0.51%, MGML by 0.32%,
+HFAM by 3.78%, CGINet by 0.21%, and UPetu by 0.89%.
+The confusion matrices of MSCN for NWPU are presented
+in Fig. 16. When the training ratio is 10% [see Fig. 16(a)],
+MSCN performs well in most categories. However, its behavior is weak in “tennis court” and “medium residential.” Their
+samples are misclassified into each other’s category. When the
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Fig. 15. Confusion matrices of MSCN counted on AID dataset. The scene categories corresponding to the numbers are consistent with Fig. 8. (a) Confusion
+matrix for 20% training. (b) Confusion matrix for 50% training.
+
+Fig. 16. Confusion matrices of MSCN counted on NWPU dataset. The scene categories corresponding to the numbers are consistent with Fig. 9. (a) Confusion
+matrix for 10% training. (b) Confusion matrix for 20% training.
+
+Fig. 17. OA values of Net-0 to Net-3 on the UCM, AID, and NWPU datasets.
+
+training ratio rises to 20% [see Fig. 16(b)], the performance of
+different methods has improved. Although MSCN is still the
+best, it does not perform nicely for “tennis court” and “medium
+residential.” The reasons behind this can be summarized as
+
+Fig. 18. OA values of Net-3 to Net-7 on the UCM, AID, and NWPU datasets.
+
+follows. Most “tennis court” scenes are surrounded by residential areas, resulting in high similarity between the two
+categories. In this scenario, our model is likely to produce
+incorrect classifications. Improving the model’s ability to differentiate highly similar samples is one of our future tasks.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+Fig. 19.
+
+5605416
+
+Visualization results of Net-0 to Net-7. We select the classification features of each network and plot heat maps to obtain the visualization results.
+
+E. Ablation Study
+MFCM and GCE are two key parts of the proposed
+MSCN. MFCM is mainly composed of three MSCs, which
+are designed to extract valuable clues from multilevel features.
+GCE is an enhancer that effectively highlights key information
+within the classification feature. In this section, we plan
+to study their contributions. To this end, we construct four
+networks and analyze their performance on the three datasets.
+These four networks are as follows:
+1) Net-0: MFEM + CM;
+2) Net-1: MFEM + MFCM + CM;
+3) Net-2: MFEM + GCE + CM;
+4) Net-3: MFEM + MFCM + GCE + CM.
+Net-0 is a baseline network where only MFEM is adopted as
+the feature extractor. To complete the classification, multilevel
+features learned by MFEM are concatenated and directly
+fed into CM. Net-1 is built upon Net-0 with the addition of MFCM. Instead of concatenating multilevel features,
+MFCM can fuse them effectively. Then, CM is also used
+to generate the predictions. Net-2 expands on Net-0 by
+incorporating GCE. In this model, the multilevel features are
+enhanced by GCE respectively. Then, the enhanced features
+are concatenated together. With the assistance of CE, the
+classification results can be obtained. Net-3 is actually the
+proposed MSCN. In Net-0 and Net-2, the 3 × 3 convolution
+in MFEM transforms features at each level to match the size
+of F′4 in Section III-A, ensuring consistent dimensions for
+concatenation.
+The performance of Net-0 to Net-3 across the three datasets
+is depicted in Fig. 17. By observing those bars, the behavior
+of Net-1 and Net-2 is stronger than that of Net-0 in all cases,
+indicating that the feature fusion scheme in MFCM and the
+feature enhancement GCE play a positive role in our model.
+An interesting finding is that the OA values of Net-1 are higher
+than that of Net-2 in most cases. This suggests that MFCM has
+a more significant impact than GCE in our proposed MSCN.
+In other words, the multilevel feature fusion contributes more
+to the classification results. Also, when MFCM and GCE are
+combined, Net-3 outperforms Net-1 and Net-2. This denotes
+
+that these two modules can provide complementary clues for
+the final classification.
+Additionally, to further demonstrate the effectiveness of our
+model, we designed the following ablation experiments, they
+are the following:
+1) Net-4: MFEM + MFCM(CAM) + GCE + CM;
+2) Net-5: MFEM + MFCM(only k1 in MSC) + GCE +
+CM;
+3) Net-6: MFEM + MFCM(only k2 in MSC) + GCE +
+CM;
+4) Net-7: MFEM + MFCM + CBAM + CM.
+For Net-4, we replace all MSCs in MFCM with CAMs to
+evaluate the performance of MSC compared to CAM. For
+Net-5 and Net-6, we apply the TopK operation only with
+k1 and k2 individually for all MSCs to verify the necessity of
+selecting two different k values. For Net-7, instead of GCE,
+CBAM is adopted to assess the performance improvement
+brought by GCE over CBAM. The performance of Net-4 to
+Net-7 across the three datasets is depicted in Fig. 18. The
+behavior of Net-3 (i.e., MSCN) is also exhibited for reference.
+From observing these bars, we can easily find that Net-3
+outperforms other networks, which implies the importance of
+MSC, multiple k values, and GCE. Taking UCM with 50%
+training samples as an example, when we use CAM rather
+than MSC, Net-4’s OA value is 0.21% lower than Net-3.
+This is because, compared to CAM, which only focuses on
+information fusion, MSC also pays attention to exploring the
+multiscale clues and removing the redundant messages. Thus,
+the fused results achieved by MSC can provide more helpful
+materials for subsequent operations. Taking AID with 20%
+training samples as another instance, once the multiple k-value
+scheme is exchanged with the single k-value design, the
+performance of Net-5 and Net-6 drops apparently compared
+with Net-3. This confirms the rationale behind our choice of
+k1 and k2 values. For Net-7, its behavior is weaker than that
+of Net-3 in all cases. This is mainly due to GCE’s ability to
+extract key information in groups compared to CBAM, thereby
+improving the classification results.
+Finally, we provided visualizations for each ablation experiment, as shown in Fig. 19. These heat maps reflect the focus
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+areas of different models. Net-3 is the proposed MSCN. Taking
+the sample of “Airplane” as an example, the attention area
+of Net-3 precisely focuses on the airplanes’ location in the
+image. In contrast, Net-0 has a more dispersed attention area,
+lacking specificity compared to Net-3. Net-1 shows insufficient
+focus on the airplane region due to the absence of GCE.
+Net-2 increases attention to irrelevant areas because it lacks
+MFCM. Net-4 employs CAM for feature fusion, but without
+filtering interference information, its overall performance is
+inferior to that of Net-3. Net-5 and Net-6 both utilize a single
+k value, which limits the breadth of their overall areas of focus.
+Additionally, because Net-6 employs a smaller k value, its area
+of focus is further narrowed compared to Net-5. While Net-7
+effectively concentrates on target areas, it still experiences
+issues with excessive focus on some areas that are not targets.
+V. C ONCLUSION
+This article presents a new RSSC network named MSCN.
+First, MSCN leverages a pretrained ResNet50 to extract multilevel features. The features are categorized into high-level
+and low-level groups based on their contributions. Then,
+the high-level features are cross-fused with different shallow
+features by the developed MFEM to extract useful information
+effectively. The proposed MFEM mainly consists of the MSC
+mechanism. By employing sparse operations, MSC can fuse
+multilevel features while filtering out irrelevant information,
+thus reducing the impact of interference messages. Finally,
+we introduce GCE to enhance the representation of classification features by identifying local salient information with the
+help of CBAM. Encouraging experimental results counted on
+multiple public RSSC datasets demonstrate that our MSCN is a
+helpful classification model. However, the network is prone to
+misclassification when the feature similarity between different
+scene categories is high or the scenes are closely related.
+Overcoming this deficiency is a key focus of our future work.
+R EFERENCES
+[1] Z. Wu, P. Ma, Y. Zheng, F. Gu, L. Liu, and H. Lin, “Automatic
+detection and classification of land subsidence in deltaic metropolitan
+areas using distributed scatterer InSAR and oriented R-CNN,” Remote
+Sens. Environ., vol. 290, May 2023, Art. no. 113545.
+[2] V. Barriere, M. Claverie, M. Schneider, G. Lemoine, and
+R. D’Andrimont, “Boosting crop classification by hierarchically
+fusing satellite, rotational, and contextual data,” Remote Sens. Environ.,
+vol. 305, May 2024, Art. no. 114110.
+[3] H. He, J. Yan, D. Liang, Z. Sun, J. Li, and L. Wang, “Timeseries land cover change detection using deep learning-based temporal
+semantic segmentation,” Remote Sens. Environ., vol. 305, May 2024,
+Art. no. 114101.
+[4] R. M. Anwer, F. S. Khan, J. van de Weijer, M. Molinier, and
+J. Laaksonen, “Binary patterns encoded convolutional neural networks
+for texture recognition and remote sensing scene classification,” ISPRS
+J. Photogramm. Remote Sens., vol. 138, pp. 74–85, Apr. 2018.
+[5] N. Dalal and B. Triggs, “Histograms of oriented gradients for human
+detection,” in Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern
+Recognit. (CVPR), Jun. 2005, pp. 886–893.
+[6] Z. Li, F. Liu, W. Yang, S. Peng, and J. Zhou, “A survey of convolutional
+neural networks: Analysis, applications, and prospects,” IEEE Trans.
+Neural Netw. Learn. Syst., vol. 33, no. 12, pp. 6999–7019, Dec. 2021.
+[7] L. Zhang and L. Zhang, “Artificial intelligence for remote sensing
+data analysis: A review of challenges and opportunities,” IEEE Geosci.
+Remote Sens. Mag., vol. 10, no. 2, pp. 270–294, Jun. 2022.
+
+[8] W. Ma et al., “Feature split–merge–enahancement network for remote
+sensing object detection,” IEEE Trans. Geosci. Remote Sens., vol. 60,
+2022, Art. no. 5616217.
+[9] X. Zhang, W. Ma, C. Li, J. Wu, X. Tang, and L. Jiao, “Fully convolutional network-based ensemble method for road extraction from
+aerial images,” IEEE Geosci. Remote Sens. Lett., vol. 17, no. 10,
+pp. 1777–1781, Oct. 2020.
+[10] Z. Wang, Y. Ma, and Y. Zhang, “Review of pixel-level remote sensing
+image fusion based on deep learning,” Inf. Fusion, vol. 90, pp. 36–58,
+Feb. 2023.
+[11] D. Hong, J. Yao, C. Li, D. Meng, N. Yokoya, and J. Chanussot,
+“Decoupled-and-coupled networks: Self-supervised hyperspectral image
+super-resolution with subpixel fusion,” IEEE Trans. Geosci. Remote
+Sens., vol. 61, 2023, Art. no. 5527812.
+[12] C. Liu, J. Ma, X. Tang, F. Liu, X. Zhang, and L. Jiao, “Deep hash
+learning for remote sensing image retrieval,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 4, pp. 3420–3443, Apr. 2021.
+[13] I. Dimitrovski, I. Kitanovski, D. Kocev, and N. Simidjievski, “Current
+trends in deep learning for Earth observation: An open-source benchmark arena for image classification,” ISPRS J. Photogramm. Remote
+Sens., vol. 197, pp. 18–35, Mar. 2023.
+[14] A. Thapa, T. Horanont, B. Neupane, and J. Aryal, “Deep learning for
+remote sensing image scene classification: A review and meta-analysis,”
+Remote Sens., vol. 15, no. 19, p. 4804, Oct. 2023.
+[15] Y. Yang et al., “Semi-supervised multiscale dynamic graph convolution
+network for hyperspectral image classification,” IEEE Trans. Neural
+Netw. Learn. Syst., vol. 35, no. 5, pp. 6806–6820, May 2022.
+[16] X. Tang et al., “Hyperspectral image classification based on 3-D
+octave convolution with spatial–spectral attention network,” IEEE Trans.
+Geosci. Remote Sens., vol. 59, no. 3, pp. 2430–2447, Mar. 2021.
+[17] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for
+image recognition,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2016, pp. 770–778.
+[18] Y. Yang and S. Newsam, “Bag-of-visual-words and spatial extensions
+for land-use classification,” in Proc. 18th SIGSPATIAL Int. Conf. Adv.
+Geograph. Inf. Syst., Nov. 2010, pp. 270–279.
+[19] Q. Bi, K. Qin, Z. Li, H. Zhang, K. Xu, and G.-S. Xia, “A multipleinstance densely-connected ConvNet for aerial scene classification,”
+IEEE Trans. Image Process., vol. 29, pp. 4911–4926, 2020.
+[20] G. Li, M. Zhang, J. Li, F. Lv, and G. Tong, “Efficient densely connected
+convolutional neural networks,” Pattern Recognit., vol. 109, Jan. 2021,
+Art. no. 107610.
+[21] X. Lu, H. Sun, and X. Zheng, “A feature aggregation convolutional
+neural network for remote sensing scene classification,” IEEE Trans.
+Geosci. Remote Sens., vol. 57, no. 10, pp. 7894–7906, Oct. 2019.
+[22] G. Zhang et al., “A multiscale attention network for remote sensing
+scene images classification,” IEEE J. Sel. Topics Appl. Earth Observ.
+Remote Sens., vol. 14, pp. 9530–9545, 2021.
+[23] J. Chen, J. Yi, A. Chen, and Z. Jin, “EFCOMFF-Net: A multiscale
+feature fusion architecture with enhanced feature correlation for remote
+sensing image scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 61, 2023, Art. no. 5604917.
+[24] N. He, L. Fang, S. Li, J. Plaza, and A. Plaza, “Skip-connected covariance
+network for remote sensing scene classification,” IEEE Trans. Neural
+Netw. Learn. Syst., vol. 31, no. 5, pp. 1461–1474, May 2020.
+[25] S. Karim, G. Tong, J. Li, A. Qadir, U. Farooq, and Y. Yu, “Current
+advances and future perspectives of image fusion: A comprehensive
+review,” Inf. Fusion, vol. 90, pp. 185–217, Feb. 2023.
+[26] A. Dosovitskiy et al., “An image is worth 16×16 words: Transformers
+for image recognition at scale,” 2020, arXiv:2010.11929.
+[27] D. Hong et al., “SpectralGPT: Spectral remote sensing foundation
+model,” IEEE Trans. Pattern Anal. Mach. Intell., vol. 46, no. 8,
+pp. 5227–5244, Aug. 2024.
+[28] A. A. Aleissaee et al., “Transformers in remote sensing: A survey,”
+Remote Sens., vol. 15, no. 7, p. 1860, Mar. 2023.
+[29] C. Li et al., “CasFormer: Cascaded transformers for fusion-aware
+computational hyperspectral imaging,” Inf. Fusion, vol. 108, Aug. 2024,
+Art. no. 102408.
+[30] A. Vaswani et al., “Attention is all you need,” Adv. Neural Inf. Process.
+Syst., vol. 30, pp. 5998–6008, Jun. 2017.
+[31] P. Lv, W. Wu, Y. Zhong, F. Du, and L. Zhang, “SCViT: A spatialchannel feature preserving vision transformer for remote sensing image
+scene classification,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 4409512.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MULTISCALE SPARSE CROSS-ATTENTION NETWORK FOR REMOTE SENSING SCENE CLASSIFICATION
+
+[32] X. Chen et al., “Hierarchical feature fusion of transformer with patch
+dilating for remote sensing scene classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 61, 2023, Art. no. 4410516.
+[33] J. Ma, J. Duan, X. Tang, X. Zhang, and L. Jiao, “EATDer: Edge-assisted
+adaptive transformer detector for remote sensing change detection,”
+IEEE Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no. 5602015.
+[34] Y. LeCun, Y. Bengio, and G. Hinton, “Deep learning,” Nature, vol. 521,
+no. 7553, pp. 436–444, 2015.
+[35] Q. Bi, K. Qin, H. Zhang, and G.-S. Xia, “Local semantic enhanced
+convnet for aerial scene recognition,” IEEE Trans. Image Process.,
+vol. 30, pp. 6498–6511, 2021.
+[36] X. Tang, Q. Ma, X. Zhang, F. Liu, J. Ma, and L. Jiao, “Attention
+consistent network for remote sensing scene classification,” IEEE J. Sel.
+Topics Appl. Earth Observ. Remote Sens., vol. 14, pp. 2030–2045, 2021.
+[37] S. Woo, J. Park, J.-Y. Lee, and I. S. Kweon, “CBAM: Convolutional
+block attention module,” in Proc. Eur. Conf. Comput. Vis., Sep. 2018,
+pp. 3–19.
+[38] G. Cheng, J. Han, and X. Lu, “Remote sensing image scene classification: Benchmark and state of the art,” Proc. IEEE, vol. 105, no. 10,
+pp. 1865–1883, Oct. 2017.
+[39] S. Li, W. Song, L. Fang, Y. Chen, P. Ghamisi, and J. A. Benediktsson,
+“Deep learning for hyperspectral image classification: An overview,”
+IEEE Trans. Geosci. Remote Sens., vol. 57, no. 9, pp. 6690–6709,
+Sep. 2019.
+[40] G. Cheng, X. Xie, J. Han, L. Guo, and G.-S. Xia, “Remote sensing
+image scene classification meets deep learning: Challenges, methods,
+benchmarks, and opportunities,” IEEE J. Sel. Topics Appl. Earth Observ.
+Remote Sens., vol. 13, pp. 3735–3756, 2020.
+[41] Y. Yang et al., “An explainable spatial–frequency multiscale transformer
+for remote sensing scene classification,” IEEE Trans. Geosci. Remote
+Sens., vol. 61, 2023, Art. no. 5907515.
+[42] K. Chen, B. Chen, C. Liu, W. Li, Z. Zou, and Z. Shi, “RSMamba:
+Remote sensing image classification with state space model,” IEEE
+Geosci. Remote Sens. Lett., vol. 21, pp. 1–5, 2024.
+[43] H. Zhang, K. Chen, C. Liu, H. Chen, Z. Zou, and Z. Shi,
+“CDMamba: Remote sensing image change detection with mamba,”
+2024, arXiv:2406.04207.
+[44] Z. Liu et al., “MambaDS: Near-surface meteorological field downscaling
+with topography constrained selective state space modeling,” IEEE
+Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no. 4112615.
+[45] G. Huang, Z. Liu, L. Van Der Maaten, and K. Q. Weinberger, “Densely
+connected convolutional networks,” in Proc. IEEE Conf. Comput. Vis.
+Pattern Recognit., Jul. 2017, pp. 4700–4708.
+[46] T. Y. Lin, P. Dollàr, R. Girshick, K. He, B. Hariharan, and S. Belongie,
+“Feature pyramid networks for object detection,” in Proc. IEEE Conf.
+Comput. Vis. Pattern Recognit., Jul. 2017, pp. 2117–2125.
+[47] C.-F. R. Chen, Q. Fan, and R. Panda, “CrossViT: Cross-attention multiscale vision transformer for image classification,” in Proc. IEEE Int.
+Conf. Comput. Vis. (ICCV), Jun. 2021, pp. 357–366.
+[48] X. Tang, M. Li, J. Ma, X. Zhang, F. Liu, and L. Jiao, “EMTCAL:
+Efficient multiscale transformer and cross-level attention learning for
+remote sensing scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5626915.
+[49] J. Yuan and S. Wang, “HCFPN: Hierarchical contextual featurepreserved network for remote sensing scene classification,” Remote
+Sens., vol. 15, no. 3, p. 810, Jan. 2023.
+[50] M. Farina et al., “Sparsity in transformers: A systematic literature
+review,” Neurocomputing, vol. 582, May 2024, Art. no. 127468.
+[51] Z. Liu et al., “Swin transformer: Hierarchical vision transformer using
+shifted windows,” in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV),
+Oct. 2021, pp. 10012–10022.
+[52] X. Dong et al., “CSWin transformer: A general vision transformer backbone with cross-shaped windows,” in Proc. IEEE/CVF Conf. Comput.
+Vis. Pattern Recognit. (CVPR), Jun. 2022, pp. 12124–12134.
+[53] L. Zhu, X. Wang, Z. Ke, W. Zhang, and R. W. Lau, “BiFormer: Vision
+transformer with bi-level routing attention,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit. (CVPR), Jun. 2023, pp. 10323–10333.
+[54] B. Ye, H. Chang, B. Ma, S. Shan, and X. Chen, “Joint feature learning
+and relation modeling for tracking: A one-stream framework,” in Proc.
+17th Eur. Conf. Comput. Vis. (ECCV). Tel Aviv-Yafo, Israel: Springer,
+Oct. 2022, pp. 341–357.
+[55] X. Chen, H. Li, M. Li, and J. Pan, “Learning a sparse transformer
+network for effective image deraining,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit. (CVPR), Jun. 2023, pp. 5896–5905.
+
+5605416
+
+[56] X. Tang, R. Du, J. Ma, and X. Zhang, “Noisy remote sensing scene
+classification via progressive learning based on multiscale information
+exploration,” Remote Sens., vol. 15, no. 24, p. 5706, Dec. 2023.
+[57] G.-S. Xia et al., “AID: A benchmark data set for performance evaluation
+of aerial scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 55, no. 7, pp. 3965–3981, Jul. 2017.
+[58] A. Krizhevsky, I. Sutskever, and G. E. Hinton, “ImageNet classification
+with deep convolutional neural networks,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 25, May 2012, pp. 84–90.
+[59] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,”
+2017, arXiv:1711.05101.
+[60] E. D. Cubuk, B. Zoph, J. Shlens, and Q. V. Le, “Randaugment: Practical
+automated data augmentation with a reduced search space,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. Workshops (CVPRW),
+Jun. 2020, pp. 702–703.
+[61] H. Zhang, M. Cisse, Y. N. Dauphin, and D. Lopez-Paz, “Mixup: Beyond
+empirical risk minimization,” 2017, arXiv:1710.09412.
+[62] Q. Zhao, S. Lyu, Y. Li, Y. Ma, and L. Chen, “MGML: Multigranularity multilevel feature ensemble network for remote sensing scene
+classification,” IEEE Trans. Neural Netw. Learn. Syst., vol. 34, no. 5,
+pp. 2308–2322, May 2023.
+[63] W. Wang, Y. Chen, and P. Ghamisi, “Transferring CNN with adaptive
+learning for remote sensing scene classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 60, 2022, Art. no. 5533918.
+[64] Q. Bi, B. Zhou, K. Qin, Q. Ye, and G.-S. Xia, “All grains, one
+scheme (AGOS): Learning multigrain instance representation for aerial
+scene classification,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5629217.
+[65] J. Wang, W. Li, M. Zhang, R. Tao, and J. Chanussot, “Remote-sensing
+scene classification via multistage self-guided separation network,” IEEE
+Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5615312.
+[66] Y. Yang, X. Tang, Y.-M. Cheung, X. Zhang, and L. Jiao, “SAGN:
+Semantic-aware graph network for remote sensing scene classification,”
+IEEE Trans. Image Process., vol. 32, pp. 1011–1025, 2023.
+[67] Q. Wan, Z. Xiao, Y. Yu, Z. Liu, K. Wang, and D. Li, “A hyperparameterfree attention module based on feature map mathematical calculation for
+remote-sensing image scene classification,” IEEE Trans. Geosci. Remote
+Sens., vol. 62, 2024, Art. no. 5600318.
+[68] Z. Dong, Y. Gu, and T. Liu, “UPetu: A unified parameter-efficient finetuning framework for remote sensing foundation model,” IEEE Trans.
+Geosci. Remote Sens., vol. 62, 2024, Art. no. 5616613.
+[69] Q. Wang, W. Huang, Z. Xiong, and X. Li, “Looking closer at the
+scene: Multiscale representation learning for remote sensing image scene
+classification,” IEEE Trans. Neural Netw. Learn. Syst., vol. 33, no. 4,
+pp. 1414–1428, Apr. 2022.
+[70] Y. Zhao, Y. Chen, S. Xiong, X. Lu, X. X. Zhu, and L. Mou, “Coenhanced global-part integration for remote-sensing scene classification,”
+IEEE Trans. Geosci. Remote Sens., vol. 62, 2024, Art. no. 4702114.
+[71] L. Bai, Q. Liu, C. Li, Z. Ye, M. Hui, and X. Jia, “Remote sensing image
+scene classification using multiscale feature fusion covariance network
+with octave convolution,” IEEE Trans. Geosci. Remote Sens., vol. 60,
+2022, Art. no. 5620214.
+[72] Y. Chen et al., “Drop an octave: Reducing spatial redundancy in convolutional neural networks with octave convolution,” in Proc. IEEE/CVF
+Int. Conf. Comput. Vis. (ICCV), Oct. 2019, pp. 3435–3444.
+[73] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A
+convnet for the 2020s,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern
+Recognit., Feb. 2022, pp. 11976–11986.
+[74] Y. Zhao, J. Liu, J. Yang, and Z. Wu, “EMSCNet: Efficient multisample
+contrastive network for remote sensing image scene classification,” IEEE
+Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5605814.
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor at
+the Key Laboratory of Intelligent Perception and
+Image Understanding of Ministry of Education,
+Xidian University. Her research interests include
+computational intelligence and image understanding.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+5605416
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025
+
+Wei Jiang received the B.E. degree in automation from Yangzhou University, Yangzhou, China,
+in 2021. He is currently pursuing the M.E. degree
+with the School of Artificial Intelligence, Xidian
+University, Xi’an, China.
+His research interests include machine learning
+and remote sensing image processing.
+
+Xu Tang (Senior Member, IEEE) received the
+B.Sc., M.Sc., and Ph.D. degrees in electronic circuit
+and system from Xidian University, Xi’an, China,
+in 2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a Joint Ph.D. Student
+along with Prof. W. J. Emery at the University
+of Colorado at Boulder, Boulder, CO, USA. He is
+currently a Full Professor at the Key Laboratory
+of Intelligent Perception and Image Understanding of Ministry of Education, Xidian University.
+His research interests include remote sensing image
+content-based retrieval and reranking, hyperspectral image processing, remote
+sensing scene classification, and object detection. For more details, please refer
+to: https://web.xidian.edu.cn/tangxu/en/index.html.
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From January 2015 to March 2016, she was
+a Visiting Scientist with the Computer Science
+and Artificial Intelligence Laboratory, Massachusetts
+Institute of Technology, Cambridge, MA, USA. She
+is a Professor with the Key Laboratory of Intelligent
+Perception and Image Understanding of Ministry of Education, Xidian University. Her research interests include pattern recognition, machine learning,
+and remote sensing image analysis and understanding.
+
+Fang Liu (Member, IEEE) was born in China,
+in 1990. She received the B.S. degree in information and computing science from Henan University,
+Kaifeng, China, in 2012, and the Ph.D. degree in
+intelligent information processing from Xidian University, Xi’an, China, in 2018.
+She is currently an Associate Professor at Nanjing University of Science and Technology, Nanjing,
+China. Her research interests include deep learning, object detection, polarimetric SAR image
+classification, and change detection.
+
+Licheng Jiao (Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding of Ministry of Education of China. He has authored or
+co-authored more than 200 scientific articles. His research interests include
+signal and image processing, nonlinear circuits and systems theory, wavelet
+theory, natural computation, and intelligent information processing.
+Dr. Jiao is a member of the IEEE Xian Section Executive Committee and
+an Executive Committee Member of the Chinese Association of Artificial
+Intelligence. He is the Chairperson of the Awards and Recognition Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:53:10 UTC from IEEE Xplore. Restrictions apply.
+
+

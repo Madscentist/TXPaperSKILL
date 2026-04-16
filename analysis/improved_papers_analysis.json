@@ -1,0 +1,449 @@
+[
+  {
+    "filename": "EATDer_Edge-Assisted_Adaptive_Transformer_Detector_for_Remote_Sensing_Change_Detection.txt",
+    "sections": {}
+  },
+  {
+    "filename": "Interacting-Enhancing_Feature_Transformer_for_Cross-Modal_Remote-Sensing_Image_and_Text_Retrieval.txt",
+    "sections": {}
+  },
+  {
+    "filename": "Language-Guided_Progressive_Query_Refinement_With_Diffusion_Model_for_Visual_Grounding_on_Remote_Sensing_Images.txt",
+    "sections": {}
+  },
+  {
+    "filename": "Multiple_Information_Collaborative_Fusion_Network_for_Joint_Classification_of_Hyperspectral_and_LiDAR_Data.txt",
+    "sections": {
+      "methods": {
+        "content_preview": "\nMethods\nInformation interaction is another crucial technology for the\njoint classification of HSI and LiDAR data, which enhances\nthe richness of feature representations and the discriminability\nof classifiers. Typical techniques include image reconstruction,\ncontrastive learning, etc. As for the technique of reconstruction, it plays an important role in preserving the integrity of\nthe information, and many methods adopt this strategy. For\ninstance, Zhang et al. [43] proposed an interleaving perception\nCNN network. It consists of a bidirectional autoencoder and a\ntwo-branch CNN, which aim to reconstruct HSI and LiDAR\nimages and produce the final classification maps. Moreover,\ntwo multimodal structural constraints are designed to ensure\n\n\nthe completeness of the fused features. Similarly, Wu et al.\n[44] developed a cross-channel reconstruction network for\nHSI and LiDAR joint classification. Unlike typical direct\nreconstruction strategies, this model learns a more compact\nfusion represen...",
+        "paragraphs": [
+          {
+            "text": "Methods\nInformation interaction is another crucial technology for the\njoint classification of HSI and LiDAR data, which enhances\nthe richness of feature representations and the discriminability\nof classifiers. Typical techniques include image reconstruction,\ncontrastive learning, etc. As for the technique of reconstruction, it plays an important role in preserving the integrity of\nthe information, and many methods adopt this strategy. For\ninstance, Zhang et al. [43] proposed an interleaving perc...",
+            "function": "method_overview",
+            "length": 744,
+            "word_count": 105
+          },
+          {
+            "text": "the completeness of the fused features. Similarly, Wu et al.\n[44] developed a cross-channel reconstruction network for\nHSI and LiDAR joint classification. Unlike typical direct\nreconstruction strategies, this model learns a more compact\nfusion representation by reconstructing flipped features, which\nbenefits downstream classification. A coupled adversarial\nlearning-based classification (CALC) method was introduced\nin [45] under the reconstructed framework. First, a game\nconstruction is used for ...",
+            "function": "method_overview",
+            "length": 3097,
+            "word_count": 427
+          },
+          {
+            "text": "Framework of the proposed MICF-Net. (a) Overall framework. (b) CMAFT. (c) SGFF module (taking the HSI branch as an example).",
+            "function": "method_overview",
+            "length": 124,
+            "word_count": 20
+          },
+          {
+            "text": "and a 2-D convolution with the kernel size of 1 × 1 are\nstacked sequentially to extract spectral information from HSI.\nDifferently, since LiDAR is a single-channel image, two\n1 × 1 2-D convolutions are stacked to extract elevation\ninformation from LiDAR. Here, the number of filters of the\ntwo convolutional layers in the HSI branch are 8 and 64,\nrespectively, while in the LiDAR branch, they are 32 and\n64. Furthermore, to speed up the convergence of the model,\na batch normalization (BN) and a leak...",
+            "function": "technical_detail",
+            "length": 1836,
+            "word_count": 282
+          },
+          {
+            "text": "area. Therefore, they should be similar in transformation\nspaces [46]. Inspired by this observation, we propose a dualbranch CMAFT to extract global contextual knowledge and\nsimultaneously mine the similarities in the spatial relationship\nbetween the two modalities. Specifically, features Fh and\nFl are first flattened and spliced with an all-zero learnable\nclassification token to generate sequence features F′h ∈ R N ×c\nand Fl′ ∈ R N ×c , where N = s 2 + 1. Then, learnable position\nembeddings are...",
+            "function": "method_overview",
+            "length": 1318,
+            "word_count": 218
+          },
+          {
+            "text": "where CMAF(·), LN(·), and MLP(·) represent the CMAF,\nlayer normalization (LN), and multilayer perceptron (MLP)\nfunctions, and Al ∈ Rn h ×N ×N denotes the self-attention map\nobtained from the first LiDAR branch. Here, n h means the\nnumber of attention heads. The detailed acquisition process of\nAl will be explained later.\nAs a key part of CMAFT, CMAF focuses on discovering\nthe potential similarities and complementarities between\nmodalities. To this end, apart from the self-attention within\nthe mod...",
+            "function": "method_overview",
+            "length": 2612,
+            "word_count": 474
+          },
+          {
+            "text": "cross-modal attention maps collected from each head space.\nThen, Kullback–Leibler (KL) divergence [50] is introduced to\nconstrain the correlation between two cross-modal attention\nmaps. In sum, the correlation loss of D two-branch CMAFTs\ncan be expressed as\nLCOR =",
+            "function": "method_overview",
+            "length": 264,
+            "word_count": 39
+          },
+          {
+            "text": "In general, after passing D dual-branch CMAFTs, not only can\nthe global context of HSI and LiDAR data be exploited, but the\ncomplementary information of the two modalities can also be\ndeeply mined. This is beneficial for extracting comprehensive\nfeatures.\nC. AMM Module\nFor joint classification tasks of multimodal data, learning\nimbalance between modalities is a common challenge due to\nthe heterogeneity of modalities [30]. This imbalance arises\nfor two main reasons. First, the convergence speeds ...",
+            "function": "method_overview",
+            "length": 2085,
+            "word_count": 365
+          },
+          {
+            "text": "where B indicates batch size and yi represents the ground truth\nof the ith sample.\nWhen we get the imbalance rate, we can further use it to\nadjust the learning speeds of different modalities by a feature\nmask modulation operation. It first converts r into the mask",
+            "function": "method_overview",
+            "length": 264,
+            "word_count": 47
+          },
+          {
+            "text": "probabilities β and γ of HSI and LiDAR features in line with\nthe following formulas:\n(\nβ = 1 − tanh(α · r ), γ = 1, r ≥ 1\n(6)\nβ = 1, γ = 1 − tanh(α · r ), r < 1\nwhere tanh(·) means the hyperbolic tangent function and α is\nthe penalty coefficient. Then, the modulation with probabilities\nβ and γ will be conducted on ZhD and ZlD , i.e.,\n\u0002\n\u0003\nZh = maskh · ZhD , maskh = δh1 , δh2 , . . . δhc\n\u0002\n\u0003\nZl = maskl · ZlD , maskl = δl1 , δl2 , . . . δlc\n(7)\nwhere δhi ∈ {β, 1} and δli ∈ {γ , 1} represent Bernoul...",
+            "function": "method_overview",
+            "length": 1275,
+            "word_count": 245
+          },
+          {
+            "text": "p̃l from the LiDAR branch into a fully connected layer to\ngenerate the query vector Q. Then, Q is multiplied by K\nand entered into the softmax function to obtain the aggregate\nweight S ∈ R1×N . After that, S is multiplied by V to obtain\na LiDAR-assistant HSI-modal representation. In addition, the\n1×c\nclassification token tcls\nof Zh is residually connected\nh ∈ R\n1×c\nto it to obtain gh ∈ R , which further highlights the\ncharacteristics of HSI further. Overall, this process can be\nformulated as\n\u0013\n\u0012...",
+            "function": "method_overview",
+            "length": 1173,
+            "word_count": 222
+          },
+          {
+            "text": "D. SGFF Module\nAfter obtaining the features zh and zl corresponding HSI and\nLiDAR, the next step for the final classification is to fuse them\nfor the multimodal features. To enhance the discrimination\nof the multimodal features, we introduce the SGFF module\nin this section. Unlike simple integration, SGFF encourages\neach modality to leverage the semantic information from other\nmodalities to extract multimodal complementary messages\neffectively so that the fused multimodal features can be\nenhance...",
+            "function": "method_overview",
+            "length": 1286,
+            "word_count": 195
+          },
+          {
+            "text": "where M̄h and M̄l indicate the average of the corresponding\nfeatures of the kth class samples calculated in the current\nbatch, and ε is the momentum parameter that is fixed as 0.9 in\nthis article.",
+            "function": "technical_detail",
+            "length": 196,
+            "word_count": 35
+          },
+          {
+            "text": "where pi indicates the probability of correct prediction. Considering the correlation loss LCOR mentioned in Section III-B,\nthe overall loss can be expressed as\nL = LCE + λLCOR",
+            "function": "technical_detail",
+            "length": 176,
+            "word_count": 29
+          },
+          {
+            "text": "where λ is the balance coefficient, which controls the\nimportance of the classification loss and correlation loss.\nIV. E XPERIMENTS\nIn this section, we evaluate the performance of the proposed\nMICF-Net on three publicly available datasets containing both\nHSI and LiDAR data. We assess the model’s performance\nusing three assessment criteria [22]: overall accuracy (OA),\naverage accuracy (AA), and Kappa coefficient (Kappa). Note\nthat all experiments are conducted five times, and the average\nand stan...",
+            "function": "method_overview",
+            "length": 1172,
+            "word_count": 188
+          },
+          {
+            "text": "2) MUUFL Dataset [56]: The second dataset was collected\nin November 2010 at The University of Southern Mississippi\nGulfport Campus, Long Beach, MS, USA. It comprises\ntwo data sources: HSI and LiDAR data. HSI consists of\n325 × 220 pixels with 64 bands ranging from 0.38 to 1.05 µm.\nThe LiDAR data were acquired using the Gemini Airborne\nLaser Terrain Mapper (ALTM) LiDAR sensor. The number of\nlabeled pixels in this dataset is 53 687, which are grouped into\n11 classes manually. In the following exper...",
+            "function": "method_overview",
+            "length": 1966,
+            "word_count": 334
+          },
+          {
+            "text": "penalty coefficient α in AMM, and the momentum parameter\nε in AMM. Their empirically optimal values are listed in\nTable I, and their impacts on MICF-Net will be presented in\nSection IV-E.",
+            "function": "method_overview",
+            "length": 187,
+            "word_count": 32
+          },
+          {
+            "text": "C. Classification Performance\nTo demonstrate the effectiveness of MICF-Net, we select\neight advanced HSI and LiDAR joint classification methods,\nincluding dual attention-based multimodal fusion network\n(FusAtNet) [27], adaptive mutual-learning-based multimodal\ndata fusion network (AM3Net) [58], global–local transformer\nnetwork (GLT-Net) [59], CALC [45], hierarchical CNN and\ntransformer (HCT) [60], multimodal fusion transformer (MFT)\n[61], ExViT [42], and mixing self-attention and convolution\nnet...",
+            "function": "technical_detail",
+            "length": 2333,
+            "word_count": 320
+          },
+          {
+            "text": "extraction to capture these details and variations effectively.\nHowever, MICF-Net mainly adopts the transformer structure,\nwhich treats all pixels equally without distinguishing the\ngeometric complexity of different objects. This manner\nmay lead to a slight decrease in the generalization ability\nof MICF-Net in these specific categories. Fortunately, the\nperformance gaps between MICF-Net and better methods\nin these classes are small, and strengthening the proposed\nmodel for these unacceptable cla...",
+            "function": "method_overview",
+            "length": 2323,
+            "word_count": 340
+          },
+          {
+            "text": "Pixel-level classification maps of different methods are\ndepicted in Fig. 7. By observation, we find that some\nnoise is present in all classification maps. However, MICFNet produces results with more apparent edges and less\nnoise, which are closest to the ground truth compared\nto other models. This superior performance is attributed\nto MICF-Net’s comprehensive exploration of multimodal\ncomplementary information, thereby obtaining more accurate\nfeature representation.\n3) Results on Trento Dataset...",
+            "function": "method_overview",
+            "length": 1099,
+            "word_count": 159
+          },
+          {
+            "text": "standard deviation (only 0.09% on OA) further illustrates its\nstability.\nFig. 8 presents the classification maps of various methods.\nAlthough the quality of the classification maps of all\nmethods is acceptable, the result obtained by the proposed\nMICF-Net still outperforms others. For example, in the\nclassification results of the “Road” class, MICF-Net predicts\nfewer misclassified pixels and smoother boundaries than\nothers. Overall, the prediction map of MICF-Net is closest\nto the ground truth, ...",
+            "function": "method_overview",
+            "length": 972,
+            "word_count": 141
+          },
+          {
+            "text": "(w/o CMAFT3 ), and proposed (w/o CMAFT4 ). The first\none indicates that the CMAFT module is eliminated from\nMICF-Net. The second one represents that MICF-Net involves\nCMAF but without the correlation loss. The third one implies\nthat CMAF is replaced with standard self-attention. The\nlast one means the concatenation operation in CMAF is\nreplaced with the addition operation. Table V presents their\nresults, and the original MICF-Net’s performance is also\nexhibited for reference. Compared to the ori...",
+            "function": "method_overview",
+            "length": 515,
+            "word_count": 79
+          },
+          {
+            "text": "the performance of the four variants has decreased to varying\ndegrees. For instance, the OA values of proposed (w/o\nCMAFT1 ) are dropped by 0.47%, 2.97%, and 0.19% on the\nthree datasets. This illustrates the effectiveness of the proposed\nCMAFT. Moreover, in most cases, the second and third\nvariants outperform the first one, indicating the importance\nof information interaction in the feature extraction process.\nIn addition, MICF-Net outperforms proposed (w/o CMAFT4 )\nin all cases, indicating that...",
+            "function": "method_overview",
+            "length": 532,
+            "word_count": 81
+          },
+          {
+            "text": "TABLE V\nR ESULTS OF A BLATION S TUDIES OF VARIOUS PARTS OF O UR MICF-N ET ON T HREE DATASETS . P ROPOSED\n( W / O ∗) R EPRESENTS MICF-N ET W ITHOUT ∗ M ODULE (%)",
+            "function": "method_overview",
+            "length": 160,
+            "word_count": 39
+          },
+          {
+            "text": "suitable for our tasks. This can be attributed to the addition\noperation potentially confusing information from different\nmodalities. In contrast, the concatenation operation preserves\nthe characteristics of each modality, which is conducive to the\nsubsequent mining of modal correlation.\n2) Effectiveness of AMM Module: The AMM module is\ndesigned to alleviate the imbalance problem in multimodal\nlearning. We remove it from MICF-Net to study its function\nand record the new network proposed (w/o AMM...",
+            "function": "method_overview",
+            "length": 2446,
+            "word_count": 358
+          },
+          {
+            "text": "(w/o SGFF2 ) by 0.42%/0.25%/0.45% and 0.98%/0.78%/1.06%\nin OA/AA/Kappa. This is because SGFF can utilize the semantic clues from different modalities to exploit complementary\ninformation, thereby improving the representation ability of\nfusion features. Compared with proposed (w/o SGFF3 ), MICFNet improves by 0.66%/0.66%/0.70% in OA/AA/Kappa. This\nis because information covered by classification tokens differs\nin distribution, hindering mutual guidance. The pseudoprediction results can mitigate t...",
+            "function": "method_overview",
+            "length": 2333,
+            "word_count": 388
+          },
+          {
+            "text": "n h is changed from 8 to 16, the behavior of MICF-Nets\nfor Houston declines slightly. This is due to Houston’s low\nspatial resolution, therefore, fewer attention heads are needed\nto capture sufficient information.\n3) Number of Dual-Branch CMAFT D: To investigate\nthe impacts of the number D of dual-branch CMAFT on\nMICF-Net, we tune D from 1 to 4. Experimental results for\nMICF-Nets with different D counted on the three datasets\nare depicted in Figs. 9(c), 10(c), and 11(c). MICF-Nets’ OA\nvalues on ...",
+            "function": "technical_detail",
+            "length": 606,
+            "word_count": 104
+          },
+          {
+            "text": "reasons behind this are twofold. When there are too few dualbranch CMAFTs, they struggle to capture HSI and LiDAR’s\ncomplex contents adequately. When too many dual-branch\nCMAFTs exist, redundant parameters lead to over-fitting on\nthe training samples, thus hindering generalization. Therefore,\nwe recommend that D = 2.\n4) Middle Layer Size of Project m: In Section III-B,\nwe fixed m to 8. Here, we change its values in the range of\n[2, 16]. The results of MICF-Nets with various m counted on\nthree da...",
+            "function": "technical_detail",
+            "length": 613,
+            "word_count": 101
+          },
+          {
+            "text": "Studies on the impact of different numbers of training samples on different methods. (a) Houston. (b) MUUFL. (c) Trento.",
+            "function": "technical_detail",
+            "length": 120,
+            "word_count": 19
+          },
+          {
+            "text": "upward and then downward, and their optimal values all\nappear at m = 8. Hence, we recommend fixing the value\nof m to 8.\n5) Balance Coefficient in the Overall Loss λ: The balance\ncoefficient λ in the overall loss controls the importance of\nthe correlation term. A larger value of λ implies that the\nspatial relationship similarity between the two modalities plays\na more significant role in improving the overall performance.\nBy changing the values of λ within the range [0.1, 0.9],\nwe can analyze its...",
+            "function": "method_overview",
+            "length": 1698,
+            "word_count": 273
+          },
+          {
+            "text": "modal, resulting in a drastic performance decline. Therefore,\nwe recommend setting α to 0.1.\n7) Momentum Parameter in AMM ε: This parameter plays\na crucial role in balancing historical prototypes with current\nprototypes. To investigate its impacts on the proposed method,\nwe systematically varied the value of ε within the range of\n[0.1, 0.9]. The OA values of MICF-Nets are summarized in\nFigs. 9(g), 10(g), and 11(g). It is easy to find that the optimal\nvalues of ε across the three datasets converg...",
+            "function": "method_overview",
+            "length": 735,
+            "word_count": 119
+          },
+          {
+            "text": "F. Feature Visualization\nTo further verify the effectiveness of the designed MICFNet, we adopt the t-distributed stochastic neighbor embedding\n(t-SNE) algorithm [63] to visualize the learned features.\nMICF-Net’s feature distribution maps counted on the Houston,\nMUUFL, and Trento datasets are displayed in the second row\nof Fig. 12. Also, the feature distribution maps of the bestcompared models (i.e., MACN) are exhibited for reference\nand can be found in the first row of Fig. 12. By comparing\nthe ...",
+            "function": "method_overview",
+            "length": 789,
+            "word_count": 123
+          },
+          {
+            "text": "TABLE VI\nM ODEL S IZE , T RAINING T IME , AND I NFERENCE T IME OF\nE ACH A LGORITHM ON THE H OUSTON DATASET",
+            "function": "technical_detail",
+            "length": 106,
+            "word_count": 27
+          },
+          {
+            "text": "G. Effect of Different Numbers of Training Samples\nTo evaluate the impact of different numbers of training\nsamples on the classification performance of MICF-Net,\nwe vary the number of training samples for each class\nfrom 20 to 100 to train different MICF-Nets. Their OA\ncurves counted on the three datasets are drawn in Fig. 13.\nThe results of the compared methods are also counted for\nreference. By analyzing these curves, we can see that the\nperformance of all methods improves as the number of\ntra...",
+            "function": "method_overview",
+            "length": 2284,
+            "word_count": 345
+          },
+          {
+            "text": "and suppressing the strong modality, the feature learning of\nweak modalities is effectively promoted. Finally, considering\nthe heterogeneity and complementarity of multimodal data,\nthe SGFF module integrates multimodal features into a\ndiscriminative fusion representation. Positive experimental\nresults on three public HSI and LiDAR joint classification\ndatasets verify the effectiveness of MICF-Net.\nAlthough MICF-Net’s performance is good, it still has room\nfor improvement. For types with variable...",
+            "function": "method_overview",
+            "length": 4198,
+            "word_count": 586
+          },
+          {
+            "text": "[15] W. Dong, T. Yang, J. Qu, T. Zhang, S. Xiao, and Y. Li, “Joint\ncontextual representation model-informed interpretable network with\ndictionary aligning for hyperspectral and LiDAR classification,” IEEE\nTrans. Circuits Syst. Video Technol., vol. 33, no. 11, pp. 6804–6818,\nNov. 2023.\n[16] W. Li, Y. Gao, M. Zhang, R. Tao, and Q. Du, “Asymmetric feature fusion\nnetwork for hyperspectral and SAR image classification,” IEEE Trans.\nNeural Netw. Learn. Syst., vol. 34, no. 10, pp. 8057–8070, Oct. 2023....",
+            "function": "method_overview",
+            "length": 4972,
+            "word_count": 769
+          },
+          {
+            "text": "[37] J. Li, Y. Liu, R. Song, Y. Li, K. Han, and Q. Du, “Sal2 RN: A spatial–\nspectral salient reinforcement network for hyperspectral and LiDAR data\nfusion classification,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,\nArt. no. 5500114.\n[38] W. Song, Y. Dai, Z. Gao, L. Fang, and Y. Zhang, “Hashing-based deep\nmetric learning for the classification of hyperspectral and LiDAR data,”\nIEEE Trans. Geosci. Remote Sens., vol. 61, 2023, Art. no. 5704513.\n[39] Y. Feng, L. Song, L. Wang, and X. Wang, “DS...",
+            "function": "method_overview",
+            "length": 4754,
+            "word_count": 713
+          },
+          {
+            "text": "[59] K. Ding, T. Lu, W. Fu, S. Li, and F. Ma, “Global–local transformer\nnetwork for HSI and LiDAR data joint classification,” IEEE Trans.\nGeosci. Remote Sens., vol. 60, 2022, Art. no. 5541213.\n[60] G. Zhao, Q. Ye, L. Sun, Z. Wu, C. Pan, and B. Jeon, “Joint\nclassification of hyperspectral and LiDAR data using a hierarchical CNN\nand transformer,” IEEE Trans. Geosci. Remote Sens., vol. 61, 2023,\nArt. no. 5500716.\n[61] S. K. Roy, A. Deria, D. Hong, B. Rasti, A. Plaza, and J. Chanussot,\n“Multimodal f...",
+            "function": "method_overview",
+            "length": 2163,
+            "word_count": 332
+          },
+          {
+            "text": "Jingjing Ma (Member, IEEE) received the B.S. and\nPh.D. degrees from Xidian University, Xi’an, China,\nin 2004 and 2012, respectively.\nShe is currently an Associate Professor with\nthe Key Laboratory of Intelligent Perception and\nImage Understanding of the Ministry of Education,\nXidian University. Her research interests include\ncomputational intelligence and image understanding.",
+            "function": "technical_detail",
+            "length": 378,
+            "word_count": 52
+          },
+          {
+            "text": "Xiangrong Zhang (Senior Member, IEEE) received\nthe B.S. and M.S. degrees from the School of\nComputer Science, Xidian University, Xi’an, China,\nin 1999 and 2003, respectively, and the Ph.D. degree\nfrom the School of Electronic Engineering, Xidian\nUniversity, in 2006.\nFrom January 2015 to March 2016, she was\na Visiting Scientist with the Computer Science\nand Artificial Intelligence Laboratory, Massachusetts\nInstitute of Technology, Cambridge, MA, USA. She\nis currently a Professor with the Key Labo...",
+            "function": "technical_detail",
+            "length": 728,
+            "word_count": 103
+          },
+          {
+            "text": "Fang Liu (Member, IEEE) was born in China,\nin 1990. She received the B.S. degree in information\nand computing science from Henan University,\nKaifeng, China, in 2012, and the Ph.D. degree\nin intelligent information processing from Xidian\nUniversity, Xi’an, China, in 2018.\nShe is currently an Associate Professor with the\nNanjing University of Science and Technology,\nNanjing, China. Her research interests include deep\nlearning, object detection, polarimetric SAR image\nclassification, and change det...",
+            "function": "technical_detail",
+            "length": 507,
+            "word_count": 73
+          },
+          {
+            "text": "Licheng Jiao (Fellow, IEEE) received the B.S.\ndegree in high voltage from Shanghai Jiao Tong\nUniversity, Shanghai, China, in 1982, and the M.S.\nand Ph.D. degrees in electronic engineering from\nXi’an Jiaotong University, Xi’an, China, in 1984 and\n1990, respectively.\nFrom 1984 to 1986, he was an Assistant Professor\nwith the Civil Aviation Institute of China, Tianjin,\nChina. From 1990 to 1991, he was a Post-Doctoral\nFellow with the Key Laboratory for Radar Signal\nProcessing, Xidian University, Xi’a...",
+            "function": "technical_detail",
+            "length": 1098,
+            "word_count": 164
+          }
+        ],
+        "paragraph_count": 42
+      }
+    }
+  },
+  {
+    "filename": "Multipretext-Task_Prototypes_Guided_Dynamic_Contrastive_Learning_Network_for_Few-Shot_Remote_Sensing_Scene_Classification.txt",
+    "sections": {}
+  },
+  {
+    "filename": "Multiscale_Sparse_Cross-Attention_Network_for_Remote_Sensing_Scene_Classification.txt",
+    "sections": {}
+  },
+  {
+    "filename": "remotesensing-15-04229-v2.txt",
+    "sections": {
+      "results": {
+        "content_preview": "\nQuery\n\nRetrival Result\n\nQuery\n\nRetrival Result\n\nVGG16\n\nGoogLeNet\n\nResNet50\n\nDenseNet121\n\nLCM\n\nLPN\n\nRk-Net\n\nFSRA\n\nFigure 5. The top five images in ranking the query image matching results on testing set. Here, the\ndatabase image with a red box represents the correct matched result.\n\n5. Conclusions\nIn this paper, a novel dataset for cross-time geo-localization is proposed, named\nMTGL40-5. This dataset comprises 40 diverse geographic locations spanning five different\nyears. For each location, the large-scale original and key images are captured, which contain\nthe complete and key content of the corresponding location. Subsequently, the key/original\nimages are split into query/database images for conducting geo-localization. By analyzing\nthe content difference of the same landmark in different years, we aim to address the crosstime challenge and enhance the practicality of geo-localization. In addition to the traditional\nimage matching task, we also perform three supplementary tasks, incl...",
+        "paragraphs": [
+          {
+            "text": "5. Conclusions\nIn this paper, a novel dataset for cross-time geo-localization is proposed, named\nMTGL40-5. This dataset comprises 40 diverse geographic locations spanning five different\nyears. For each location, the large-scale original and key images are captured, which contain\nthe complete and key content of the corresponding location. Subsequently, the key/original\nimages are split into query/database images for conducting geo-localization. By analyzing\nthe content difference of the same land...",
+            "function": "result_report",
+            "length": 1100,
+            "word_count": 157
+          },
+          {
+            "text": "Author Contributions: Conceptualization, J.M.; Methodology, S.P., Y.Y. and X.T.; Writing—original\ndraft, S.P. and Y.Y.; Writing—review & editing, X.T. and X.Z. All authors have read and agreed to the\npublished version of the manuscript.\nFunding: This work was funded in part by the National Natural Science Foundation of China (Nos.\n62171332, 62276197), and in part by the Fund of National Key Laboratory of Science and Technology\non Remote Sensing Information and imagery Analysis, Beijing Research ...",
+            "function": "result_report",
+            "length": 762,
+            "word_count": 104
+          },
+          {
+            "text": "Dai, M.; Hu, J.; Zhuang, J.; Zheng, E. A Transformer-Based Feature Segmentation and Region Alignment Method For UAV-View\nGeo-Localization. IEEE Trans. Circuits Syst. Video Technol. 2021, 32, 4376–4389. [CrossRef]\nZhu, P.; Zheng, J.; Du, D.; Wen, L.; Sun, Y.; Hu, Q. Multi-drone-based single object tracking with agent sharing network. IEEE\nTrans. Circuits Syst. Video Technol. 2020, 31, 4058–4070. [CrossRef]\nDeng, S.; Li, S.; Xie, K.; Song, W.; Liao, X.; Hao, A.; Qin, H. A global-local self-adaptiv...",
+            "function": "result_report",
+            "length": 4491,
+            "word_count": 650
+          },
+          {
+            "text": "Chen, D.M.; Baatz, G.; Köser, K.; Tsai, S.S.; Vedantham, R.; Pylvänäinen, T.; Roimela, K.; Chen, X.; Bach, J.; Pollefeys, M.; et al.\nCity-scale landmark identification on mobile devices. In Proceedings of the CVPR 2011, Colorado Springs, CO, USA, 20–25 June\n2011; pp. 737–744.\nPhilbin, J.; Chum, O.; Isard, M.; Sivic, J.; Zisserman, A. Lost in quantization: Improving particular object retrieval in large scale\nimage databases. In Proceedings of the 2008 IEEE Conference on Computer Vision and Patter...",
+            "function": "result_report",
+            "length": 5443,
+            "word_count": 791
+          },
+          {
+            "text": "Gordo, A.; Almazán, J.; Revaud, J.; Larlus, D. Deep image retrieval: Learning global representations for image search. In\nProceedings of the Computer Vision–ECCV 2016: 14th European Conference, Amsterdam, The Netherlands, 11–14 October 2016;\nSpringer: Berlin/Heidelberg, Germany, 2016; pp. 241–257.\nLee, S.; Seong, H.; Lee, S.; Kim, E. Correlation verification for image retrieval. In Proceedings of the IEEE/CVF Conference on\nComputer Vision and Pattern Recognition, New Orleans, LA, USA, 18–24 June...",
+            "function": "result_report",
+            "length": 2648,
+            "word_count": 392
+          },
+          {
+            "text": "Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual\nauthor(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to\npeople or property resulting from any ideas, methods, instructions or products referred to in the content.",
+            "function": "result_report",
+            "length": 369,
+            "word_count": 53
+          }
+        ],
+        "paragraph_count": 6
+      },
+      "methods": {
+        "content_preview": "\n\nMethods\n\n4.6. Visual Analysis\nTo visually illustrate the results of the eight compared methods on the MTGL405 dataset, we select two distinct query images as samples. For each query image, we\nsort the matching scores of the corresponding database images, and choose the top five\nimages to save space. The results are shown in Figure 5. Based on the results, all methods\ndemonstrate a certain capacity for image matching through model training. This is evident\n\n\fRemote Sens. 2023, 15, 4229\n\n13 of 16\n\nas the left/right query images contain buildings/water, and most of the matched database\nimages also contain buildings/water. Furthermore, most of the methods successfully match\nthe correct top database image. However, certain methods find it difficult to match the\ncorrect database image when some database images exhibit high similarity with the query\nimage, such as VGG16 with the left query image and FSRA with the right query image.\nThis demonstrates the limited capacity of these methods in ...",
+        "paragraphs": [
+          {
+            "text": "4.6. Visual Analysis\nTo visually illustrate the results of the eight compared methods on the MTGL405 dataset, we select two distinct query images as samples. For each query image, we\nsort the matching scores of the corresponding database images, and choose the top five\nimages to save space. The results are shown in Figure 5. Based on the results, all methods\ndemonstrate a certain capacity for image matching through model training. This is evident",
+            "function": "technical_detail",
+            "length": 450,
+            "word_count": 74
+          },
+          {
+            "text": "as the left/right query images contain buildings/water, and most of the matched database\nimages also contain buildings/water. Furthermore, most of the methods successfully match\nthe correct top database image. However, certain methods find it difficult to match the\ncorrect database image when some database images exhibit high similarity with the query\nimage, such as VGG16 with the left query image and FSRA with the right query image.\nThis demonstrates the limited capacity of these methods in acc...",
+            "function": "method_overview",
+            "length": 886,
+            "word_count": 132
+          }
+        ],
+        "paragraph_count": 2
+      }
+    }
+  },
+  {
+    "filename": "remotesensing-15-05706-v2.txt",
+    "sections": {
+      "results": {
+        "content_preview": "\n\nExperiments\n\nDNL\n\nAPL\n\nESL\n\n0.1\n\nExperiment-1\nExperiment-2\nExperiment-3\nExperiment-4\n\n×\nX\nX\nX\n\n×\n×\nX\nX\n\n0.2\n\nExperiment-1\nExperiment-2\nExperiment-3\nExperiment-4\n\n×\nX\nX\nX\n\n0.3\n\nExperiment-1\nExperiment-2\nExperiment-3\nExperiment-4\n\n0.4\n\nExperiment-1\nExperiment-2\nExperiment-3\nExperiment-4\n\nData Set\nUCM\n\nAID\n\nNWPU\n\n×\n×\n×\nX\n\n94.28\n94.76\n98.57\n98.81\n\n93.12\n93.31\n95.24\n95.72\n\n89.56\n89.78\n91.64\n92.35\n\n×\n×\nX\nX\n\n×\n×\n×\nX\n\n89.04\n89.52\n98.10\n98.42\n\n89.62\n90.14\n94.74\n95.27\n\n85.32\n85.51\n91.21\n91.70\n\n×\nX\nX\nX\n\n×\n×\nX\nX\n\n×\n×\n×\nX\n\n84.52\n85.23\n97.00\n97.42\n\n84.55\n84.96\n94.62\n94.81\n\n80.57\n80.92\n90.56\n90.97\n\n×\nX\nX\nX\n\n×\n×\nX\nX\n\n×\n×\n×\nX\n\n73.57\n74.04\n96.43\n96.80\n\n76.24\n76.48\n93.16\n93.44\n\n73.14\n73.23\n88.52\n89.88\n\n5.4. Sensitivity Analysis\nThree free parameters influence our MIEN-PLA, including the smooth transition\nweight, α (in Equation (5)), the head number of MISA, h (in TAMSFM), and the number of\nCIIT encoders, Nt (in TAMSFM). In this section, we deeply study their impacts by changing\ntheir values individuall...",
+        "paragraphs": [
+          {
+            "text": "5.4. Sensitivity Analysis\nThree free parameters influence our MIEN-PLA, including the smooth transition\nweight, α (in Equation (5)), the head number of MISA, h (in TAMSFM), and the number of\nCIIT encoders, Nt (in TAMSFM). In this section, we deeply study their impacts by changing\ntheir values individually. First, we fix h = 4, Nt = 1, and vary α from 0.1 to 0.9 with an\ninterval of 0.1. In addition, the cases of α = 0.99 and α = 0.999 are considered. Next, α and\nNt are set to be 0.99 and 1, and h...",
+            "function": "result_report",
+            "length": 1480,
+            "word_count": 261
+          },
+          {
+            "text": "The results of various MIEN-PLAs with different h counted on three data sets are\nshown in Figure 13. For UCM21 and AID30, the behavior of MIEN-PLAs decreases\nas h increases. For MWPU45, the performance perturbation of MIEN-PLAs is evident.\nOverall, MIEN-PLA performs optimally on different data sets when h equals 2 or 4. This\ninvestigation indicates that MIEN-PLA can learn beneficial messages when the number of\nprojection spaces is small. When projection spaces are enlarged, the excessive fragmen...",
+            "function": "result_report",
+            "length": 571,
+            "word_count": 87
+          },
+          {
+            "text": "The OA curves of MIEN-PLAs with varied Nt are exhibited in Figure 14. It is easy\nto see that MIEN-PLAs become stronger when Nt increases, which implies that the more\nCIIT encoders there are, the better the performance of MIEN-PLA. However, the parameter\nvolume would be increased dramatically with the increase of Nt . In detail, the parameter volume of MIEN-PLAs is 14.60M, 17.75M, and 20.90M when Nt varied from 1 to 3.\nConsidering the trade-off between performance and model size, we suggest Nt = ...",
+            "function": "result_report",
+            "length": 502,
+            "word_count": 86
+          },
+          {
+            "text": "5.5. Comparison with Other Classification Models\nFor RS scene classification with noisy labels, the classification results are decided by the\nrobustness of the learning algorithm and the ability of the feature extractor. In Section 5.2,\nwe demonstrated the effectiveness of our PLA noise tolerance learning algorithm by only\nusing ResNet18 as the backbone of MIEN (i.e., Res-PLA). In this section, we choose several\nnetworks designed for RS scenes as the backbones of the classification and teacher s...",
+            "function": "comparison",
+            "length": 666,
+            "word_count": 103
+          },
+          {
+            "text": "A, and MIEN-R, respectively. The above models are trained using PLA, and the backbones’\nparameters are set according to the original literature. The OA values of different MIENs\nunder the scenario of NR = 0.1 are summarized in Table 7. In addition, Giga floating point\noperations (GFLOPs) values of different MIENs are provided for reference.\nTable 7. OA values (%) and GFLOPs of different MIENs trained by PLA counted on three data sets\n(NR = 0.1). The best values are marked in bold.",
+            "function": "result_report",
+            "length": 485,
+            "word_count": 83
+          },
+          {
+            "text": "By observing the results, we can see that our MIEN achieves the best OA values\non UCM21 and the second-best OA values on AID30 and NWPU45. This proves the\nsuperiority of MIEN’s feature extraction capabilities and also reflects that MIEN still has\nroom for improvement when facing large-scale complex RS scene data sets such as AID30\nand NWPU45. Although our MIEN is not optimal in OA, its GFLOPs are the best, showing\nthat it is relatively lightweight. In summary, our MIEN is efficient and energetic...",
+            "function": "comparison",
+            "length": 1797,
+            "word_count": 288
+          },
+          {
+            "text": "6. Discussion\nIn this section, we further analyze the differences, advantages, disadvantages, and future directions of our MIEN-PLA in comparison to similar methods.\n6.1. Similar Work Comparison\nIn recent years, noisy RS scene classification has been a hot research topic, and many\nsuccessful methods have been proposed [50–54,67,73–75]. Among them, CMR-NLD [50],\nRS-COCL [54], and NLNL [67] are similar to our methods as they are also aimed at reducing\nthe impact of noisy labels on the model from d...",
+            "function": "comparison",
+            "length": 619,
+            "word_count": 95
+          },
+          {
+            "text": "other methods can be summarized as follows. CMR-NLD, RS-COCL, and NLNL focus on\nfiltering out noisy scenes during training, whereas our methods are aimed at discovering\nthe possible noisy data and relabeling them. This way, all samples can be used to train the\nmodel, preventing information loss. Meanwhile, compared to two RS-oriented methods\n(CMR-NLD and RS-COCL), which only use the existing CNNs to generate the visual\nfeatures, our methods develop a specific network (i.e., MIEN) to explore the ...",
+            "function": "comparison",
+            "length": 3647,
+            "word_count": 540
+          },
+          {
+            "text": "Zhang, L.; Zhang, L. Artificial Intelligence for Remote Sensing Data Analysis: A review of challenges and opportunities. IEEE\nGeosci. Remote Sens. Mag. 2022, 10, 270–294. [CrossRef]\nCheng, G.; Xie, X.; Han, J.; Guo, L.; Xia, G.S. Remote sensing image scene classification meets deep learning: Challenges, methods,\nbenchmarks, and opportunities. IEEE J. Sel. Top. Appl. Earth Obs. Remote Sens. 2020, 13, 3735–3756. [CrossRef]\nTang, X.; Yang, Y.; Ma, J.; Cheung, Y.M.; Liu, C.; Liu, F.; Zhang, X.; Jiao...",
+            "function": "result_report",
+            "length": 5704,
+            "word_count": 854
+          },
+          {
+            "text": "Liu, C.; Ma, J.; Tang, X.; Liu, F.; Zhang, X.; Jiao, L. Deep hash learning for remote sensing image retrieval. IEEE Trans. Geosci.\nRemote Sens. 2020, 59, 3420–3443. [CrossRef]\nChen, J.; Huang, H.; Peng, J.; Zhu, J.; Chen, L.; Tao, C.; Li, H. Contextual information-preserved architecture learning for\nremote-sensing scene classification. IEEE Trans. Geosci. Remote Sens. 2021, 60, 5602614. [CrossRef]\nBi, Q.; Qin, K.; Zhang, H.; Xia, G.S. Local semantic enhanced convnet for aerial scene recognition....",
+            "function": "result_report",
+            "length": 6000,
+            "word_count": 884
+          },
+          {
+            "text": "Xia, G.S.; Hu, J.; Hu, F.; Shi, B.; Bai, X.; Zhong, Y.; Zhang, L.; Lu, X. AID: A benchmark data set for performance evaluation of\naerial scene classification. IEEE Trans. Geosci. Remote Sens. 2017, 55, 3965–3981. [CrossRef]\nCheng, G.; Han, J.; Lu, X. Remote sensing image scene classification: Benchmark and state of the art. Proc. IEEE 2017,\n105, 1865–1883. [CrossRef]\nMiao, W.; Geng, J.; Jiang, W. Multigranularity Decoupling Network With Pseudolabel Selection for Remote Sensing Image Scene\nClassi...",
+            "function": "result_report",
+            "length": 5036,
+            "word_count": 749
+          },
+          {
+            "text": "Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual\nauthor(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to\npeople or property resulting from any ideas, methods, instructions or products referred to in the content.",
+            "function": "result_report",
+            "length": 369,
+            "word_count": 53
+          }
+        ],
+        "paragraph_count": 12
+      }
+    }
+  },
+  {
+    "filename": "Spatial_Pooling_Transformer_Network_and_Noise-Tolerant_Learning_for_Noisy_Hyperspectral_Image_Classification.txt",
+    "sections": {}
+  },
+  {
+    "filename": "SpiralMamba_Spatial-Spectral_Complementary_Mamba_With_Spatial_Spiral_Scan_for_Hyperspectral_Image_Classification.txt",
+    "sections": {}
+  },
+  {
+    "filename": "Unsupervised_SAR_Image_Change_Detection_Based_on_Feature_Fusion_of_Information_Transfer.txt",
+    "sections": {}
+  },
+  {
+    "filename": "WNet_W-Shaped_Hierarchical_Network_for_Remote-Sensing_Image_Change_Detection.txt",
+    "sections": {}
+  }
+]

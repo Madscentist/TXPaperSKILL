@@ -1,0 +1,540 @@
+IEEE GEOSCIENCE AND REMOTE SENSING LETTERS, VOL. 20, 2023
+
+4004905
+
+Unsupervised SAR Image Change Detection Based
+on Feature Fusion of Information Transfer
+Jingjing Ma, Member, IEEE, Desheng Li, Xu Tang , Senior Member, IEEE, Yuqun Yang, Student Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, and Licheng Jiao , Fellow, IEEE
+Abstract— Synthetic aperture radar (SAR) image change
+detection is a hot but challenging task due to SAR images’
+complex contents and inherent speckle noises. The expected
+change detection methods should reduce the influence of speckle
+noises, obtain the discriminative feature representations, and
+generate accurate change maps simultaneously. To these ends,
+we propose a new SAR image change detection method named
+feature fusion of information transfer network (FFITN). First,
+we develop a hybrid convolution block (HCB) to depress the
+speckle noise impacts and explore the valuable information from
+SAR images. Thus, the feature extraction module (FEM) is constructed to obtain the multilevel features. Then, an information
+transfer module (ITM) is proposed to capture the salient regions
+from various aspects. Also, the salient knowledge is transferred
+among features at different levels to enhance their discrimination.
+Next, a self-attention-based feature fusion module (SAFFM)
+is introduced to fuse various features. Finally, a change map
+generation module (CMGM) with the clustering algorithm and
+specific loss functions is designed to produce the pseudo labels
+and change maps. Experimental results on three public SAR
+datasets demonstrate the model’s effectiveness. Our source codes
+are available at https://github.com/TangXu-Group/FFITN.
+Index Terms— Change detection, synthetic aperture radar
+(SAR) images.
+
+I. I NTRODUCTION
+
+W
+
+ITH the development of sensor technology, acquiring remote sensing (RS) images have become more
+convenient. The abundant RS images bring rich information to scholars for the study of our planet, despite the
+intractable challenges in understanding them. As an important
+RS interpretation task, RS change detection is always an active
+research topic that aims to identify the changes that occurred
+in multitemporal RS images, which cover the same geographic
+areas and are collected at different times [1], [2]. Among
+diverse RS images, synthetic aperture radar (SAR) images are
+popular in change detection tasks because SAR sensors can
+work on all-day and all-weather [3].
+In general, SAR image change detection methods can
+be divided into three categories according to whether prior
+Manuscript received 1 December 2022; revised 20 January 2023;
+accepted 9 April 2023. Date of publication 13 April 2023; date of current
+version 26 April 2023. This work was supported in part by the National
+Natural Science Foundation of China under Grant 62171332 and Grant
+62276197 and in part by the Xidian University-SenseTime Joint Laboratory of
+Smart Health Care under Grant A202203. (Corresponding author: Xu Tang.)
+The authors are with the Key Laboratory of Intelligent Perception
+and Image Understanding of Ministry of Education, School of Artificial
+Intelligence, Xidian University, Xi’an, Shaanxi 710071, China (e-mail:
+tangxu128@gmail.com).
+This article has supplementary downloadable material available at
+https://doi.org/10.1109/LGRS.2023.3266891, provided by the authors.
+Digital Object Identifier 10.1109/LGRS.2023.3266891
+
+knowledge is used or not [4], including supervised, semisupervised, and unsupervised approaches. The supervised
+methods (e.g., [5]) have achieved satisfactory results. However,
+they need many labeled data, which is harsh or even impractical in the SAR community. Accordingly, some researchers pay
+attention to developing semisupervised models [6]. Although
+these models can mitigate the burden of collecting the labeled
+data, the semi-supervised assumptions limit their applicability.
+In contrast to the above methods, unsupervised methods do
+not need labeled data and are not restricted to specific prerequisites. Therefore, they are more practical. There are three
+steps in a basic unsupervised SAR image change detection
+method, i.e., SAR image preprocessing, difference image (DI)
+generation, and DI analysis [7]. Here, we suppose that the
+multitemporal SAR images have been preprocessed, and our
+mission is to produce and investigate the DIs for the binary
+change maps deeply. In the beginning, hand-crafted visual
+features and conventional machine learning techniques are
+popular in DI generation and analysis. However, those methods cannot reach what we expect since the hand-crafted
+features cannot represent the complex contents within SAR
+images [8].
+Recently, unsupervised SAR image change detection techniques have made rapid progress with the appearance
+of deep learning, especially convolutional neural networks
+(CNNs). For instance, a symmetric convolutional coupling
+network (SCCN) was developed in [9] to address SAR image
+change detection. Based on the denoising auto-encoder, SCCN
+uses convolution operations to learn the rich features from
+SAR images. Then, the change maps are generated by the
+hierarchical coupling layers. There are two free parameters in
+SCCN, which should be tuned carefully for different testing
+data. Also, the encouraging experimental results counted on
+two pairs of bi-temporal SAR images (collected by Radarsat-2
+and Landsat-7 satellites) confirm the strength of SCCN. Dong
+et al. [10] proposed a multiscale self-attention deep clustering
+model for SAR image change detection (MSDC). By introducing the clustering technique, CNN, and attention mechanism,
+the change detection results can be obtained. There are eight
+free parameters in MSDC, and the usefulness of MSDC is
+verified by seven bi-temporal SAR image sets, which are
+produced by the Radarsat-2, ESR-1, ESR-2, and TerraSAR-X
+satellites. A convolutional-wavelet neural network (CWNN)
+was proposed in [11] for sea ice change detection using SAR
+images. After generating the DIs, the CNN embedded with
+the complex wavelet pooling is used to produce the final
+change maps. Two free parameters influence the CWNN’s
+
+1558-0571 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:59:19 UTC from IEEE Xplore. Restrictions apply.
+
+4004905
+
+IEEE GEOSCIENCE AND REMOTE SENSING LETTERS, VOL. 20, 2023
+
+performance, and two SAR datasets (collected by the European
+Space Agency’s ENVISAT satellite) are adopted to illustrate
+the effectiveness of CWNN. Qu et al. [12] presented a dualdomain network (DDNet) to deal with SAR image change
+detection. DDNet first maps SAR images into the frequency
+domain, then a multiregion convolution module is used to
+obtain the change maps. The SAR images’ frequency and
+spatial information can be utilized in this way. Three SAR
+images generated by the Radarsat-2 and ENVISAT satellites
+are used to evaluate DDNet. The patch size and other free
+settings would impact the behavior of DDNet directly. In addition, the spatial sizes of testing SAR images used in the above
+literature are varied from 256 to 512 approximately.
+Although the above deep learning-based methods have
+succeeded in their applications, there are still some challenges in SAR image change detection. First, the existing
+methods usually depress the speckle noises by the simple
+operators (such as logarithmic ratios) in the DI generation
+process [1]. However, their negative influences are not fully
+considered during feature learning, which would decrease
+the effectiveness of obtained feature representations. Second,
+the current models are habituated to leveraging the multilevel features obtained by CNNs to explore the complex
+contents within SAR images [4]. Although it is feasible,
+they do not pay attention to the salient clues within these
+features, which limit the functions of the multilayer features in
+change detection. Third, the feature fusion schemes in change
+detection networks are always concatenation and summation
+[13]. However, these straightforward fusion strategies fail
+to maximize the potential of learned features for change
+tasks.
+To meet the above challenges, this letter develops a feature fusion of information transfer network (FFITN). FFITN
+consists of a feature extraction module (FEM), an information
+transfer module (ITM), a self-attention-based feature fusion
+module (SAFFM), and a change map generation module
+(CMGM). FEM is developed to extract multilevel features
+from SAR images and depress the influence of speckle noise.
+ITM aims to discover the salient regions at different levels
+and transfer the salient messages from high- to low-level,
+so that the mutual influence between different features can
+be considered. SAFFM is designed to fuse multilevel features
+using a self-attention strategy to maximize the final features’
+function for change detection tasks. CMGM focuses on generating the binary change map by the simple threshold clustering
+algorithm. Our FFITN can be trained in an unsupervised
+manner through specific loss functions.
+The main contributions of our work can be summarized as
+follows.
+1) An unsupervised SAR image change detection network (FFITN) is developed in this letter, which considers the speckle noise and multiscale properties of SAR
+images simultaneously to ensure the quality of change
+detection results.
+2) By introducing the octave convolution [14], a hierarchical FEM is developed. It can capture multilayer information from SAR images and mitigate the disturbance
+of speckle noise.
+
+Fig. 1.
+
+Framework of the FFITN.
+
+3) A salient information discovery and transferring module
+is constructed to exploit the crucial clues hidden in
+multilayer features. Thus, their discrimination can be
+enhanced.
+4) A delicate feature fusion module is proposed based
+on the self-attention mechanism, which can enlarge
+contributions from multilayer features for downstream
+change detection.
+II. M ETHODOLOGY
+A. Overall Framework
+The framework of the proposed FFITN is shown in Fig. 1.
+Suppose there are bi-temporal SAR images I1 and I2 with the
+spatial size of H × W . First, similar to [15], they and their DI
+D (obtained by the log-ratio operator) are concatenated to input
+FEM for generating a set of feature maps {F1 , F2 , F3 , F4 , F5 }
+with the consideration of depressing the speckle noise. On the
+one hand, FEM can explore the rich land covers and hidden
+temporal clues from the original SAR images to ensure the
+discrimination of the obtained feature maps. On the other hand,
+D provides the primary change clues, which can help FEM
+obtain the change detection preferred feature maps. Then,
+those feature maps are fed into IFM for the enhanced feature
+maps {F′1 , F′2 , F′3 , F′4 , F′5 }. The enhanced feature maps contain
+hierarchical information due to the spatial attention mechanism
+and information transfer strategy. Next, SAFFM combines the
+contributions of multilevel feature maps to generate the final
+feature F, which is rich in contextual knowledge hidden in
+SAR images. Finally, a 1 × 1 convolution and the hierarchical
+fuzzy c-means algorithm are used to produce the output O and
+its pseudo labels P L .
+B. Feature Extraction Module
+To ensure our FEM can obtain valuable knowledge from
+SAR images while reducing the negative influence of speckle
+noises, we introduce the octave convolution and develop the
+hybrid convolution block (HCB) as the basic unit of FEM.
+The octave convolution divides the feature maps into low- and
+high-frequency parts and convolves them separately, followed
+by low- and high-frequency information interaction. Owing to
+the specific mechanism of the octave convolution, the speckle
+noises mixed in the high spatial frequency part of SAR images
+can be depressed [10]. As shown in Fig. 2, there are two
+3 × 3 regular convolutional layers and two 1 × 1 octave
+convolutional layers in HCB. The regular convolutions focus
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:59:19 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: UNSUPERVISED SAR IMAGE CHANGE DETECTION BASED ON FEATURE FUSION
+
+Fig. 2.
+
+Structure of HCB.
+
+Fig. 4.
+
+Fig. 3.
+
+4004905
+
+Structure of ITM.
+
+on capturing helpful information, and the octave convolutions
+aim at discovering speckle noises and decreasing their impacts.
+In this way, the effectiveness of the final features can be
+guaranteed. Note that we do not apply additional operations
+on the high- and low-frequency parts generated in octave
+convolutional layers to avoid causing interference clues (highfrequency) and information loss (low-frequency).
+Our FEM links five HCBs serially. When SAR images and
+their DI are input, the first HCB will be conducted to generate
+the feature map C1 . Then, C1 will be fed into HCB2 to
+produce C2 . Similarly, we can get various immediate feature
+maps {C1 , C2 , C3 , C4 , C5 } corresponding to different levels.
+Their channels are 32, 64, 128, 256, and 512. Then, they are
+mapped into {P1 , P2 , P3 , P4 , P5 } by five 1 × 1 convolutions,
+whose channels are 32. Next, to improve the discrimination
+of feature maps, they are fed into a top-down dense connected feature pyramid [16]. Finally, five 1 × 1 convolutions
+are adopted to transform {P1 , P2 , P3 , P4 , P5 } into the feature
+maps {F1 , F2 , F3 , F4 , F5 }, whose channels are also 32. These
+feature maps can represent SAR images’ multiscale contents.
+Note that the data’s spatial size would be halved after HCB.
+However, we change the stride value of HCB1 to ensure the
+spatial size of F1 is the same as the original SAR images.
+C. Information Transfer Module
+When the multilayer feature maps {F1 , F2 , F3 , F4 , F5 } are
+obtained, the next step for change detection is to fuse them in
+general. Nevertheless, considering the messages within different feature maps are different and complementary, we develop
+ITM in this section to capture the salient clues from each
+feature map and transfer them from high- to low-level for
+enhancing the feature maps. The structure of ITM is shown in
+Fig. 3. First, ITM conducts 1 × 1 convolution and the sigmoid
+function on Fi , i = 2, . . . , 5 for obtaining the spatial attention
+scores Atti , i = 2, . . . , 5. These scores reflect the salient
+information for change detection tasks. Second, ITM leverages
+the simple dot product and addition operations to propagate
+the salient scores and original knowledge from deep to shallow
+levels. On the one hand, the low-level feature maps (rich in
+textual information) can be supplemented by the semantic
+knowledge within the high-level feature maps. On the other
+
+Structure of SAFFM.
+
+hand, due to the introduction of the octave convolution, the
+high-level feature maps are more robust to speckle noise than
+the low-level feature maps. Therefore, transferring the salient
+information from high- to low-level feature maps could ensure
+that the shallow features are also robust to speckle noise.
+D. Self-Attention-Based Feature Fusion Module
+So far, we have obtained enhanced feature maps
+{F′1 , F′2 , F′3 , F′4 , F′5 }. Instead of fusing them by simple concatenation and summation, we develop SAFFM to integrate
+their contributions and mine the contextual information within
+SAR images in a self-attention manner. As exhibited in Fig. 4,
+SAFFM first up-samples F′5 and multiplies it by the transposed
+F′4 to get the self-attention score Att4 & 5 . Meanwhile, SAFFM
+down-samples F′1 and multiplies it by the transposed F′2 to get
+another self-attention score Att1 & 2 . Second, the self-attention
+score Att4 & 5 is combined with F′3 by the up-sampling, dot
+production, and addition operations to get F3–5 . At the same
+time, Att1 & 2 and F3–5 are merged to get F̂ by the downsampling, dot production, and addition operations. Finally,
+F̂ is up-sampled and added to F′1 for the final feature F.
+Here, we want to explain the rationality of the SAFFM’s
+operations. First, the high-level feature maps (F′4 and F′5 )
+are rich in semantics, and the low-level feature maps (F′1 and
+F′2 ) incorporate sufficient textual information. The attention
+scores obtained by them remain important semantic and textual
+messages. The mid-level feature map F′3 can be regarded as
+a transition from low- to high-level features, which involves
+intermediate clues. Thus, when we add semantic and textual
+attention scores to F′3 , the produced F̂ encloses all paramount
+information of the multilayer features. Second, considering
+the importance of changed areas’ edges, we combine F̂ and
+F′1 at last. This way, more detailed edge information can be
+integrated for change detection.
+E. Change Map Generation Module
+After FEM, ITM, and SAFFM, the bi-temporal SAR images
+and their DI have been mapped into the feature map F with
+a size of H × W × 32. Now, GCGM is developed to
+generate the change map. In particular, CMGM first uses a
+1 × 1 convolution to produce the output O ∈ RW ×H ×1 .
+Then, the hierarchical fuzzy c-means algorithm is adopted
+to generate the corresponding pseudo labels P L ∈ RW ×H ×1 ,
+which can be used to train our FFITN. Here, we suppose
+three clusters are in P L , including the unchanged cluster u ,
+changed cluster c , and uncertain cluster i . Only the pixels
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:59:19 UTC from IEEE Xplore. Restrictions apply.
+
+4004905
+
+Fig. 5.
+
+IEEE GEOSCIENCE AND REMOTE SENSING LETTERS, VOL. 20, 2023
+
+Testing datasets. (a) Bern. (b) Yellow River I. (c) Yellow River IV.
+
+belonging to u and c participate in the training procedure.
+Here, we select the contrast loss as our loss function. Its
+definition is
+Loss = Lossneg + Losspos
+P N1
+R1 · (1 − y) · d2
+Lossneg = i=1
+N1 + N2
+P N2
+2
+R
+0 · y · max(m − d, 0)
+Losspos = i=1
+(1)
+N1 + N2
+where N1 and N2 represent the numbers of changed and
+unchanged pixels, y ∈ {0, 1} is the pseudo label, max(·) is
+the maximum value function, d indicates the feature value
+corresponding to the changed point, m has the same shape
+as d and is filled with the value m, m is the upper boundary
+parameter of the changed pixel value, and R1 and R0 represent
+the ratio of pixels with labels 1 and 0 to the total training
+samples, which are used to alleviate the imbalance issue.
+There are two points we want to explain further. First,
+the parameters of FFITN are initialized randomly. FFITN’s
+training process is divided into two phases to optimize them
+adequately without any labeled data, i.e., warm-up and training. P L is generated by D and O in the warm-up and training
+phases, respectively. Second, when our FFITN is trained,
+we can use it to obtain O in the testing process. Then, instead
+of the hierarchical fuzzy c-means algorithm, a simple threshold
+binarization scheme is selected to generate the change map.
+III. E XPERIMENTAL R ESULTS AND A NALYSIS
+A. Dataset Introduction and Experimental Settings
+We select three datasets [3] to verify our FFITN comprehensively. The first is the Bern dataset [see Fig. 5(a)], which was
+captured by the European Remote Sensing 2 spaceborne sensor
+in April and May 1999. The bi-temporal SAR images’ sizes
+are 301 × 301. The last two datasets are parts of the Yellow
+River Estuary dataset, which was collected by RADARSAT-2
+in June 2008 and June 2009, and we record them Yellow
+River I [see Fig. 5(b)] and Yellow River IV [see Fig. 5(c)]
+in this letter. Their spatial sizes are 257 × 289 (Yellow River
+I) and 306 × 291 (Yellow River IV). All experiments reported
+here are compiled by the Pytorch platform using a workstation
+equipped with GeForce RTX 2080 Ti and 11G video memory.
+We select the Adam algorithm to train our FFITN. The
+learning rate and training epochs are set to 0.001 and 200.
+In the first 100 epochs, we use 10% pseudo labels generated
+by the hierarchical fuzzy c-means algorithm to accomplish
+the training. In the rest 100 epochs, 60% of pseudo labels
+participate in the training process. To obtain the numerical
+performance of FFITN, we choose five common evaluation
+criteria [10], including false positive (FP), false negative (FN),
+overall error (OE), percent correct classification (PCC), and
+Kappa coefficient (KC).
+
+Fig. 6.
+
+PCC values of FFITN with various free parameters. (a) m. (b) t.
+TABLE I
+A BLATION S TUDY OF FFITN U SING PCC VALUES (%)
+
+B. Parameter Analysis
+As mentioned in Section II, two free parameters should
+be set in advance, i.e., the upper boundary parameter m in
+(1) and the threshold t used in the testing process. Here,
+we change their values one by one to decide their optimal
+values. The values of m are varied from 1.0 to 3.0 with an
+interval of 0.2, and the values of t are fluctuated within a range
+of [0.1, 1.0]. The PCC values of FFITN based on different
+empirical parameters are shown in Fig. 6(a). We can find
+that FFITN performs steadily on the Bern and Yellow River I
+datasets with various m. However, there is a distinct fluctuation
+for the Yellow River IV dataset, and the optimal performance
+is achieved when m = 1.6. The different behavior of FFITN
+counted on three datasets is mainly caused by the diverse
+category and intensity changes. In the rest of the experiments,
+we empirically set m = 1.6. As shown in Fig. 6(b), the PCC
+values are increased when the value of t is changed from 0.1 to
+0.5, and then the FFITN’s behavior tends to be stable. The
+optimal values appear at t = 0.8 (Bern), t = 0.6 (Yellow River
+I), and t = 0.5 (Yellow River IV). This demonstrates that our
+model’s outputs follow a relatively clear changed/unchanged
+distribution. According to the results, we use the optimal t in
+the following experiments.
+C. Ablation Study
+In this section, we construct three networks to study the
+contributions of different modules to our FFITN. They are:
+1) Net1: FEM + CMGM; 2) Net2: FEM + ITM + CMGM;
+3) Net3: FEM + SAFFM + CMGM; and 4) Net4:
+FEM + ITM + SAFFM + CMGM. Net1 can be regarded
+as the baseline, which only contains the feature learning and
+change map generation operations. Based on Net1, we add
+ITM and SAFFM to construct Net2 and Net 3, respectively.
+Net4 is actually our FFITN. The performance of different
+networks counted by PCC is summarized in Table I. From
+observing these results, we find that each module provides
+positive contributions to FFITN. Taking the Yellow River I
+dataset as an example. The PCC value of Net1 is 94.28%.
+When we add ITM or SAFFM, the PCC value can be
+improved to different degrees. This implies that the mined
+salient knowledge and the self-attention fusion strategy are
+good to change detection. When all modules are integrated,
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:59:19 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: UNSUPERVISED SAR IMAGE CHANGE DETECTION BASED ON FEATURE FUSION
+
+4004905
+
+TABLE II
+C HANGE D ETECTION R ESULTS OF D IFFERENT M ETHODS C OUNTED ON T HREE DATASETS
+
+Net4 achieves the best performance. Apart from the above
+ablation study, the significance of the octave convolution, the
+benefits of stacking DI with SAR images, and the function of
+our model on speckle noise depression are discussed in the
+supplementary material.
+D. Performance Comparison
+To verify our model objectively, the following five methods
+are selected, including DDNet [12], SAFNet [17], MsCapsNet
+[5], MSDC [10], GKSNet [18], and CAA [19]. Table II
+shows the numerical results of different methods. We can
+easily find that our FFITN achieves the best performance
+in most cases from observing them. The values of FN and
+OE of FFITN are the lowest among all methods. Also, the
+PCC and KC values of FFITN are the largest among all
+methods. Taking KC values of Yellow River IV as examples,
+in comparison to other methods, the enhancements achieved
+by FFITN are 5.47% (DDNet), 6.01% (SAFNet), 4.54%
+(MsCapsNet), 3.42% (MSDC), 4.65% (GKSNet), and 11.27%
+(CAA). We also count the training and testing time costs of
+FFITN in Table II. Although our training times are longer than
+other methods, the inference times of FFITN are the shortest.
+Due to space limitations, the various change detection maps
+are shown in the supplementary material. In addition, we also
+select two other larger datasets to evaluate FFITN, and the
+results are exhibited in the supplementary material.
+IV. C ONCLUSION
+This letter presents an unsupervised change detection
+method (FFITN) for SAR images. It consists of four modules,
+and their function is to depress the noises and extract useful
+information from SAR images, enhance the discrimination of
+learned features, complete the feature fusion, and produce the
+final change maps. The positive experimental results counted
+on three public datasets confirm that our method is helpful
+for SAR image change detection. Also, the following points
+can be obtained. The first one is that the octave convolution is
+able to depress the speckle noises hidden in SAR images. The
+second one is that salient information is beneficial to change
+detection. The last one is the self-attention mechanism is good
+at fusing various knowledge. These three points can also be
+found in the literature [10] and [17].
+Even so, FFITN still has some shortcomings. First, training
+FFITN is time-consuming due to the complex structure and
+clustering operation. Second, the FP values of our model
+need to be better compared with some existing methods. How
+to address the limitations mentioned above is our further
+work.
+
+R EFERENCES
+[1] D. Wen et al., “Change detection from very-high-spatial-resolution optical remote sensing images: Methods, applications, and future directions,”
+IEEE Geosci. Remote Sens. Mag., vol. 9, no. 4, pp. 68–101, Dec. 2021.
+[2] X. Tang et al., “An unsupervised remote sensing change detection
+method based on multiscale graph convolutional network and metric learning,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5609715.
+[3] W. Zhang, L. Jiao, F. Liu, S. Yang, and J. Liu, “Adaptive contourlet
+fusion clustering for SAR image change detection,” IEEE Trans. Image
+Process., vol. 31, pp. 2295–2308, 2022.
+[4] Z. Lv, T. Liu, J. A. Benediktsson, and N. Falco, “Land cover change
+detection techniques: Very-high-resolution optical images: A review,”
+IEEE Geosci. Remote Sens. Mag., vol. 10, no. 1, pp. 44–63, Mar. 2022.
+[5] Y. Gao, F. Gao, J. Dong, and H.-C. Li, “SAR image change detection
+based on multiscale capsule network,” IEEE Geosci. Remote Sens. Lett.,
+vol. 18, no. 3, pp. 484–488, Mar. 2021.
+[6] H.-C. Li, G. Yang, W. Yang, Q. Du, and W. J. Emery, “Deep nonsmooth
+nonnegative matrix factorization network with semi-supervised learning
+for SAR image change detection,” ISPRS J. Photogramm. Remote Sens.,
+vol. 160, pp. 167–179, Feb. 2020.
+[7] W. Zhang, L. Jiao, F. Liu, S. Yang, W. Song, and J. Liu, “Sparse feature
+clustering network for unsupervised SAR image change detection,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5226713.
+[8] J. Wang, T. Zhao, and X. Jiang, “Unsupervised multi-look SAR image
+change detection driven by dual-layer graph with intensity and texture
+attributes,” IEEE Geosci. Remote Sens. Lett., vol. 19, pp. 1–5, 2022.
+[9] J. Liu, M. Gong, K. Qin, and P. Zhang, “A deep convolutional coupling
+network for change detection based on heterogeneous optical and
+radar images,” IEEE Trans. Neural Netw. Learn. Syst., vol. 29, no. 3,
+pp. 545–559, Dec. 2016.
+[10] H. Dong, W. Ma, L. Jiao, F. Liu, and L. Li, “A multiscale self-attention
+deep clustering for change detection in SAR images,” IEEE Trans.
+Geosci. Remote Sens., vol. 60, 2022, Art. no. 5207016.
+[11] F. Gao, X. Wang, Y. Gao, J. Dong, and S. Wang, “Sea ice change
+detection in SAR images based on convolutional-wavelet neural networks,” IEEE Geosci. Remote Sens. Lett., vol. 16, no. 8, pp. 1240–1244,
+Aug. 2019.
+[12] X. Qu, F. Gao, J. Dong, Q. Du, and H.-C. Li, “Change detection in
+synthetic aperture radar images using a dual-domain network,” IEEE
+Geosci. Remote Sens. Lett., vol. 19, pp. 1–5, 2022.
+[13] Y. Afaq and A. Manocha, “Analysis on change detection techniques
+for remote sensing applications: A review,” Ecol. Informat., vol. 63,
+Jul. 2021, Art. no. 101310.
+[14] Y. Chen et al., “Drop an octave: Reducing spatial redundancy in convolutional neural networks with octave convolution,” in Proc. IEEE/CVF
+Int. Conf. Comput. Vis. (ICCV), Oct. 2019, pp. 3435–3444.
+[15] R. Wang, L. Wang, X. Wei, J.-W. Chen, and L. Jiao, “Dynamic graphlevel neural network for SAR image change detection,” IEEE Geosci.
+Remote Sens. Lett., vol. 19, pp. 1–5, 2022.
+[16] Y. Yang et al., “AR2 Det: An accurate and real-time rotational one-stage
+ship detector in remote sensing images,” IEEE Trans. Geosci. Remote
+Sens., vol. 60, 2022, Art. no. 5605414.
+[17] Y. Gao, F. Gao, J. Dong, Q. Du, and H.-C. Li, “Synthetic aperture radar
+image change detection via Siamese adaptive fusion network,” IEEE
+J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 14,
+pp. 10748–10760, 2021.
+[18] J. Wang, F. Gao, J. Dong, S. Zhang, and Q. Du, “Change detection from
+synthetic aperture radar images via graph-based knowledge supplement
+network,” IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 15,
+pp. 1823–1836, 2022.
+[19] L. T. Luppino et al., “Code-aligned autoencoders for unsupervised change detection in multimodal remote sensing images,” IEEE
+Trans. Neural Netw. Learn. Syst., early access, May 12, 2022, doi:
+10.1109/TNNLS.2022.3172183.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:59:19 UTC from IEEE Xplore. Restrictions apply.
+
+

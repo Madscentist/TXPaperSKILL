@@ -1,0 +1,1738 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+5614216
+
+Multipretext-Task Prototypes Guided Dynamic
+Contrastive Learning Network for Few-Shot Remote
+Sensing Scene Classification
+Jingjing Ma, Member, IEEE, Weiquan Lin, Xu Tang , Senior Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, Fang Liu, Member, IEEE, and Licheng Jiao , Fellow, IEEE
+
+Abstract— As a content management technique, remote sensing
+(RS) scene classification (RSSC) always attracts researchers’
+attention. In the past decades, many successful methods have
+been proposed. Nevertheless, their prerequisite is that there are
+large labeled datasets, which is a strict demand in practice.
+To resolve this contradiction, developing RSSC models with the
+help of few-shot learning (FSL) has become popular. Due to
+lacking prior knowledge, most of the existing few-shot RSSC
+models pay attention to the learning algorithm. However, they do
+not attach importance to the complex contents within RS scenes
+and the intricate interclass/intraclass relations between RS scenes.
+This would influence their performance negatively. In this article,
+we propose a new few-shot RSSC model named multipretext-task
+prototypes guided dynamic contrastive learning network (MPCLNet). MPCL-Net consists of a multipretext tasks generation
+submodule, a deep feature learning submodule, and a joint
+optimization submodule. First, two RS-oriented pretext tasks are
+constructed under the self-supervised learning (SSL) framework
+in the multipretext tasks generation submodule, which aims to
+explore multiscale and rotation-invariant information from RS
+scenes. Second, a simple convolutional neural network (CNN) is
+developed in the deep feature learning submodule to transform
+the RS scenes into visual features. Third, three loss functions are
+formulated and integrated into the joint optimization submodule.
+Their goals are to fully capture the diverse land covers within
+RS scenes and compact/separate the intraclass/interclass samples
+with limited supervision. Finally, our MPCL-Net can be trained
+in a meta way. The positive results counted on the three public
+RS scene datasets confirm that our MPCL-Net is helpful to
+RSSC tasks under the few-shot scenario. Our source codes are
+available at https://github.com/TangXu-Group/Remote-SensingImages-Classification/tree/main/MPCL.
+
+Manuscript received 25 February 2023; revised 1 June 2023;
+accepted 28 June 2023. Date of publication 30 June 2023; date of
+current version 12 July 2023. This work was supported in part by the
+National Natural Science Foundation of China under Grant 62171332 and
+Grant 62276197, and in part by the Fund of National Key Laboratory
+of Science and Technology on Remote Sensing Information and Imagery
+Analysis, Beijing Research Institute of Uranium Geology, under Grant
+6142A010301. (Corresponding author: Xu Tang.)
+Jingjing Ma, Weiquan Lin, Xu Tang, Xiangrong Zhang, and Licheng Jiao are
+with the Key Laboratory of Intelligent Perception and Image Understanding
+of Ministry of Education, School of Artificial Intelligence, Xidian University,
+Xi’an 710071, China (e-mail: tangxu128@gmail.com).
+Fang Liu is with the Key Laboratory of Intelligent Perception and Systems
+for High-Dimensional Information of Ministry of Education, School of Computer Science and Engineering, Nanjing University of Science and Technology,
+Nanjing 210094, China.
+This article has supplementary downloadable material available at
+https://doi.org/10.1109/TGRS.2023.3291357, provided by the authors.
+Digital Object Identifier 10.1109/TGRS.2023.3291357
+
+Index Terms— Dynamic contrastive learning, few-shot
+remote sensing scene classification (RSSC), multipretext tasks
+self-supervised learning (SSL).
+
+I. I NTRODUCTION
+
+R
+
+EMOTE sensing (RS) scene classification (RSSC) is an
+important research topic in the RS community, which
+aims to assign semantic labels to RS scenes according to
+their contents [1], [2]. As a fundamental technique, RSSC
+is widely used in various RS applications, such as change
+detection [3], [4], contents mining [5], [6], geospatial object
+detection [7], [8], and so on. With the rapid development
+of deep learning, many RSSC methods have been proposed
+based on convolutional neural networks (CNNs) [9], and their
+performance is impressive. However, those notable results rely
+on a large number of labeled data. This strict requirement
+limits their application to reality as the volume and covered
+categories of labeled data are most of the time few and
+incomplete in practical applications. Therefore, it is necessary
+and urgent to develop RSSC models which can work on the
+few-shot scenario. In other words, the expected RSSC models
+should have two merits. One is that a few labeled samples can
+train them, and the other is that they can distinguish the new
+concepts.
+To meet the above-mentioned demands, few-shot learning
+(FSL) [10] has been developed in the RS community. As a
+popular solution to FSL tasks, meta-learning [11] attracts
+researchers’ attention due to its “learning to learn” mechanism.
+Especially, in the current deep era, many deep meta-learning
+algorithms have been proposed, and they have achieved success in various FSL tasks [12]. The existing meta-learning
+methods can be divided into three categories, including
+optimization-, model-, and metric-based technologies [13].
+Optimization-based approaches [14], [15] aim at developing
+specific optimization algorithms to make models learn rapidly
+for new tasks. Model-based schemes [16], [17] focus on
+learning their internal dynamics, which can be leveraged to
+process and predict the new inputs. Metric-based ways [18],
+[19] pay attention to finding a meta-feature space and adopting
+the similarity comparisons to recognize the new tasks. In the
+RS community, most few-shot RSSC methods [20], [21], [22]
+are derived from metric-based meta-learning methods due to
+their simple and clear meta-mechanisms.
+
+1558-0644 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+Although those methods have reached acceptable performance and generalization, some challenges in RSSC are still
+to be solved. The satisfactory RSSC results cannot only
+depend on the similarity measures. The effectiveness and
+sufficient visual features for describing RS scenes are also
+paramount [23]. Since RS scenes have diverse and abundant
+land covers with multiscales, learning the useful visual features
+is a tough task, especially in the few-shot scenario. A natural
+way to address this problem is to expand the samples. However, annotating RS scenes is a time-consuming and laborious
+task. In contrast to the labeled data, collecting the unlabeled
+samples is easy. The rich information hidden in the big unlabeled data is beneficial for learning valuable features. Thus,
+developing the method to explore the knowledge from RS
+scenes without the assistance of manual annotation becomes
+a critical issue for the above-mentioned challenges. To this
+end, self-supervised learning (SSL) [24] draws researchers’
+attention, which aims to use the data itself to be the supervised
+information for completing the learning missions. A usual way
+of SSL for image processing is pretext task learning, which
+pushes the models to solve the predefined image-level tasks
+so that the helpful information of images can be captured.
+The common pretext tasks [25] are image jigsaw puzzles,
+image rotation, and so on. Another popular SSL way to
+image understanding is contrastive learning [26], which makes
+models distinguish the images that have a high interclass
+similarity or intraclass variance.
+One problem is raised: is it possible to integrate the metricbased meta-learning and SSL to develop an expected RSSC
+model? To achieve this goal, we propose a new model named
+multipretext-task prototypes guided dynamic contrastive learning network (MPCL-Net) in this article. The main body of
+MPCL-Net consists of a multipretext tasks generation submodule and a deep feature learning submodule. The former
+aims to explore the multiscale and rotation-invariant information by constructing various pretext tasks under the SSL
+framework. The latter focuses on mapping the RS scenes into
+valuable visual features by a simple CNN. To train MPCLNet using a few labeled samples, we add a joint optimization
+submodule at the top of MPCL-Net. This submodule involves
+three specific loss functions, including a multipretext-task
+SSL (MPT-SSL) loss, a multiview consistency FSL (MVCFSL) loss, and a prototype-based dynamic contrastive learning
+(P-DCL) loss. By minimizing them jointly, our MPCL-Net can
+be trained with small samples. Also, its generalization can be
+guaranteed.
+In summary, our main contributions are as follows.
+1) An end-to-end RS scene classification model (MPCLNet) is proposed with the consideration of the characteristics of RS scenes. MPCL-Net can be trained with
+small labeled RS samples and be used to distinguish the
+new RS concepts.
+2) To deeply explore the complex contents within RS
+scenes, we introduce the SSL technique into our MPCLNet. Along with two RS-oriented pretext tasks and a
+simple CNN, the valuable features that contain the multiscale and rotation-invariant knowledge can be mined
+from RS scenes.
+
+3) To make the proposed MPCL-Net meet the demands of
+the few-shot scenario, three specific loss functions are
+formulated based on the conventional meta loss. Their
+function is to help MPCL-Net capture elegant information from RS scenes, maintain prediction consistency,
+and address the interclass/intraclass problem. By optimizing them jointly in a meta-manner, our MPCL-Net
+can be trained using a few labeled samples.
+4) Extensive experiments conducted on three public RS
+scene datasets show that the proposed model is helpful
+to RS scene classification. Compared with many existing
+methods, the performance and generation of MPCL-Net
+are competitive.
+The remaining sections are organized as follows. Related
+work is reviewed in Section II. Then, the proposed MPCL-Net
+is introduced in Section III. The evaluations of the proposed
+method are given in Section IV, Finally, the conclusions are
+summarized in Section V.
+II. R ELATED W ORK
+A. Deep Remote Sensing Scene Classification Model
+With the help of CNNs, a large number of RSSC models
+have been proposed in recent years. This section divides them
+into two groups for a short review. In the first group, the
+methods focus on improving the classification performance by
+reducing the influence of intraclass variance and interclass similarity in RS scenes. For example, Cheng et al. [27] proposed
+a discriminative CNN (D-CNN) to complete the RSSC tasks.
+Apart from normal cross-entropy loss, the metric-learning loss
+is developed in D-CNN to ensure the samples from the same
+(different) classes can be close to (far away from) each other.
+The positive results illustrate the superiorities of D-CNN. Similarly, another metric-learning-based deep model was proposed
+in [28]. Based on the Siamese network, Chopra et al. [29]
+design a metric learning regularization layer to enlarge or
+decrease the distances between RS scenes from the same
+or different classes. The reported results confirm its usefulness. Li et al. [30] first use the attention map technique to
+obtain the salient parts of RS scenes. Then, a CNN model
+with a new loss function is developed to further mine discriminative information and reduce the negative impacts of
+interclass dispersion and intraclass variance. Tang et al. [31]
+developed an attention-consistent network (ACNet) for RSSC.
+First, ACNet leverages the channelwise and spatialwise attention mechanisms to capture the salient regions within RS
+scenes. Then, the diverse salient regions are unified by an
+attention-consistent scheme to obtain the normalized knowledge for RSSC tasks. After the above-mentioned operations,
+not only can the key information hidden in RS scenes be
+mined, but the problem of interclass/intraclass can also be
+partly solved.
+The approaches in the second group aim at exploring
+the multiscale and rotation-invariant information from RS
+scenes so that the models’ performance in RSSC can be
+improved. Liu et al. [32] proposed a dual-branch multiscale
+CNN to capture the multiscale knowledge fully. It consists of
+a fixed-scale net and a varied-scale net. By forcing the outputs
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+of two nets close, the obtained visual features can describe the
+scale information exactly. Thus, the RSSC results generated
+by those features are adequate. To explore the information
+comprehensively, a rotation invariance CNN was introduced
+in [33]. It combines the specific data augmentation strategy and
+rotation-invariant regularization to ensure the discrimination of
+the final visual features. Consequently, the RSSC results can
+be guaranteed. Lu et al. [34] introduced SIFT [35] into CNNs
+and designed a bidirectional adaptive feature fusion strategy
+to obtain the discriminative representation for RSSC. Since
+fused features contain both semantic (global) and scale (local)
+information, the classification results are as good as expected.
+A multiscale staking attention pooling was introduced in [36]
+to highlight the latent semantics and exploit the multiscale
+information. Through embedding the residual attention strategy and multiscale dilated convolution layer into a CNN, the
+effectiveness of the learned features and the accuracy of the
+classification results can be ensured.
+B. Meta-Learning in Remote Sensing
+To deal with the few-shot problem and enhance the models’
+generalization for diverse practical applications, meta-learning
+has become popular in the RS community. Based on the
+relational network [37], Gao et al. [38] proposed a new deep
+model for classifying the hyperspectral image (HSI) under
+the few-shot scenario. The authors first leverage the feature
+learning module to capture the spatial–spectral information
+from HSIs fully. Then, a task-based learning algorithm is
+designed under the meta-learning paradigm to ensure that
+model can classify the new HSIs. A meta-learning-based RS
+object detection model was developed in [39], consisting of
+a meta-feature extractor, a feature reweighting module, and
+a bounding box prediction module. This model can not only
+complete the detection task but also distinguish the unseen
+objects in the RS images. Tang et al. [5] introduced the key
+ideas of the prototype network [40] into the hash learning and
+proposed a meta-hashing model for content-based RS image
+retrieval. The improved metric-based meta-learning strategy
+helps the model learn the valuable hash codes from RS images
+using few labeled data.
+For RSSC, meta-learning-based methods are also abundant.
+For instance, Li et al. [20] proposed discriminative learning
+of adaptive match network (DLA-MatchNet) under the metalearning framework. With the assistance of attention mechanisms and the adaptive distance matcher, DLA-MatchNet
+can learn the discriminative features using a few labeled
+samples to accomplish RSSC tasks. Another meta-learningbased model was proposed in [21], which completes the
+feature learning at the task level and achieves the classification
+results using the Balance loss function. In [22], a Siameseprototype network (SPNet) was developed to address few-shot
+RSSC tasks. Considering the properties of RS scenes, SPNet
+updates the normal prototype generation schemes. Along with
+the specific loss functions, the RSSC results are encouraging. Cui et al. [41] embedded the kernel techniques into the
+meta-learning framework and constructed meta-kernel networks (MKNs) for RSSC. By exploring the data distribution,
+
+5614216
+
+the discriminative classification bias can be obtained with limited supervised information. A multiscale multiangle network
+and the corresponding class-level prototype guided learning
+algorithm were proposed in [42] for RSSC. They aim to
+capture the complex land covers within RS scenes based on
+limited labels. The reported results confirm their helpfulness.
+An aerial image few-shot dataset (AIFS-DATASET) was proposed in [43]. AIFS-DATASET consists of various datasets
+so that its data distribution is diverse enough to evaluate FSL
+algorithms comprehensively. At the same time, the authors
+also developed a dual-constrained distance metric learning
+(DC-DML) model in this article to deal with the FSL tasks
+by narrowing down and enlarging the distances between the
+intraclass and interclass samples.
+C. Self-Supervised Learning in Remote Sensing
+SSL study in RS is energetic as it can learn valuable information from RS images without supervision knowledge, which
+can provide auxiliary messages for many RS applications. For
+example, Dong et al. [44] designed a self-supervised strategy
+for RS image change detection, in which the developed network is asked to complete the temporal prediction. In this way,
+the model can mine the distribution-aware information from
+temporal RS images, which is beneficial to change detection.
+A self-supervised spectral–spatial residual network (SSRN)
+was proposed for HSIs super-resolution [45]. The authors
+first transform the super-resolution problem into a pixelwise
+spectral mapping issue. Then, a self-supervised fine-tuning
+scheme is developed to produce high spatial resolution HSIs.
+Another SSL model was presented for RS image semantic
+segmentation [46]. The encouraging segmentation results can
+be obtained by developing the appropriate contrastive learning
+modules for global styles and local regions.
+In the RSSC tasks, SSL is also a prevailing technique.
+Li et al. [46] developed a self-supervised contrastive learningbased metric learning network (SCL-MLNet) to accomplish
+the few-shot RSSC tasks. First, SCL-MLNet incorporates
+contrastive and FSL in a multitask learning framework to
+obtain the representative features. Then, the attention method
+is adopted to separate the samples from different classes.
+The satisfactory classification results can be produced based
+on the above-mentioned two stages. In [47], SSL is utilized
+to generate a high-performance pretraining model for RSSC.
+This operation can mitigate the burden of collecting labeled
+data and improve classification performance. Considering the
+complex contents within RS scenes and the limited supervision
+information, Zhao et al. [48] leveraged the SSL to deal with
+RSSC in a multitasking way. A new mixup loss strategy is
+developed to weight different tasks dynamically so that the
+discriminative features can be learned from RS scenes at a
+small cost. The promising classification results confirm the
+idea’s usefulness.
+D. Similar Work Comparison
+Our MPCL-Net aims to enhance the classification results
+by combining FSL and SSL. Admittedly, some similar solutions have been proposed for image classification, such as
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+ProtoNetRot [49], SupBYOL [50], conditional self-supervised
+(CSS) [51], and calibrated pretext tasks (CPT) [52]. Specifically, ProtoNetRot weaves a rotation pretext task (RPT) into
+ProtoNet [40], where the model is required to predict the input
+images’ rotation angles and complete FSL simultaneously.
+Besides the rotation prediction, SupBYOL also introduces
+another SSL task (representation prediction [53]) in the metalearning stage. This way, valuable features can be learned
+from images under the FSL cases. Unlike the above-mentioned
+two methods that complete SSL and FSL simultaneously, CSS
+first accomplishes SSL (rotation forecast) and FSL separately.
+Then, the knowledge learned from two tasks is fused by a
+graph convolutional network (GCN) [54] module for the final
+classification. CPT was developed for RS images, which adds
+pretext task techniques and contrastive learning into the FSL
+framework to ensure the final performance.
+Although the targets of our MPCL-Net and the four methods
+discussed earlier are similar, i.e., using SSL to improve FSL,
+there are some differences between MPCL-Net and them. For
+the first three methods (ProtoNetRot, SupBYOL, and CSS), the
+different points are as follows. First, they are general-purpose
+methods that are applied to natural images, while our model
+is developed for RS images. Apart from the common RPT,
+MPCL-Net also develops the scale pretext task (SPT) to
+mine the multiscale information hidden in RS images, which
+benefits RS scene classification. Second, the introduced SSL
+technologies in the above three methods are pretext-task-based,
+aiming to learn the profitable features from images by predicting the pseudolabels. Compared with them, besides developing
+proper pretext tasks (RPT and SPT), we also introduce contrastive learning based on feature-level prototypes into our
+model, which focuses on compacting the intraclass samples
+and pushing away the interclass samples. Third, compared with
+SupBYOL and CSS, the proposed MPCL-Net can be trained
+without pretraining, which is beneficial to practical scenarios.
+For RS-oriented CPT, there are still distinct differences.
+First, CPT trains the base model in a supervised learning
+way. In other words, it leverages the whole samples in the
+training set directly to train the model along with a multiclass
+classifier by reducing the cross-entropy values. In contrast to
+CPT, our MPCL-Net trains the base model in an N-way-Kshot manner. The details of the N-way-K-shot learning will
+be discussed in Section III-A. Second, CPT only contains
+RPT, and MPCL-Net adopts RPT and SPT to guarantee the
+effectiveness of the learned features. Third, CPT uses contrast
+learning at the image level, and MPCL-Net applies contrast
+learning at the prototype level.
+III. M ETHODOLOGY
+A. Preliminary Knowledge
+1) Meta-Learning: The data partition is a crucial step
+in meta-learning [12], [13]. Suppose there is a dataset D
+with a label space C, and the number of classes is M.
+In general, the dataset would be divided into a training set
+Dtrain , a validation set Dval , and a testing set Dtest under the
+meta-learning framework. Their corresponding label subspaces
+are disjoined and complementary, i.e., Ctrain ∩ Cval = ∅,
+
+Ctrain ∩ Ctest = ∅, Cval ∩ Ctest = ∅, and C=Ctrain ∪ Cval ∪ Ctest .
+Furthermore, the number of classes in different sets satisfies
+M = Mtrain + Mval + Mtest . Meta-learning techniques train the
+model on Dtrain , evaluate the performance of the model on
+Dval , and assess the model’s generalization to unseen data of
+Dtest .
+In the training stage, suppose Dtrain contains Mtrain classes
+with L samples per class. Since L is small, the meta-learning
+algorithms use a set of tasks T instead of single samples to
+train the deep models. This training paradigm is known as
+episode training. Each task T consists of a support set Ds =
+q
+q
+×Q
+N ×K
+, which are
+{(xis , yis )}i=1
+and a query set Dq = {(x j , y j )} Nj=1
+randomly selected from Dtrain . Here, N (N < Mtrain ) indicates
+the class numbers within support and query sets, K and Q
+are the number of samples within per class and K + Q = L.
+Then, the obtained N -way-K -shot task set T is used to train
+the deep models using the following equation:
+X
+θ = arg min
+L( f θ (T ))
+(1)
+θ
+
+T
+
+where f θ (·) indicates the deep mapping of nonlinear models
+and L(·) denotes the loss function that usually measures the
+prediction error on query sets. In the validation and testing
+stage, the samples within Dval and Dtest should also be organized as tasks to complete the performance and generalization
+assessment.
+2) Metric-Based Baseline Model: Our MPCL-Net is developed based on the prototypical network (ProtoNet) [40]. Thus,
+we introduce ProtoNet’s main idea in short. ProtoNet is a
+simple yet classical metric-based meta-learning technique.
+It leverages the distances between samples within the query
+set and the prototypes to train the model under the few-shot
+scenario. In detail, for a task T , ProtoNet first computes the
+class-level prototypes using Dtrain according to
+X
+1
+fis
+(2)
+cn =
+K
+s s
+n
+((xi ,yi )∈Ds )
+where cn means the nth prototype, Dsn indicates a set of
+samples with class n, fis denotes the embedding of xis ∈ Dsn .
+p
+Then, for a query sample x j , its class distribution can be
+calculated by
+
+q
+exp −d f j , cn
+q
+q
+(3)
+p y j = n x j = PN
+
+q
+n=1 exp −d f j , cn
+q
+
+q
+
+where f j indicates the embedding of x j , and d(·, ·) denotes
+q
+q
+the Euclidean distance. By minimizing − log p(y j = n|x j ),
+the parameters of the model can be updated by the task T .
+When we expand the above-mentioned process to task set T ,
+the model can be trained. In the reference stage, the class of a
+new sample would also be decided by the distances between
+the new sample and the corresponding prototypes.
+B. Structure of the Proposed Network
+The structure of the proposed MPCL-Net is shown in
+Fig. 1, which consists of a multipretext tasks generation
+submodule, a deep feature learning submodule, and a joint
+optimization submodule. The multipretext tasks generation
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+Fig. 1.
+
+5614216
+
+Framework of the proposed MPCL-Net.
+
+submodule focuses on preprocessing the input RS scenes and
+defining the RS-oriented prepretext tasks. The deep feature
+learning submodule aims to extract valuable information from
+RS scenes. The joint optimization submodule considers formulating the specific loss functions to train our MPCL-Net
+under the few-shot scenario. For clarity, we use a specific task
+T as the example to explain each submodule of MPCL-Net in
+the following.
+The multipretext task generation submodule constructs two
+pretext tasks, including SPT and RPT. In SPT, the multiscale
+information hidden in RS scenes would be explored by randomly varying their sizes. Suppose we have a set of scale
+operators G τ = {gτ |τ = 1, . . . , n τ }. For an input RS scene
+with a size of u × u, we can use gτ to resize it into v × v,
+where v equals u + τ · m or u − τ · m, and m denotes
+the scaling margin. In RPT, the rotation-invariant messages
+within the input RS scenes would be captured by the simple
+rotation. Assume that there is a set of rotation operators
+G r = {gr |r = 1, . . . , n r }. We can use gr to rotate an input RS
+scene with (r −1)·90 degrees in the 2-D space. By constructing
+SPT and RPT, an original input task T = {Ds , Dq } can be
+transformed into two new tasks
+ τ τ
+Tτ =
+D , D |τ = 1, . . . , n τ
+ sr rq
+r
+T =
+Ds , Dq |r = 1, . . . , n r
+where
+Dsτ =
+
+
+
+Dsr =
+
+
+
+xis , yis , τ
+
+ N ×K
+
+xis , yis , r
+
+
+
+,
+
+i=1
+N ×K
+,
+i=1
+
+Dqτ =
+
+ N ×Q
+q
+q
+x j , y j , τ j=1
+ q q  N ×Q
+Dqr = x j , y j , r j=1 .
+
+
+Like [40], our deep feature learning submodule is a simple
+network that consists of four convolutional blocks. Each block
+contains a 3 × 3 convolutional layer, a rectified linear unit
+(ReLU) layer, and a 2 × 2 MaxPool layer. Besides, there is
+an additional 5 × 5 adaptive MaxPool layer in the last block.
+After passing through the deep feature learning submodule,
+the RS scenes within T τ and T r can be mapped into the ddimensional high-level visual features
+ τ τ
+Fτ =
+F , F |τ = 1, . . . , n τ
+ rs rq
+r
+F =
+Fs , Fq |r = 1, . . . , n r
+
+where
+ q τ N ×Q
+N ×K
+, Fqτ = f j
+i=1
+j=1
+ s r N ×K r
+ q r N ×Q
+r
+Fs = fi
+, Fq = f j
+.
+i=1
+j=1
+
+Fsτ =
+
+
+
+fis
+
+τ
+
+When we obtain these representations, the joint optimization submodule will be utilized to update the parameters of
+MPCL-Net. Three loss functions are developed to assist the
+optimization process. The first one is the MPT-SSL loss, which
+aims at deeply mining the valuable information from RS
+scenes without any manual supervision. The second one is
+the MVC-FSL loss. The functions of the MVC-FSL loss are
+twofold. One is to ensure that our MPCL-Net can be trained
+under the few-shot scenario. The other is to further capture
+the knowledge hidden in RS scenes from various views. The
+last one is the P-DCL loss, which focuses on addressing the
+problems of interclass similarity and intraclass variance using
+a few labeled samples. Now, we discuss three loss functions
+in detail.
+
+C. Learning Algorithm for the Proposed Network
+To obtain a model with good performance and high generalization using a few labeled samples, we develop the learning
+algorithm under the meta-learning paradigm. Here, we also use
+a specific task T = {Ds , Dq } to clarify the proposed learning
+algorithm. The whole training process would be completed
+using a set of tasks T . As mentioned in Section III-B, when
+the task T is passed through the multipretext tasks generation
+and deep feature learning submodules, we can get two pretext
+tasks T τ and T r , and the corresponding RS scenes can be
+mapped into the high-level features Fτ and Fr . Next, three
+loss functions are developed to guide the learning process.
+Since the loss functions of SPT and RPT are similar, we only
+define the different functions for SPT here for clarity. The
+definitions of the three loss functions for RPT can be found
+in the Supplementary Material.
+1) MPT-SSL Loss: This loss function is developed to help
+MPCL-Net mine the profitable information from RS scenes
+without manual labels. To this end, the self-supervised scale
+nτ
+nr
+and rotation labels {τi }i=1
+and {ri }i=1
+are used. For convenience, we combine the support and query sets and redefine
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+q τ
+
+Fτ and Fr as
+
+query samples {(f j ) |τ = 1, . . . , n τ } according to (6). The
+MVC term is defined as
+
+n
+o
+N (K +Q)
+|τ = 1, . . . , n τ
+fiτ i=1
+o
+n
+N (K +Q)
+|r = 1, . . . , n r .
+Fr =
+fir i=1
+
+Fτ =
+
+Lτcon =
+
+Then, a scale loss and a rotation loss are formulated.
+For T τ , we develop a scale classifier θτ , consisting of a
+1 × 1 convolutional layer and an ReLU activation function.
+The scale classifier realizes the mapping θτ : fiτ 7→ τi for
+(fiτ , τi ) ∈ F τ . To recognize the diverse scale variations, the
+scale loss is formulated as follows for the feature pair (fiτ , τi ):
+
+nτ
+X
+exp θτ fiτ , τi
+1 X
+τ
+ (4)
+log Pn τ
+Lssl = −
+τ
+′
+n τ l τ =1 τ
+′ =1 exp θτ fi , τi
+τ
+τ
+(fi ,τi )∈F
+where l = N (K + Q). For T , we construct a rotation classifier
+θr , whose structure is the same as θτ . The rotation classifier
+completes the mapping θr : fir 7 → ri for (fir , ri ) ∈ F r . For the
+feature pair (fir , ri ), similar to Eq. (4), the rotation loss Lrssl can
+be defined to ensure the various rotations can be distinguished.
+Finally, the MPT-SSL loss is the combination of the scale loss
+and rotation loss
+r
+
+Lssl = Lτssl + Lrssl .
+mpt
+
+(5)
+
+2) MVC-FSL Loss: This loss function has the FSL term and
+the MVC term. The FSL term guarantees that our MPCL-Net
+can be trained with limited labeled samples. The MVC term
+ensures that MPCL-Net can consistently predict the pretexted
+samples corresponding to the same RS scene.
+For the RS scenes in
+
+ s s 
+q
+q
+Tτ =
+xi , yi , τ , x j , y j , τ |τ = 1, . . . , n τ .
+We have already obtained their features
+ τ τ
+Fτ =
+Fs , Fq |τ = 1, . . . , n τ
+ s τ
+q τ
+|τ = 1, . . . , n τ .
+=
+fi , f j
+By the deep feature learning submodule, where i ∈
+[1, N × K ], j ∈ [1, N × Q], N denotes the class number
+in T τ , K and Q indicate the numbers of the support and
+query samples, respectively. Similar to [40], the FSL term is
+formulated as
+n
+
+τ
+
+1 X
+q
+q
+log p τ y j = n x j , τ
+n τ τ =1
+
+q τ
+
+exp −d f j , cτn
+q
+q
+τ
+p y j = n x j , τ = PN
+
+q τ
+, cτn
+n=1 exp −d f j
+τ
+1 X
+cτn =
+fis
+(6)
+K s τ τ
+(fi ) ∈Fs n
+
+Lτfsl = −
+
+where Fτs n indicates a set of features with class n, and cτn
+denotes the prototype corresponding to the nth class. Inspired
+by [55], we leverage the Kullback–Leibler (KL) divergence
+to ensure prediction consistency. Suppose we have gotten
+the posterior probability distributions {pτj |τ = 1, . . . , n τ } for
+
+NQ
+nτ X
+X
+
+1
+·
+mean pτj log pτj − log p̂τj
+n τ N Q τ =1 j=1
+n
+
+p̂τj =
+
+τ
+1 X
+pτ
+n τ τ =1 j
+
+(7)
+
+where mean(·) denotes the elemental average operation, and
+p̂τj implies the center prediction distributions of the pretexted
+samples from one RS scene. Therefore, the MVC-FSL loss
+function for T τ can be formulated as
+Lτmvcfsl = Lτfsl + ητ Lτcon
+
+(8)
+
+where ητ is a free parameter to control the contributions of
+Lτfsl and Lτcon .
+Similarly, for the RS samples in
+ s s 
+
+q
+q
+Tr =
+xi , yi , r , x j , y j , r |r = 1, . . . , n r
+and their features
+Fr =
+
+
+
+=
+
+
+
+Fsr , Fqr |r = 1, . . . , n r
+r
+q r
+|r = 1, . . . , n r .
+fis , f j
+
+The same process is done. Thus, the MVC-FSL loss function
+for T r can be formulated as
+Lrmvcfsl = Lrfsl + ηr Lrcon
+
+(9)
+
+where Lrfsl and Lrcon are the FSL and MVC terms for the
+rotational task, and ηr is a hyperparameter to balance the
+efforts of two terms.
+Consequently, the MVC-FSL loss function is
+
+1 τ
+Lmvcfsl + Lrmvcfsl
+2
+ ητ
+1 τ
+ηr
+=
+Lfsl + Lrfsl + Lτcon + Lrcon
+2
+2
+2
+
+
+1 τ
+r
+τ
+∼
+Lfsl + Lfsl + η Lcon + Lrcon
+{z
+}
+|2
+{z
+} |
+
+Lmvc
+fsl =
+
+FSL Term
+
+(10)
+
+MVC Term
+
+where η is an empirical parameter for the FSL and MVC
+terms, and ∼ means the equivalence.
+3) P-DCL Loss: To compact/separate the intraclass and
+interclass samples, we develop the P-DCL loss in this section
+with the help of contrastive learning. A critical step in
+contrastive learning is constructing the positive and negative
+data according to the anchor sample [26]. Such that the
+samples corresponding to the same/different classes can be
+clustered/split. We apply these critical ideas to the prototypes
+and develop the P-DCL loss. Compared with the regular
+contrastive learning networks (e.g., [56], [57]), which collect
+the anchors and their positive and negative data pairs in
+the preprocessing stage at the image level, the anchors and
+corresponding data pairs in our P-DCL loss are the immediate
+class-level prototypes (generated during the training) and their
+variants. Therefore, the P-DCL loss can be regarded as a
+dynamic technique.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+Fig. 2.
+
+5614216
+
+Architecture of the learnable sample generator.
+
+For T τ , suppose we have obtained N prototypes CτN =
+= 1, . . . , n τ }. First, we regard each prototype as the
+anchor and construct its positive and negative samples by
+a learnable sample generator (LSG), whose architecture is
+shown in Fig. 2. LSG consists of two 1 × 1 convolutional
+layers, one ReLU layer, and a Softmax layer. The inputs of
+LSG are the prototypes CτN , and the outputs are two hyperparameters sets AτN and BτN . After disturbing and the linear
+combination operations, we can get the positive and negative
+samples. The above-mentioned process can be formulated as
+
++
+CτN = AτN · CτN + BτN · Shuffle CτN
+
+−
+CτN = BτN · CτN + AτN · Shuffle CτN
+
+
+AτN , BτN = f lsg CτN
+(11)
+{cτn |τ
+
+where f lsg (·) denotes the nonlinear mapping of LSG, Shuffle(·)
+N
+means the shuffle operation, and AτN = {αnτ }n=1
+and BτN =
+τ N
+τ
+τ
+{βn }n=1 are hyperparameter sets. Here, αn and βn should obey
+the rules: αnτ + βnτ = 1 and αnτ > βnτ . Then, derived from
+InfoNCE [58], the P-DCL loss for T τ is defined as
+1
+Lτdcl = −
+nτ
+
+
+ D τ τ+ E 
+cn ,cn
+exp
+nτ X
+N
+
+
+ε
+X
+
+
+D
+E
+·
+log
+
+−
+
+
+τ ,cτ
++
+
+
+τ
+τ
+c
+P
+n n′
+c ,c
+τ =1 n=1
+exp ⟨ n ε n ⟩ + nN′ =1 exp
+ε
+(12)
+where ε is a temperature hyperparameter and ⟨·, ·⟩ implies the
+inner product. The target of Lτdcl is to narrow down the distance
+between the anchor and its positive sample and enlarge the gap
+between the anchor and its negative sample.
+To further explain how to produce the positive/negative
+samples, a schematic illustration of positive sample generation under the five-way-K-shot scenario for the SPTs is
+provided in Fig. 3. Suppose there are five prototypes Cτ5 =
+{cτ1 , cτ2 , cτ3 , cτ4 , cτ5 }. After passing them through LSG, we can
+get two sets of hyperparameters Aτ5 = {α1τ , α2τ , α3τ , α4τ , α5τ }
+and Bτ5 = {β1τ , β2τ , β3τ , β4τ , β5τ }. Then, the original prototypes
+Cτ5 and its Shuffle version would be combined linearly with
++
+the weights of Aτ5 and Bτ5 to generate Cτ5 . Since we define
++
+τ
+τ
+τ
+τ
+τ
+αi > βi and αi + βi = 1, C5 has a higher weight in Cτ5 .
+τ+
+Therefore, C5 can be regarded as the positive samples of Cτ5 .
+Similarly, when we can get the positive and negative sam+
+−
+ples CrN and CrN of the prototypes CrN = {crn |r = 1, . . . , n r },
+we can also get the P-DCL loss Lrdcl for T r whose definition
+can be deduced by (12). Finally, the ultimate P-DCL loss is
+formulated as
+Ldcl = Lτdcl + Lrdcl .
+p
+
+(13)
+
+Fig. 3.
+Schematic illustration of positive sample generation under the
+five-way-K-shot scenario for the SPTs.
+
+Algorithm 1 Steps of Training MPCL-Net
+Input:
+A labeled dataset that contains M classes with L samples
+per class, the maximum iterations iterMax.
+1: for i = 1 to iterMax do;
+2: Construct one training task T ;
+3: Generate scale pretext task T τ and rotation pretext task
+T r using T according to the scheme mentioned in Section
+III-B;
+4: Pass the multi-pretext tasks through the deep feature
+learning submodule to get their d−dimensional features
+Fτ and Fr .
+5: Compute multi-view prototypes CτN and CrN ;
+mpt
+mpt
+mpt
+6: Calculate Lssl , Lssl and Lssl by Eqs. 5, 10, and 13;
+7: Calculate the final loss Ltotal by Eq. 14 and update
+the MPCL-Net’s parameters by the back propagation
+algorithm.
+8: end for.
+Output:
+The trained MPCL-Net.
+
+4) Total Loss: Based on the contents discussed earlier, the
+loss function for training our MPCL-Net is
+mpt
+
+p
+
+Ltotal = Lmvc
+fsl + λ1 Lssl + λ2 Ldcl
+
+(14)
+
+where λ1 and λ2 are two hyperparameters to control the
+significance of different terms. Besides, we summary the
+training steps in Algorithm 1.
+IV. E XPERIMENTS
+A. Datasets Description
+UC
+Merced
+Land-Use
+(UCM)1
+[59]
+contains
+2100 256 × 256 RS scenes images belonging to 21 semantic
+categories. Each category has 100 RS scenes. The spatial
+resolution of scenes is one foot. The semantics of each class
+and the number of scenes within each class are exhibited
+in Fig. 4. In our experiments, the dataset is divided into
+ten, six, and five classes for training, validation, and testing,
+respectively, and the exact splits are shown in Table I.
+AID2 [60] consists of 31 500 600 × 600 RS scenes, which
+are grouped into 30 classes. The scene numbers of each class
+1 http://vision.ucmerced.edu/datasets/landuse.html
+2 https://captain-whu.github.io/AID/
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+Fig. 4. Examples of scenes of the UCM dataset. The scene numbers and
+names are summarized as follows. 1) Agricultural. 2) Airplane. 3) Baseball
+diamond. 4) Beach. 5) Buildings. 6) Chaparral. 7) Dense residential. 8) Forest.
+9) Freeway. 10) Golf course. 11) Harbor. 12) Intersection. 13) Medium-density
+residential. 14) Mobile home park. 15) Overpass. 16) Parking lot. 17) River.
+18) Runway. 19) Sparse residential. 20) Storage tanks. 21) Tennis courts.
+
+are varied from 200 to 400. The pixel resolution of each image
+ranges from 8 to 1.5 m. The semantics of different classes and
+the number of scenes corresponding to each class are exhibited
+in Fig. 5. For the aerial image dataset (AID), 16 classes are
+randomly chosen as the training set, seven classes are selected
+as the validation set, and the remaining seven classes are
+regarded as the test set (see Table I for detail).
+NWPU-RESISC453 [61] has 31 500 256 × 256 RS scenes,
+and they are divided into 45 semantic classed equally. Their
+spatial resolution varies from 30 to 0.2 m. The examples are
+exhibited in Fig. 6. In the following experiments, 25 classes
+are selected as the training set, ten classes are regarded as the
+validation set, and the rest of the ten classes are regarded as
+the test set, as shown in Table I.
+
+Fig. 5. Examples of scenes of the AID dataset. The scene numbers and names
+are summarized as follows. 1) Airport. 2) Bare land. 3) Baseball field. 4)
+Beach. 5) Bridge. 6) Center. 7) Church. 8) Commercial. 9) Dense residential.
+10) Desert. 11) Farmland. 12) Forest. 13) Industrial. 14) Meadow. 15) Medium
+residential. 16) Mountain. 17) Park. 18) Parking. 19) Playground. 20) Pond.
+21) Port. 22) Railway station. 23) Resort. 24) River. 25) School. 26) Sparse
+residential. 27) Square. 28) Stadium. 29) Storage tanks. 30) Viaduct.
+
+B. Implementation Details
+Following the most commonly used meta-learning protocol,
+we perform five-way one-shot and five-way five-shot classification. We implement our model in the PyTorch platform4 and
+run our experiment on two Amax GeForce RTX 3090 GPUs.
+In the meta-training stage, the adaptive momentum estimation
+algorithm (ADAM) is used to optimize the parameters of our
+model. The initial learning rate is set as 1 × 10−4 and the
+maximum iterations are set to be 4000. We train the model
+from scratch without pretrained weights for each dataset. All
+the input images are resized to 224 × 224. In the meta-testing
+phase, both SPT and RPT are used to output the classification
+results for testing images to improve the performance with the
+help of multiscale and rotation-invariant information.
+Several parameters should be set in advance, including the
+number of the scale and rotation operators n τ and n r , the
+scaling margin m, the empirical parameter η in the MVC-FSL
+loss [see (10)], the temperature parameter ε in the P-DCL loss
+[see (12)], and the hyperparameter λ1 and λ2 in total loss [see
+(14)]. The optimal values of λ1 , λ2 , and m for different datasets
+and diverse few-shot scenarios are exhibited in Table II, and
+their influence on our model will be discussed in Section IV-F.
+For η, as suggested by [55] and [62], we set its value to
+3 https://gcheng-nwpu.github.io/#Datasets
+4 https://pytorch.org/
+
+Fig. 6. Examples of scenes of the NWPU-RESISC45 dataset. The scene
+numbers and names are summarized as follows. 1) Airplane. 2) Airport. 3)
+Baseball diamond. 4) Basketball court. 5) Beach. 6) Bridge. 7) Chaparral. 8)
+Church. 9) Circular farmland. 10) Cloud. 11) Commercial area. 12) Dense
+residential. 13) Desert. 14) Forest. 15) Freeway. 16) Golf course. 17) Ground
+track field. 18) Harbor. 19) Industrial area. 20) Intersection. 21) Island. 22)
+Lake. 23) Meadow. 24) Medium residential. 25) Mobile home park. 26)
+Mountain. 27) Overpass. 28) Palace. 29) Parking lot. 30) Railway. 31) Railway
+station. 32) Rectangular farmland. 33) River. 34) Roundabout. 35) Runway.
+36) Sea ice. 37) Ship. 38) Snowberg. 39) Sparse residential. 40) Stadium. 41)
+Storage tank. 42) Tennis court. 43) Terrace. 44) Thermal power station. 45)
+Wetland.
+
+0.1. Its impact on our MPCL-Net will also be analyzed in
+Section IV-F. Besides, we set n τ = n r = 4 and ε = 0.1 for
+the following experiments. The reasons why we fix their values
+are twofold. First, since the valid rotation angles in RPT are
+{0◦ , 90◦ , 180◦ , 270◦ }, the value of n r is decided to be four.
+Spontaneously, n τ is equal to four. Second, similar to [58]
+and [56], we set the temperature parameter ε to be 0.1.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+5614216
+
+TABLE I
+DATA S PLITS ON T HREE DATASETS
+
+TABLE II
+E MPIRICALLY O PTIMAL VALUES OF m, AND λ1 AND λ2 FOR D IFFERENT
+DATASETS AND D IFFERENT T RAINING TASKS
+
+We adopt overall accuracy (OA) as our assessment criteria
+to evaluate the proposed method. OA is defined as the number
+of correctly classified samples divided by the total number of
+scenes in the dataset, and it reflects the overall classification
+performance.
+C. Performance of Our Model
+To validate our MPCL-Net extensively, we compare it
+with the following ten models, including matching network (MatchingNet) [63], relation network (RelationNet) [37],
+ProtoNet [40], ProtoNetRot [49], SupBYOL [50], DLAMatchNet [20], SPNet [22], SCL-MLNet [46], CPT [52], and
+DC-DML [43]. The first five models are general-purpose FSL
+networks, and the last five are RS-oriented FSL networks.
+Their publication information can be found in Table III.
+Note that all models are accomplished by ourselves using the
+released codes, and their free parameters are set according to
+the original literature. In addition, for the sake of fairness, the
+experimental settings of the compared methods are the same
+as the contents discussed in Section IV-B. There is another
+point we want to touch on: CPT trains the base model in a
+supervised manner. This training way is different from our Nway-K-shot manner. To make a fair comparison between CPT
+and our MPCL-Net, we replace the supervised learning way
+in CPT with the N-way-K-shot training manner.
+1) Results of the UCM Dataset: The classification performance of MPCL-Net and the compared methods counted
+on the UCM dataset is summarized in Table III, from
+where we can easily find that our MPCL-Net outperforms
+other models in all cases. Taking the five-way one-shot
+scenario as an example, compared with the other mod-
+
+els, the improvements achieved by MPCL-Net in OAs
+are 8.71% (MatchingNet), 4.78% (ProtoNet), 6.52% (RelationNet), 2.36% (ProtoNetRot), 0.98% (SupBYOL), 3.83%
+(DLA-MatchNet), 3.62% (SPNet), 2.02% (SCL_MLNet),
+0.74% (CPT), and 0.77% (DC_DML), respectively. The significant performance gaps between MPCL-Net and other methods
+illustrate the effectiveness of our model. Also, compared with
+the other methods, the standard deviations of MPCL-Net are
+the lowest. This implies that the feature learning ability of
+MPCL-Net is strong, and its behavior is stable when the
+volume of training data is limited. The reasons for these
+encouraging results can be summarized as follows. First, our
+model can capture complex semantic information from RS
+images owing to the RS-oriented pretext tasks. Second, due to
+the multiview consistency strategy proposed in the MVC-FSL
+loss, the robustness of MPCL-Net can be ensured. Last but
+not least, the P-DCL loss enhances the generalization of our
+MPCL-Net to the unseen classes.
+2) Results of the AID Dataset: The OA values and standard deviations of different methods counted on the AID
+dataset are exhibited in Table III. Our model’s classification behavior is the strongest among all the methods. For
+the five-way one-shot scenario, compared with the other
+methods, the OA improvements achieved by MPCL-Net
+are 12.05% (MatchingNet), 3.43% (ProtoNet), 3.02% (RelationNet), 2.29% (ProtoNetRot), 1.31% (SupBYOL), 1.83%
+(DLA-MatchNet), 2.59% (SPNet), 1.59% (SCL_MLNet),
+0.66% (CPT), and 0.53% (DC_DML). For the five-way fiveshot scenario, the OA enhancements obtained by MPCL-Net
+are 18.43% (MatchingNet), 5.24% (ProtoNet), 11.48% (RelationNet), 2.76% (ProtoNetRot), 1.30% (SupBYOL), 5.82%
+(DLA-MatchNet), 4.19% (SPNet), 4.20% (SCL_MLNet),
+2.72% (CPT), and 1.61% (DC_DML). These positive results
+demonstrate that the proposed MPCL-Net is helpful to the
+AID dataset.
+3) Results of the NWPU-RESISC45 Dataset: The performance of different methods counted on the NWPU-RESISC45
+dataset is shown in Table III. MPCL-Net achieves the best
+performance in the five-way five-shot scenario. In comparison
+with other methods, the improvements achieved by MPCL-Net
+are 30.33% (MatchingNet), 2.13% (ProtoNet), 5.10% (Rela-
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+TABLE III
+OA (%) OF MPCL-N ET AND OTHER M ETHODS ON T HREE DATASETS
+
+tionNet), 1.46% (ProtoNetRot), 0.40% (SupBYOL), 0.38%
+(DLA-MatchNet), 1.85% (SPNet), 0.76% (SCL_MLNet),
+0.91% (CPT), and 0.06% (DC_DML). However, MPCL-Net
+cannot reach what we expect in the five-way one-shot scenario,
+whose behavior is weaker than that of DLA-MatchNet and
+RelationNet. This is because DLA-MatchNet and RelationNet
+adopt nonlinear classifiers, which would benefit the classification tasks when the number of classes is large, and the
+supervision information is limited. Similar observations can be
+found in [21] and [46]. Nevertheless, embedding the nonlinear
+classifier would increase the model’s complexity. Thus, we still
+prefer adopting the linear classifier into our model. One of our
+future works is to improve the linear classifier-based model’s
+classification performance in this kind of difficult classification
+scenario.
+Apart from the numerical results discussed earlier, we study
+MPCL-Net’s performance by visualizing the learned features
+using the t-SNE [64] algorithm. Here, we use the ski-learn
+library to execute the t-SNE algorithm. The function name
+is “TSNE,” and the parameters are “n_components = 2,”
+“init = pca,” and “random_state = 0,” where “n_components”
+indicates the dimension of the embedded space, “init”
+implies the initialization manner of embedding, and “random_state” decides the random number generator. Apart from
+the above-mentioned three parameters, other input parameters
+for the TSNE function equal the default values. The feature
+distributions of the testing data under the five-way one-shot
+and five-way five-shot scenarios are exhibited in Figs. 7
+and 8, respectively. Due to the experimental settings (fiveway), only five classes are selected from the testing sets to
+complete the feature distribution exhibition. For UCM, the
+selected five classes are “Beach,” “Golf Course,” “Mobile
+Home Park,” “River,” and “Tennis Courts,” and they are
+numbered 1–5 in Figs. 7 and 8. For AID, the five classes are
+“Desert,” “Railway Station,” “Sparse Residential,” “Storage
+Tanks,” and “Viaduct.” Their numbers in Figs. 7 and 8 are 6–
+10. For NWPU-RESISC45, the five classes contain “Airport,”
+“Basketball Court,” “Circular Farmland,” “Dense Residential,”
+and “Forest,” and their numbers are 11–15 in Figs. 7 and 8.
+Here, the distributions of features learned by ProtoNet are also
+displayed for reference.
+
+By observing Figs. 7 and 8, we can find that the
+discrimination of the features learned by our MPCL-Net is
+higher than that of ProtoNet in all cases. Taking the AID
+dataset and five-way five-shot setting as an example, the
+features obtained by ProtoNet are mixed, which cannot
+provide valuable information for scene classification. While
+the clusters of the features generated by our model are
+separable, the distances between different clusters are
+relatively apparent. Therefore, they can support discriminative
+clues for scene classification tasks. These positive results
+confirm the usefulness of our MPCL-Net.
+D. Ablation Study of Loss Function
+As said in Section III, the proposed MPCL-Net is developed
+based on ProtoNet, and it consists of a multipretext tasks
+generation submodule (SPT and RPT), a deep feature learning
+submodule (ProtoNet), and a joint optimization submodule
+(MPT-SSL, MVC-FSL, and P-DCL losses). To study their contributions to MPCL-Net, we construct the following networks.
+1) Net-0: ProtoNet (with FSL loss).
+2) Net-1: RPT + ProtoNet (with RPT-SSL and FSL losses).
+3) Net-2: SPT + ProtoNet (with SPT-SSL and FSL losses).
+4) Net-3: RPT + SPT + ProtoNet (with MPT-SSL and FSL
+losses).
+5) Net-4: RPT + SPT + ProtoNet (with MPT-SSL and
+MVC-FSL losses).
+6) Net-5: RPT + SPT + ProtoNet (with MPT-SSL, MVCFSL, and P-DCL losses).
+Net-0 is the original ProtoNet, i.e., the deep feature learning
+submodule. Net-1 and Net-2 are the combinations of the
+deep feature learning submodule and the rotation-/scale-pretext
+tasks generation submodule. Net-3 is our MPCL-Net with the
+MPT-SSL and MVC-FSL losses. Net-4 is our MPCL-Net.
+The results of various networks counted on three datasets
+are shown in Table IV. Note that the experimental settings
+are the same as the contents mentioned in Section IV-B. From
+observing these results, we can find the following points. First,
+Net-1 and Net-2 are better than Net-0 since SPT and RPT can
+help the model capture the rich information from RS scenes.
+After combining SPT and RPT into MPT-SSL, the behavior
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+5614216
+
+Fig. 7. t-SNE plots of tested embedding under five-way one-shot scenario. The scene numbers and names from three datasets are summarized as follows.
+UCM—1) Beach. 2) Golf course. 3) Mobile home park. 4) River.5) Tennis courts. AID—6) Desert. 7) Railway station. 8) Sparse residential. 9) Storage
+tanks. 10) Viaduct. NWPU-RESISC45—11) Airport. 12) Basketball court. 13) Circular farmland. 14) Dense residential. 15) Forest. (a) MPCL-Net on UCM.
+(b) MPCL-Net on AID. (c) MPCL-Net on NWPU-RESISC45. (d) ProtoNet on UCM. (e) ProtoNet on AID. (f) ProtoNet on NWPU-RESISC45.
+
+Fig. 8. t-SNE plots of tested embedding under five-way five-shot scenario. The scene numbers and names from three datasets are summarized as follows.
+UCM—1) Beach. 2) Golf course. 3) Mobile home park. 4) River. 5) Tennis courts. AID—6) Desert. 7) Railway station. 8) Sparse residential. 9) Storage
+tanks. 10) Viaduct. NWPU-RESISC45—11) Airport. 12) Basketball court. 13) Circular farmland. 14) Dense residential. 15) Forest. (a) MPCL-Net on UCM.
+(b) MPCL-Net on AID. (c) MPCL-Net on NWPU-RESISC45. (d) ProtoNet on UCM. (e) ProtoNet on AID. (f) ProtoNet on NWPU-RESISC45.
+
+of Net-3 becomes stronger, which explicitly indicates the
+effectiveness of our multipretext tasks generation submodule
+and the MPT-SSL loss. Furthermore, when our MVC-FSL loss
+replaces the original FSL loss, Net-4 outperforms Net-3 in all
+cases, and its standard deviations are less than Net-3 on three
+datasets. This implies the positive influence of the MVC term.
+Adding the proposed P-DCL loss to Net-4, the classification
+results of Net-5 are better than that of Net-4, which shows
+the importance of the dynamic contrastive learning strategy in
+RSSC. In sum, each part of MPCL-Net plays a positive role
+in the final classification.
+
+E. Statistical Test
+To further evaluate the differences between the proposed
+MPCL-Net and the comparison methods, we adopt the
+Wilcoxon rank sum test [65], [66], [67], which is a nonparametric statistical test method. Particularly, all methods are
+randomly carried out in 30 rounds to construct the various
+OA pairs. Then, the Wilcoxon rank sum test (0.05 significant
+level) is calculated between different OA pairs. In general,
+the test results would be symbolized by “+,” “−,” and “=,”
+where “+” and “−” indicate that there is a difference between
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+TABLE IV
+OA (%) OF D IFFERENT A BLATION M ODELS ON T HREE DATASET
+
+TABLE V
+W ILCOXON R ANK S UM T EST (0.05 S IGNIFICANCE L EVEL ) OF MPCL-N ET AND OTHER M ETHODS ON T HREE DATASETS
+
+MPCL-Net and the compared method, and “=” denotes no
+difference exists. Furthermore, “−” implies that the performance of MPCL-Net is better than the compared method, and
+“+” shows the opposite. The test results are summarized in
+Table V. We can easily find that there is no “=,” indicating that
+the proposed MPCL-Net differs from the selected compared
+models. Besides, apart from the five-way one-shot scenario
+of NWPU, the MPCL-Net achieves the best performance,
+which is consistent with the information presented in Table III.
+These investigations demonstrate that the proposed method
+over different methods is statistically significant.
+
+F. Sensitivity Analysis
+In this section, we study the influence of empirical parameters on the proposed model, including the empirical parameters
+λ1 and λ2 [see (14)], the scaling margin m, and the hyperparameter η [see (10)]. To this end, we train a set of MPCL-Nets
+with different parameters. Then, their performance is counted
+on different datasets under the five-way one-shot scenario.
+In particular, the values of λ1 , λ2 , and η are varied from 0.1 to
+1.0 with an interval of 0.1, and the values of m are changed
+from −40 to 40 with an interval of 10 (except 0). The results
+are shown in Fig. 9. Note that only one parameter is turned
+at a time, and the others are set according to the contents
+described in Section IV-B.
+From the observation of Fig. 9(a), we can find that
+the optimal values of λ1 are 0.5 (UCM), 0.1 (AID), and
+0.9 (NWPU-RESISC45). For UCM, the performance of
+MPCL-Net increases when λ1 is varied from 0.1 to 0.5. When
+λ1 > 0.5, the behavior of our model becomes weaker but
+stable. For AID, the performance trend of MPCL-Net is down
+
+with the increase of λ1 . Inversely, MPCL-Net’s behavior on
+NWPU-RESISC45 becomes stronger when λ1 gets bigger.
+By investigating Fig. 9(b), it is easy to find that the peak
+values of λ2 appear at 0.5 (UCM), 0.3 (AID), and 0.5 (NWPURESISC45). Similar to λ1 , the performance of MPCL-Net
+gradually increases with time at first and then decreases.
+The demarcation point is λ2 = 0.5. Contrast to λ1 , when
+λ2 ̸= 0.3 and λ2 ̸= 0.5 the proposed model’s performance
+on AID and NWPU-RESISC45 is approximately equal. These
+discoveries suggest that the satisfactory λ2 can be found at
+around 0.5.
+For m [see Fig. 9(c)], its optimal values are −40 (UCM),
+−30 (AID), and −30 (NWPU-RESISC45). As a whole, the
+performance trend of MPCL-Net for three datasets is down
+when m increases. Also, when the values of m are positive,
+the behavior of various MPCL-Nets becomes steady. Those
+findings imply that shrinking RS scenes is beneficial to our
+model.
+For η, by investigating the bars, we can find that the
+optimal performance appears when η = 0.1, and the behavior
+of MPCL-Nets gets weaker with the increasing η. This is
+because the MVC term in the MVC-FSL loss focuses on
+improving the model stability by the multiview consistent
+prediction. However, when its weight grows, it pushes the
+model to generate similar (or even the same) features for
+samples of different views. Therefore, the discrimination of
+the final feature representation would be reduced so that the
+classification results would be influenced negatively.
+G. Influence of Training Samples Volume
+To further study how the number of training data affects our
+model, we conduct the experiments under various five-way-K -
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+5614216
+
+Fig. 9.
+
+Influence of empirical parameters on the proposed model. (a) λ1 . (b) λ2 . (c) m. (d) η.
+
+Fig. 10.
+
+Performance of MPCL-Net under various five-way K -shot scenarios counted on three datasets. (a) UCM. (b) AID. (c) NWPU.
+
+TABLE VI
+PARAMETERS (M B) AND I NFERENCE T IMES (s) OF D IFFERENT A BLATION
+N ETWORKS U NDER F IVE -WAY O NE -S HOT S CENARIO C OUNTED ON
+THE UCM DATASET
+
+shot scenarios by changing the number of shots from 1 to 10.
+The results counted on three datasets are displayed in Fig. 10.
+Note that the free parameters of MPCL-Net are the same
+as the five-way one-shot and five-way five-shot cases when
+K < 5 and K ≥ 5. We can easily find that the behavior
+of our MPCL-Net becomes stronger when the number of
+shots increases. Furthermore, when shots rise from 1 to 5, the
+MPCL-Net’s performance enhancements are distinct. When
+shots are raised from 5 to 10, the performance of MPCL-Net
+is improved steadily. The above-mentioned investigations confirm that the proposed MPCL-Net performs reasonably when
+the number of training samples changes.
+H. Parameters and Inference Times
+To study the efficiency of our MPCL-Net, we count its
+parameters and inference time under a five-way one-shot
+scenario on the UCM dataset. First, we count the parameters
+volume and inference times of each part of MPCL-Net. To this
+
+TABLE VII
+PARAMETERS (M B) AND I NFERENCE T IMES (s) OF MPCL-N ET AND C OM PARED M ETHODS U NDER F IVE -WAY O NE -S HOT S CENARIO C OUNTED
+ON THE UCM DATASET
+
+end, the networks constructed in the ablation study section
+(Section IV-D) are used. Their parameter sizes and inference
+times are summarized in Table VI. We find that the multipretext tasks generation submodule makes the inference times
+longer distinctly, and the P-DCL loss increases the model’s
+parameters dramatically. These observations are reasonable
+because: 1) compared with the single pretext, preparing SPT
+and RPT is a time-consuming process and 2) the positive
+and negative sample generation procedure for the P-DCL loss
+would multiply the model’s sizes.
+Second, the compared models’ parameters volume and
+inference times are counted for comparison (see Table VII).
+For the parameters, we can observe that MPCL-Net
+is significantly lighter than ReLationNet, DLA-MatchNet,
+SCL_MLNet, and DC_DML. Although our model is more
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+complex than others, the parameter increments are slight. As a
+whole, the proposed MPCL-Net is not a heavy model. For the
+inference times, MPCL-Net is relatively time-consuming. This
+is because of the multipretext tasks generation submodule.
+In other words, most time is spent on constructing the pretext
+tasks. Fortunately, considering the positive classification performance, a longer inference procedure is not an unacceptable
+issue. Speeding up our model is one of our future works.
+V. C ONCLUSION
+This article presents a new network for few-shot RSSC
+tasks named MPCL-Net. First, a multipretext tasks generation
+submodule is developed under the SSL framework to explore
+the complex contents hidden in RS scenes from the multiscale
+(SPT) and rotation-invariant (RPT) aspects. Then, a simple
+yet useful CNN is adopted to map the RS scenes into useful
+deep features. Finally, a specific loss function with MPTSSL, MVC-FSL, and P-DCL terms is formulated under the
+metric-based meta-learning paradigm to train MPCL-Net using
+limited supervision. On the one hand, owing to the introduction of SSL and FSL ideas, MPCL-Net can be trained in a
+meta way. On the other hand, since involving the multiview
+scheme and the contrastive learning theory, MPCL-Net can
+not only cope with the interclass/intraclass issue but also
+distinguish the unseen classes. The encouraging experimental
+results on three public datasets demonstrate the effectiveness
+and generalization for few-shot RSSC tasks.
+R EFERENCES
+[1] L. Zhang and L. Zhang, “Artificial intelligence for remote sensing
+data analysis: A review of challenges and opportunities,” IEEE Geosci.
+Remote Sens. Mag. Replaces Newsletter, vol. 10, no. 2, pp. 270–294,
+Jun. 2022.
+[2] G. Cheng, X. Xie, J. Han, L. Guo, and G. Xia, “Remote sensing
+image scene classification meets deep learning: Challenges, methods,
+benchmarks, and opportunities,” IEEE J. Sel. Topics Appl. Earth Observ.
+Remote Sens., vol. 13, pp. 3735–3756, 2020.
+[3] X. Tang et al., “An unsupervised remote sensing change detection
+method based on multiscale graph convolutional network and metric learning,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5609715.
+[4] X. Zhang et al., “SMD-Net: Siamese multi-scale difference-enhancement
+network for change detection in remote sensing,” Remote Sens., vol. 14,
+no. 7, p. 1580, Mar. 2022.
+[5] X. Tang et al., “Meta-hashing for remote sensing image retrieval,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5615419.
+[6] C. Liu, J. Ma, X. Tang, F. Liu, X. Zhang, and L. Jiao, “Deep hash
+learning for remote sensing image retrieval,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 4, pp. 3420–3443, Apr. 2021.
+[7] Y. Yang et al., “AR2 Det: An accurate and real-time rotational one-stage
+ship detector in remote sensing images,” IEEE Trans. Geosci. Remote
+Sens., vol. 60, 2022, Art. no. 5605414.
+[8] T. Zhang et al., “Foreground refinement network for rotated object
+detection in remote sensing images,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5610013.
+[9] L. Ma, Y. Liu, X. Zhang, Y. Ye, G. Yin, and B. A. Johnson, “Deep
+learning in remote sensing applications: A meta-analysis and review,”
+ISPRS J. Photogramm. Remote Sens., vol. 152, pp. 166–177, Jun. 2019.
+[10] Y. Wang, Q. Yao, J. T. Kwok, and L. M. Ni, “Generalizing from a
+few examples: A survey on few-shot learning,” ACM Comput. Surveys,
+vol. 53, no. 3, pp. 1–34, May 2021.
+[11] J. Vanschoren, “Meta-learning,” in Automated Machine Learning. Cham,
+Switzerland: Springer, 2019, pp. 35–61.
+[12] T. Hospedales, A. Antoniou, P. Micaelli, and A. Storkey, “Meta-learning
+in neural networks: A survey,” IEEE Trans. Pattern Anal. Mach. Intell.,
+vol. 44, no. 9, pp. 5149–5169, Sep. 2022.
+
+[13] M. Huisman, J. N. van Rijn, and A. Plaat, “A survey of deep metalearning,” Artif. Intell. Rev., vol. 54, no. 6, pp. 4483–4541, Aug. 2021.
+[14] H.-J. Ye and W.-L. Chao, “How to train your MAML to excel in fewshot classification,” 2021, arXiv:2106.16245.
+[15] T. Nguyen, T. Luu, T. Pham, S. Rakhimkul, and C. D. Yoo, “Robust
+MAML: Prioritization task buffer with adaptive learning process for
+model-agnostic meta-learning,” in Proc. IEEE Int. Conf. Acoust., Speech
+Signal Process. (ICASSP), Jun. 2021, pp. 3460–3464.
+[16] S. Qiao, C. Liu, W. Shen, and A. Yuille, “Few-shot image recognition
+by predicting parameters from activations,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit., Jun. 2018, pp. 7229–7238.
+[17] S. Gidaris and N. Komodakis, “Dynamic few-shot visual learning
+without forgetting,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern
+Recognit., Jun. 2018, pp. 4367–4375.
+[18] Z. Ji, X. Chai, Y. Yu, Y. Pang, and Z. Zhang, “Improved prototypical
+networks for few-shot learning,” Pattern Recognit. Lett., vol. 140,
+pp. 81–87, Dec. 2020.
+[19] T. Gao, X. Han, Z. Liu, and M. Sun, “Hybrid attention-based prototypical networks for noisy few-shot relation classification,” in Proc. AAAI,
+vol. 33, 2019, pp. 6407–6414.
+[20] L. Li, J. Han, X. Yao, G. Cheng, and L. Guo, “DLA-MatchNet for fewshot remote sensing image scene classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 9, pp. 7844–7853, Sep. 2021.
+[21] H. Li et al., “RS-MetaNet: Deep metametric learning for few-shot remote
+sensing scene classification,” IEEE Trans. Geosci. Remote Sens., vol. 59,
+no. 8, pp. 6983–6994, Aug. 2021.
+[22] G. Cheng et al., “SPNet: Siamese-prototype network for few-shot remote
+sensing image scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5608011.
+[23] Y. Gu, Y. Wang, and Y. Li, “A survey on deep learning-driven remote
+sensing image scene understanding: Scene classification, scene retrieval
+and scene-guided object detection,” Appl. Sci., vol. 9, no. 10, p. 2110,
+May 2019.
+[24] K. Ohri and M. Kumar, “Review on self-supervised image recognition
+using deep neural networks,” Knowl.-Based Syst., vol. 224, Jul. 2021,
+Art. no. 107090.
+[25] L. Jing and Y. Tian, “Self-supervised visual feature learning with deep
+neural networks: A survey,” IEEE Trans. Pattern Anal. Mach. Intell.,
+vol. 43, no. 11, pp. 4037–4058, Nov. 2021.
+[26] X. Liu et al., “Self-supervised learning: Generative or contrastive,” IEEE
+Trans. Knowl. Data Eng., vol. 35, no. 1, pp. 857–876, Jan. 2023.
+[27] G. Cheng, C. Yang, X. Yao, L. Guo, and J. Han, “When deep learning
+meets metric learning: Remote sensing image scene classification via
+learning discriminative CNNs,” IEEE Trans. Geosci. Remote Sens.,
+vol. 56, no. 5, pp. 2811–2821, May 2018.
+[28] X. Liu, Y. Zhou, J. Zhao, R. Yao, B. Liu, and Y. Zheng, “Siamese convolutional neural networks for remote sensing scene classification,” IEEE
+Geosci. Remote Sens. Lett., vol. 16, no. 8, pp. 1200–1204, Aug. 2019.
+[29] S. Chopra, R. Hadsell, and Y. LeCun, “Learning a similarity metric
+discriminatively, with application to face verification,” in Proc. IEEE
+Comput. Soc. Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2005,
+pp. 539–546.
+[30] J. Li et al., “Deep discriminative representation learning with attention
+map for scene classification,” Remote Sens., vol. 12, no. 9, p. 1366,
+Apr. 2020.
+[31] X. Tang, Q. Ma, X. Zhang, F. Liu, J. Ma, and L. Jiao, “Attention
+consistent network for remote sensing scene classification,” IEEE J. Sel.
+Topics Appl. Earth Observ. Remote Sens., vol. 14, pp. 2030–2045, 2021.
+[32] Y. Liu, Y. Zhong, and Q. Qin, “Scene classification based on multiscale
+convolutional neural network,” IEEE Trans. Geosci. Remote Sens.,
+vol. 56, no. 12, pp. 7109–7121, Dec. 2018.
+[33] K. Qi, C. Yang, C. Hu, Y. Shen, S. Shen, and H. Wu, “Rotation
+invariance regularization for remote sensing image scene classification
+with convolutional neural networks,” Remote Sens., vol. 13, no. 4,
+p. 569, Feb. 2021.
+[34] X. Lu, W. Ji, X. Li, and X. Zheng, “Bidirectional adaptive feature fusion
+for remote sensing scene classification,” Neurocomputing, vol. 328,
+pp. 135–146, Feb. 2019.
+[35] D. G. Lowe, “Object recognition from local scale-invariant features,” in
+Proc. 7th IEEE Int. Conf. Comput. Vis., Jun. 1999, pp. 1150–1157.
+[36] Q. Bi, H. Zhang, and K. Qin, “Multi-scale stacking attention pooling
+for remote sensing scene classification,” Neurocomputing, vol. 436,
+pp. 147–161, May 2021.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+MA et al.: MPCL-Net FOR FEW-SHOT RSSC
+
+[37] F. Sung et al., “Learning to compare: Relation network for few-shot
+learning,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.,
+Jun. 2018, pp. 1199–1208.
+[38] K. Gao, B. Liu, X. Yu, J. Qin, P. Zhang, and X. Tan, “Deep relation
+network for hyperspectral image few-shot classification,” Remote Sens.,
+vol. 12, no. 6, p. 923, Mar. 2020.
+[39] X. Li, J. Deng, and Y. Fang, “Few-shot object detection on remote
+sensing images,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5601614.
+[40] J. Snell, K. Swersky, and R. Zemel, “Prototypical networks for fewshot learning,” in Proc. Adv. Neural Inf. Process. Syst., vol. 30, 2017,
+pp. 1–11.
+[41] Z. Cui, W. Yang, L. Chen, and H. Li, “MKN: Metakernel networks
+for few shot remote sensing scene classification,” IEEE Trans. Geosci.
+Remote Sens., vol. 60, 2022, Art. no. 4705611.
+[42] X. Tang, W. Lin, J. Ma, X. Zhang, F. Liu, and L. Jiao, “Class-level
+prototype guided multiscale feature learning for remote sensing scene
+classification with limited labels,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5622315.
+[43] L. Li, X. Yao, G. Cheng, and J. Han, “AIFS-DATASET for few-shot
+aerial image scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5618211.
+[44] H. Dong, W. Ma, Y. Wu, J. Zhang, and L. Jiao, “Self-supervised
+representation learning for remote sensing image change detection
+based on temporal prediction,” Remote Sens., vol. 12, no. 11, p. 1868,
+Jun. 2020.
+[45] W. Chen, X. Zheng, and X. Lu, “Hyperspectral image super-resolution
+with self-supervised spectral–spatial residual network,” Remote Sens.,
+vol. 13, no. 7, p. 1260, Mar. 2021.
+[46] X. Li, D. Shi, X. Diao, and H. Xu, “SCL-MLNet: Boosting
+few-shot remote sensing scene classification via self-supervised contrastive learning,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5801112.
+[47] C. Tao, J. Qi, W. Lu, H. Wang, and H. Li, “Remote sensing image scene
+classification with self-supervised paradigm under limited labeled samples,” IEEE Geosci. Remote Sens. Lett., vol. 19, 2022, Art. no. 8004005.
+[48] Z. Zhao, Z. Luo, J. Li, C. Chen, and Y. Piao, “When self-supervised
+learning meets scene classification: Remote sensing scene classification
+based on a multitask learning framework,” Remote Sens., vol. 12, no. 20,
+p. 3276, Oct. 2020.
+[49] S. Gidaris, A. Bursuc, N. Komodakis, P. P. Pérez, and M. Cord, “Boosting few-shot visual learning with self-supervision,” in Proc. IEEE/CVF
+Int. Conf. Comput. Vis. (ICCV), Oct. 2019, pp. 8058–8067.
+[50] N. Simard and G. Lagrange, “Improving few-shot learning with auxiliary
+self-supervised pretext tasks,” 2021, arXiv:2101.09825.
+[51] Y. An, H. Xue, X. Zhao, and L. Zhang, “Conditional self-supervised
+learning for few-shot classification,” in Proc. 13th Int. Joint Conf. Artif.
+Intell., Aug. 2021, pp. 2140–2146.
+[52] H. Ji, Z. Gao, Y. Zhang, Y. Wan, C. Li, and T. Mei, “Few-shot scene
+classification of optical remote sensing images leveraging calibrated
+pretext tasks,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 5625513.
+[53] J.-B. Grill et al., “Bootstrap your own latent-a new approach to selfsupervised learning,” in Proc. Adv. Neural Inf. Process. Syst., vol. 33,
+2020, pp. 21271–21284.
+[54] T. N. Kipf and M. Welling, “Semi-supervised classification with graph
+convolutional networks,” 2016, arXiv:1609.02907.
+[55] M. Zhang, J. Zhang, Z. Lu, T. Xiang, M. Ding, and S. Huang, “IEPT:
+Instance-level and episode-level pretext tasks for few-shot learning,” in
+Proc. Int. Conf. Learn. Represent., 2020, pp. 1–16.
+[56] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast for
+unsupervised visual representation learning,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit. (CVPR), Jun. 2020, pp. 9726–9735.
+[57] P. Khosla et al., “Supervised contrastive learning,” in Proc. Adv. Neural
+Inf. Process. Syst., vol. 33, 2020, pp. 18661–18673.
+[58] A. van den Oord, Y. Li, and O. Vinyals, “Representation learning with
+contrastive predictive coding,” 2018, arXiv:1807.03748.
+[59] Y. Yang and S. Newsam, “Bag-of-visual-words and spatial extensions
+for land-use classification,” in Proc. 18th SIGSPATIAL Int. Conf. Adv.
+Geographic Inf. Syst., Nov. 2010, pp. 270–279.
+[60] G. Xia et al., “AID: A benchmark data set for performance evaluation of
+aerial scene classification,” IEEE Trans. Geosci. Remote Sens., vol. 55,
+no. 7, pp. 3965–3981, Jul. 2017.
+
+5614216
+
+[61] G. Cheng, J. Han, and X. Lu, “Remote sensing image scene classification: Benchmark and state of the art,” Proc. IEEE, vol. 105, no. 10,
+pp. 1865–1883, Oct. 2017.
+[62] H. Lee, S. J. Hwang, and J. Shin, “Self-supervised label augmentation
+via input transformations,” in Proc. Int. Conf. Mach. Learn., 2020,
+pp. 5714–5724.
+[63] O. Vinyals et al., “Matching networks for one shot learning,” in Proc.
+Adv. Neural Inf. Process. Syst., vol. 29, 2016, pp. 1–9.
+[64] L. Van der Maaten and G. Hinton, “Visualizing data using t-SNE,”
+J. Mach. Learn. Res., vol. 9, no. 11, pp. 2579–2605, 2008.
+[65] F. Wilcoxon, Individual Comparisons by Ranking Methods. Cham,
+Switzerland: Springer, 1992.
+[66] P. D. Bridge and S. S. Sawilowsky, “Increasing physicians’ awareness of
+the impact of statistics on research outcomes: Comparative power of the
+T-test and Wilcoxon rank-sum test in small samples applied research,”
+J. Clin. Epidemiology, vol. 52, no. 3, pp. 229–235, 1999.
+[67] Z. Liu, H. Wang, and Y. Jin, “Performance indicator-based adaptive
+model selection for offline data-driven multiobjective evolutionary optimization,” IEEE Trans. Cybern., early access, May 13, 2022, doi:
+10.1109/TCYB.2022.3170344.
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor with the
+Key Laboratory of Intelligent Perception and Image
+Understanding, Ministry of Education, Xidian University. Her research interests include computational
+intelligence and image understanding.
+
+Weiquan Lin received the B.E. degree in weapon
+systems and engineering from the North University
+of China, Taiyuan, China, in 2020. He is currently
+pursuing the M.S. degree with the School of Artificial Intelligence, Xidian University, Xi’an, China.
+His research interests include machine learning, few-shot learning, and remote sensing image
+processing.
+
+Xu Tang (Senior Member, IEEE) received the
+B.Sc., M.Sc., and Ph.D. degrees in electronic circuits
+and systems from Xidian University, Xi’an, China,
+in 2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a joint Ph.D.
+Researcher with the University of Colorado at
+Boulder, Boulder, CO, USA, along with Prof.
+W. J. Emery. He is currently an Associate Professor
+with the Key Laboratory of Intelligent Perception
+and Image Understanding, Ministry of Education,
+Xidian University. His research interests include
+remote sensing image content-based retrieval and reranking, hyperspectral
+image processing, remote sensing scene classification, and object detection.
+For more details, please refer to: https://web.xidian.edu.cn/tangxu/.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+5614216
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From 2015 to 2016, she was a Visiting Scientist with the Computer Science and Artificial
+Intelligence Laboratory, Massachusetts Institute of
+Technology, Cambridge, MA, USA. She is currently
+a Professor with the Key Laboratory of Intelligent
+Perception and Image Understanding of the Ministry of Education, Xidian
+University. Her research interests include pattern recognition, machine learning, and remote sensing image analysis and understanding.
+
+Fang Liu (Member, IEEE) was born in China,
+in 1990. She received the B.S. degree in information and computing science from Henan University,
+Kaifeng, China, in 2012, and the Ph.D. degree in
+intelligent information processing from Xidian University, Xi’an, China, in 2018.
+She is currently an Associate Professor with the
+Nanjing University of Science and Technology, Nanjing, China. Her research interests include deep
+learning, object detection, polarimetric SAR image
+classification, and change detection.
+
+Licheng Jiao (Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding, Ministry of Education, Xi’an. He has authored or
+coauthored more than 200 scientific articles. His research interests include
+signal and image processing, nonlinear circuits and systems theory, wavelet
+theory, natural computation, and intelligent information processing.
+Dr. Jiao is also a member of the IEEE Xi’an Section Executive Committee
+and an Executive Committee Member of the Chinese Association of Artificial
+Intelligence. He is the Chairperson of the Awards and Recognition Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:58:28 UTC from IEEE Xplore. Restrictions apply.
+
+

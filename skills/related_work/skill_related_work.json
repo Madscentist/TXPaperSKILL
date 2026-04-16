@@ -1,0 +1,48 @@
+{
+  "section": "related_work",
+  "goal": [
+    "全面回顾相关领域的研究",
+    "分类整理现有方法",
+    "指出现有方法的优缺点",
+    "为本文方法提供理论依据",
+    "突出本文方法的创新点"
+  ],
+  "structure": [
+    "研究领域概述（1段）",
+    "方法分类（2-4个类别）",
+    "各类方法详细分析（每类2-3段）",
+    "现有方法的总结（1段）",
+    "本文方法的定位（1段）"
+  ],
+  "tone": [
+    "客观、全面、有条理",
+    "使用文献综述的语气",
+    "避免主观评价",
+    "强调分类和比较"
+  ],
+  "preferred_phrases": [
+    "Existing methods can be categorized into...",
+    "The first category includes...",
+    "The second category focuses on...",
+    "Compared with these methods, our approach...",
+    "In summary, existing methods..."
+  ],
+  "logic_pattern": [
+    "领域概述 → 方法分类 → 各类分析 → 总结 → 本文定位"
+  ],
+  "avoid": [
+    "简单罗列文献",
+    "缺乏分类和比较",
+    "主观评价现有方法",
+    "遗漏重要文献",
+    "与introduction重复"
+  ],
+  "constraints": [
+    "长度：1000-1500词",
+    "引用：至少30-40篇参考文献",
+    "分类：至少2-3个主要类别",
+    "比较：突出各类方法的优缺点",
+    "不遗漏重要相关工作",
+    "不重复introduction内容"
+  ]
+}

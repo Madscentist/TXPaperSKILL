@@ -1,0 +1,1584 @@
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+5611715
+
+Interacting-Enhancing Feature Transformer for
+Cross-Modal Remote-Sensing Image
+and Text Retrieval
+Xu Tang , Senior Member, IEEE, Yijing Wang , Graduate Student Member, IEEE, Jingjing Ma, Member, IEEE,
+Xiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE, and Licheng Jiao , Fellow, IEEE
+Abstract— Cross-modal remote-sensing image–text retrieval
+(CMRSITR) is a challenging topic in the remote-sensing (RS)
+community. It has gained growing attention because it can be
+flexibly used in many practical applications. In the current
+deep era, with the help of deep convolutional neural networks
+(DCNNs), many successful CMRSITR methods have been proposed. Most of them first learn valuable features from RS
+images and texts, respectively. Then, the obtained visual and
+textual features are mapped into a common space for the
+final retrieval. The above operations are feasible; however, two
+difficulties are still to be solved. One is that the semantics
+within the visual and textual features are misaligned due to the
+independent learning manner. The other one is that the deep
+links between RS images and texts cannot be fully explored
+by simple common space mapping. To overcome the above
+challenges, we propose a new model named interacting-enhancing
+feature transformer (IEFT) for CMRSITR, which regards the RS
+images and texts as a whole. First, a simple feature embedding
+module (FEM) is developed to map images and texts into
+the visual and textual feature spaces. Second, an information
+interacting-enhancing module (IIEM) is designed to simultaneously model the inner relationships between RS images and texts
+and enhance the visual features. IIEM consists of three feature
+interacting-enhancing (FIE) blocks, each of which contains an
+intermodality relationship interacting (IMRI) subblock and a
+visual feature enhancing (VFE) subblock. The duty of IMRI
+is to exploit the hidden relations between cross-modal data,
+while the responsibility of VFE is to improve the visual features.
+By combining them, semantic bias can be mitigated, and the
+complex contents of RS images can be studied. Finally, the
+retrieval module (RM) is constructed to generate the matching
+scores for deciding the search results. Extensive experiments
+are conducted on four public RS datasets. The positive results
+demonstrate that our IEFT can achieve superior retrieval performance compared with many existing methods. Our source codes
+Manuscript received 29 October 2022; revised 13 April 2023;
+accepted 23 May 2023. Date of publication 29 May 2023; date of
+current version 13 June 2023. This work was supported in part by the
+National Natural Science Foundation of China under Grant 62171332 and
+Grant 62276197; and in part by the Fund of the National Key Laboratory
+of Science and Technology on Remote Sensing Information and imagery
+Analysis, Beijing Research Institute of Uranium Geology, under Grant
+6142A010301. (Corresponding author: Jingjing Ma.)
+Xu Tang, Yijing Wang, Jingjing Ma, Xiangrong Zhang, and Licheng Jiao are
+with the Key Laboratory of Intelligent Perception and Image Understanding
+of Ministry of Education, School of Artificial Intelligence, Xidian University,
+Xi’an 710071, China (e-mail: tangxu128@gmail.com; jjma@ieee.org).
+Fang Liu is with the Key Laboratory of Intelligent Perception and Systems
+for High-Dimensional Information of the Ministry of Education, School
+of Computer Science and Engineering, Nanjing University of Science and
+Technology, Nanjing 210094, China.
+This article has supplementary downloadable material available at
+https://doi.org/10.1109/TGRS.2023.3280546, provided by the authors.
+Digital Object Identifier 10.1109/TGRS.2023.3280546
+
+are available at https://github.com/TangXu-Group/Cross-modalremote-sensing-image-and-text-retrieval-models/tree/main/IEFT.
+Index Terms— Cross-modal remote-sensing
+retrieval (CMRSITR), transformer.
+
+image–text
+
+I. I NTRODUCTION
+
+W
+
+ITH the development of Earth observation technologies, collecting a large number of remote-sensing
+(RS) images is not a difficult task anymore [1], [2], [3].
+They provide new opportunities for scholars to explore our
+planet. Before using the proper interpretation methods to
+mine the information from them, managing these large RS
+images according to specific demands is an indispensable
+step [4]. To this end, information retrieval entries the RS
+community. There are two common retrieval techniques for
+RS images, that is, content-based RS image retrieval (CBRSIR) [5], [6], [7] and cross-modal RS image–text retrieval
+(CMRSITR) [8], [9], [10], [11]. CBRSIR aims to search
+the target RS images with similar contents to the query
+RS image, highlighting the image contents’ understanding.
+CMRSITR refers to using one modality of data to find the most
+semantic consistency data in another modality, which emphasizes the exploration of the latent correspondence between
+images and texts. Each of them has its advantages. However,
+compared with CBRSIR, CMRSITR (the topic of this article)
+attracts more attention recently since it establishes a bridge
+between the RS image understanding and language comprehension, which is beneficial to many practical applications
+[12], [13], [14], [15].
+The study of CMRSITR is still in its infancy. With the
+help of deep-learning techniques, several CMRSITR methods
+have been proposed [8], [9], [10], [16], [17]. Most of them
+are dual-branch networks. One branch aims at learning the
+visual features from RS images, and the other focuses on
+extracting the textual representations from texts. When the
+different features are obtained, some specific layers embedded
+at the top of the model are developed to map them into the
+joint space so that the similarities between RS images and
+texts can be measured directly. Here, the common tools for
+visual feature learning are deep convolutional neural networks
+(DCNNs) [18], the usual techniques for textual representation
+learning are recurrent neural networks (RNNs) [19], and the
+popular loss functions are the triplet loss and its variants [20].
+Although these dual-branch methods are feasible, their
+
+1558-0644 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+performance cannot still reach what we expected. The reasons
+behind this are twofold. First, since those models learn the
+features of RS images and texts independently, in general,
+the semantic gaps between different feature representations
+are distinct [21]. In other words, the semantics within visual
+features and textual representations are misaligned [22], which
+would reduce the reliability of the resemblance measurement.
+Second, the above CMRSITR methods mainly emphasize
+feature learning. However, modeling relations between RS
+images and texts properly is often ignored. This is adverse to
+mining the semantic correspondence under this cross-modal
+scenario [23].
+The transformer [24], [25], [26] has recently drawn scholars’ attention because of its inherent advantages in modeling
+relationships hidden in the input data. The transformer-based
+models become prevalent in diverse computer vision applications [27], [28], [29], as well as the cross-modal image–text
+retrieval [22], [23], [30]. On the one hand, owing to the
+peculiar structure, the images and texts are fed into a unified
+network, and the corresponding visual features and textual
+representations can be learned simultaneously. This guarantees
+semantic consistency between different features. On the other
+hand, benefiting from the self-attention mechanism (SAM),
+the relations between images and texts can also be modeled
+deeply in the transformer-based models. This is conducive
+to establishing the semantic correspondence between two
+modalities effectively. One question is raised, can we transfer
+these methods to RS tasks directly?
+The answer is probably negative. Although the
+above-mentioned methods have shown their superiorities
+in natural image processing, there are still some challenges
+to be addressed when applying them to the RS images. First,
+the transformer-based methods focus on building cross-modal
+relationships. However, they do not attach importance to
+image feature learning. This limitation is inconspicuous to
+natural images but is catastrophic to RS images since they
+contain a large number of land covers with diverse types and
+multiple scales. Second, the images’ spatialwise information
+is fully considered when they apply SAM to model the
+cross-modal relationships. Nevertheless, the channelwise
+knowledge hidden in the corresponding feature maps does
+not get the attention it deserves, limiting their ability to
+understand RS images.
+To address the above problems, inspired by vision-andlanguage transformer (ViLT) [23], we propose a new CMRSITR method named interacting-enhancing feature transformer
+(IEFT). The IEFT contains a feature embedding module
+(FEM), an information interacting-enhancing module (IIEM),
+and a retrieval module (RM). FEM introduces a pretrained Bert
+tokenizer and a simple linear projector to transform texts and
+RS images into feature embeddings. Then, these embeddings
+are fed into IIEM simultaneously to keep feature consistency.
+IIEM is developed based on the transformer. On the one
+hand, it leverages SAM to model the relationships between
+texts and RS images at the spatial level. On the other hand,
+considering the complex contents hidden in RS images, IIEM
+also improves the visual feature embeddings by investigating
+their channelwise and localwise information. RM comprises
+
+three transformer encoders and an image–text matching (ITM)
+head. The transformer encoders aim to discover inner relations
+between texts and RS images. The ITM head focuses on
+generating the matching scores, which can be used directly
+to get the retrieval results.
+1) We propose an end-to-end CMRSITR model (i.e., IEFT).
+Instead of exploring valuable information from RS
+images and texts individually, IEFT simultaneously processes RS images and texts, so the visual and textual knowledge can be learned with small distribution
+misaligned.
+2) IEFT can inherently explore the relationships between
+RS images and texts by taking advantage of SAM
+within the transformer. In this way, the final cross-modal
+matching decisions tend to be creditable.
+3) To further mine the useful information, we develop two
+simple, yet useful units to capture the complex contents
+within RS images from the channel and local aspects.
+By embedding them into our IEFT, the obtained visual
+features for RS images are more discriminative.
+4) Extensive experiments are conducted on four benchmark
+datasets, and the encouraging results demonstrate that
+the proposed method is effective.
+The rest of this article is organized as follows. Previous
+works related to CMRSITR are reviewed in Section II. Then,
+the proposed method is introduced in Section III. The experimental results and discussion are given in Section IV. Finally,
+the conclusions are summarized in Section V.
+II. R ELATED W ORK
+A. Cross-Modal Image–Text Retrieval
+Cross-modal image–text retrieval refers to finding semantically similar data between images and texts. According to
+the type of images, we review some published works from
+the following two aspects, including cross-modal natural scene
+image-text retrieval (CMNSITR) and CMRSITR.
+1) Cross-Modal Natural Scene Image–Text Retrieval:
+CMNSITR is always a hot research topic in image processing,
+which aims to find semantically similar data across images and
+texts [31], [32]. Especially in the current deep era, the rapid
+development of CMNSITR is obvious to all [33]. As early as
+2018, You et al. [34] developed an end-to-end semantic embedding model for CMNSITR. This method leverages DCNNs to
+learn hierarchical features from both images and texts first.
+Then, the local information (within the middle-level features)
+and the semantic messages (within the high-level features)
+are combined by a specific learning objective function to
+complete the cross-modal retrieval. The positive experimental
+results confirm its helpfulness. This kind of solution can
+also be found in [35], [36], and [37]. Although the above
+methods’ performance is good, they still face the problem
+of heterogeneity gaps. To mitigate this issue, Gu et al. [32]
+developed a generative model to map images and texts into
+a common semantic space. By introducing the generative
+adversarial scheme, the global abstract and local grounded
+features can be explored from dual-modal data. Ji et al. [38]
+developed two specific networks based on DCNN and the
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+long short-term memory (LSTM) model. After fully mining
+the valuable information from images and texts using two
+networks, the different information is mapped into a common
+space for completing the cross-modal similarity matching.
+Considering the diverse contents within images, some scholars
+add object detection tools into their cross-modal method, such
+as [39], [40], [41], [42], and [43]. This way, the images can be
+interpreted comprehensively so that the cross-modal retrieval
+performance can be enhanced.
+Recently, when the transformer appears, it attracts
+researchers’ attention instantly due to its strong capacity for
+relationship learning. In the CMNSITR field, many interesting
+works have been proposed and achieved impressive results. For
+instance, vision-and-language BERT (ViLBERT) [44] combines three basic transformers to deal with the cross-modal
+retrieval tasks. The first two transformers are used to learn the
+features from images and texts separately. Here, rather than a
+whole image, the various objects within the image are detected
+for visual feature learning. The last one is used to model
+the inner relationships for measuring the similarities. Meanwhile, universal image-text representation (UNITER) [30] and
+object-semantics aligned pre-training (OSCAR) [22] directly
+introduce a single transformer to both process images (at the
+object level) and texts and study the cross-modal relationships.
+To further ensure the stability and discrimination of visual
+features, ViLT [23] adds a lightweight learnable linear projector to map whole images into feature embeddings. Then,
+a transformer is adopted to analyze the cross-modal relations.
+Unlike the methods mentioned above, align the image and
+text representations before fusing (ALBEF) [45] uses web data
+and a momentum distillation scheme to enhance the retrieval
+performance. This approach improves the model’s ability to
+understand and reason about cross-modal relationships.
+2) Cross-Modal Remote-Sensing Image–Text Retrieval: In
+the CMRSITR community, some successful methods have
+been proposed. Yuan et al. [16] developed an asymmetric
+multimodal feature matching network (AMFMN) for CMRSITR tasks, in which the multiscale characteristic of RS
+images are fully considered for deeply interpreting their
+diverse land covers. AMFMN first introduces the multiscale
+visual self-attention scheme to find the salient areas within RS
+images and guide the text representation learning at the same
+time. Then, a specific triplet loss is developed to bridge the
+relations between data from different modalities. The positive
+results counted on their constructed dataset imply the effectiveness of AMFMN. To enhance the feasibility of the retrieval
+approach, a lightweight retrieval model was presented in [8],
+in which the multiscale feature learning scheme, abundant feature filter mechanism, lightweight text representation extraction strategy, and knowledge distillation policy are combined
+for CMRSITR. Meanwhile, another model was published by
+the same group [10]. In this model, the authors emphasize the
+importance of visual feature learning in CMRSITR. Both the
+global and local information are considered when transforming
+RS images into discriminative visual features. Such that the
+complex contents hidden in RS images can be understood
+for cross-modal retrieval. The above methods are supervised,
+whose behavior depends on many labeled data. To relieve
+
+5611715
+
+this burden, Mikriukov et al. [46] introduced an unsupervised
+method for CMRSITR, where contrastive learning, hashing,
+and multiobjective optimization techniques are integrated.
+The encouraging results confirm its helpfulness. Despite the
+advancements in implementing these methods, a significant
+opportunity for enhancement persists. Because the current
+approach primarily utilizes triplet loss to regulate the semantic
+associations between different modalities, ignoring the challenging situation that the feature spaces of each modality are
+distinct and independent.
+B. Transformer-Based Methods for RS Data
+Transformer [24] was first proposed for natural language
+processing [25], [47], [48], [49]. Inspired by its powerful
+ability in long-range dependence learning, the transformer
+has become prevalent in computer vision [50], as well as
+the RS community. Bazi et al. [51] first applied a transformer
+to RS image processing. They leveraged vision transformer
+(ViT) [26] to handle the RS scene classification tasks. Owing
+to the multihead attention (MHA) mechanisms, the global
+contextual information can be fully explored so that the classification results are competitive. Another transformer-based
+RS scene classification method was proposed in [52]. Based
+on ViT, the authors developed specific schemes to capture
+the spatialwise and channelwise information from RS scenes.
+In this way, the detailed geometric clues and the contributions
+of multiple feature maps can be utilized to distinguish the
+various scenes. Ma et al. [53] proposed a homo-heterogeneous
+transformer learning (HHTL) framework for the RS scene
+classification. This method fully considers the homogenous
+and heterogeneous knowledge within RS scenes. Along with
+the transformer structure, the learned features are discriminative for classification. To reduce the time costs caused
+by SAM, an efficient multiscale transformer was proposed
+in [54]. By changing the MHA mechanism into a 2-D version
+and introducing the dilated convolution, the rich contextual
+information within RS scenes can be explored at a small time
+cost.
+The above transformer-based methods were scene-oriented.
+Many models have been developed based on the transformer for objectwise and pixelwise applications. For instance,
+Wang et al. [55] combined DCNN and transformer to adaptively capture local and global information from RS images
+so that the objects can be detected from the complex background. In this method, an adjacent feature-aligned module is
+developed to align adjacent features, and an interactive guidance loss is formulated to achieve joint region and boundary
+detection. Therefore, diverse objects can be effectively discovered. A transformer-based method named SpectralFormer was
+introduced in [56] for hyperspectral image classification tasks.
+SpectralFormer uses groupwise spectral embedding to learn
+local information and adopts the cross-layer adaptive fusion
+scheme to combine the valuable information from multiple
+layers. The promising results counted on several hyperspectral
+images confirm its effectiveness. Li et al. [57] proposed an
+end-to-end hybrid transformer model (TransUNetCD) for RS
+image change detection under the Unet framework. TransUNetCD first uses Siamese DCNN to fully learn the shallow
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+and high deep features from bitemporal RS images. Then,
+a transformer module is developed to mine the global context
+information. The encouraging results reported in the literature
+illustrate that the transformer is useful in RS change detection.
+A wide-context network was introduced in [58] for RS image
+semantic segmentation. The detailed local information and
+the global contextual relations can be captured by combining
+the normal convolution and transformer. Thus, satisfactory
+semantic segmentation results can be obtained based on this
+luxuriant knowledge.
+III. P ROPOSED M ETHOD
+A. Overall Framework
+The architecture of IEFT is shown in Fig. 1, consisting of
+an FEM, an IIEM, and an RM. Suppose we have a set of
+RS image and text pairs (V, T ), where V = {v1 , . . . , v N }
+and T = {t1 , . . . , t N } indicate RS images and texts, and N
+denotes the volume of the set. Their relationship labels are
+m = {m 1 , . . . , m N }, where m i = 1 means that vi and ti
+contain similar concepts, while m i = 0 implies that they
+have different concepts. FEM aims to map RS image and
+text pairs (V, T ) into d-dimensional feature embeddings F =
+{F1 , . . . , F N } and G = {G1 , . . . , G N }. The goals of IIEM
+are twofold. One is to model the intermodality relationships
+by mutually investigating the features corresponding to two
+modalities. The other is to enhance the RS image features
+by exploring channelwise information and salient local areas.
+Finally, RM continues to further fuse two modalities features
+for narrowing the possible semantic gaps and leverages the
+ITM head to output the matching scores. In the training phase,
+we adopt the cross-entropy loss function to optimize our model
+by mining the differences between the output scores and the
+relationship labels. In the inference phase, the matching scores
+are utilized to produce the retrieval results. Now, we explain
+each module in detail.
+B. Feature Embedding Module
+As illustrated in Fig. 2, FEM contains a text embedding
+block and an image embedding block. They are developed
+to transform texts and the corresponding RS images into
+d-dimensional features.
+1) Text Embedding Block: Unlike many existing works [8],
+[10], we employ a pretrained Bert tokenizer [25], [44] instead
+of common RNNs to learn the texts’ features. This is because
+Bert is a transformer-based model, which is consistent with the
+rest of our IEFT. Note that the common mask-maker strategy
+in Bert’s training is excluded to ensure the textual integrity
+of our task. Also, the Bert tokenizer’s parameters would be
+updated along with the training of the proposed IEFT.
+We assume that a text ti contains l words, which can be
+expressed as ti = {wi1 , . . . , wil }. First, a predefined vocabulary
+is introduced to transform words within ti into one-hot codes
+j
+Oi = [oi1 , . . . , oli ] ∈ Rdo ×l , where oi indicates the jth word’s
+one-hot representation and its dimension is do . Then, these
+codes would be converted into the textual features GiE ∈
+Rd×l by a learnable mapping matrix Etext ∈ Rd×do , which is
+
+formulated as
+
+
+GiE = Etext (Oi ) = ai1 , . . . , ali
+
+(1)
+
+j
+where ai ∈ Rd×1 denotes the
+
+jth word’s textual feature. Like
+Bert, the obtained textual feature GiE would be attached with
+a fixed text classification token a0 ∈ Rd×1 in this article. Also,
+to eliminate the disturbances caused by the same words, the
+pos
+text positional matrix Gi ∈ Rd×(1+l) is added to GiE for
+enriching the textual features. The above operations can be
+defined as
+
+
+pos
+(2)
+Gi′ = a0 , ai1 , . . . , ali + Gi .
+Finally, the textual embeddings Gi = [g0 , gi1 , . . . , gli ] ∈
+R
+can be obtained by adding Gi′ and the text-type
+type
+identification matrix Gi , that is,
+d×(1+l)
+
+type
+
+Gi = Gi
+
++ Gi′ .
+
+(3)
+
+type
+Here, we set the token of Gi to be “0.”
+
+2) Image Embedding Block: Inspired by ViT [26],
+we develop a lightweight linear projector to generate the RS
+image embeddings. For an RS image vi whose height, width,
+and channel are H , W , and C, respectively, we first slice and
+flatten it into n patches Pi = { pi1 , . . . , pin } ∈ R(h×w×C)×n ,
+where h and w denote the heights and widths of patches,
+respectively, and their values are the same in general. Then,
+a learnable linear projection matrix Eimage ∈ Rd×(h×w×C) is
+designed to map patches into d-dimensional visual features
+FiE ∈ Rd×n . The formulation of this step is
+
+
+FiE = Eimage (Pi ) = bi1 , . . . , bin
+(4)
+j
+
+where bi ∈ Rd×1 means the jth RS patches’ visual feature.
+Next, we concatenate FiE with an image classification token
+bi0 ∈ Rd×1 and add the image positional embedding vector
+pos
+Fi ∈ Rd×(1+n) to improve the visual features with the image
+structure information. This operation can be defined as
+pos
+
+Fi′ = [bi0 , bi1 , . . . , bin ] + Fi .
+
+(5)
+
+Finally, we can get the RS image embeddings Fi =
+[f0 , fi1 , . . . , fin ] ∈ Rd×(1+n) by combining the enhanced visual
+type
+features Fi′ and the image-type identification matrix Fi , that
+is,
+type
+
+Fi = Fi
+
++ Fi′ .
+
+(6)
+
+type
+In this article, we set the token of Fi to be “1.”
+
+C. Information Interacting-Enhancing Module
+So far, we have obtained the textual and visual embeddings for the texts and RS images. Then, their relationships
+should be mined intensely for CMRSITR. Also, the current
+visual embeddings should be enhanced as they cannot fully
+represent the complex contents within RS images. To achieve
+these goals, we develop IIEM in this section. As shown in
+Fig. 1, IIEM comprises three feature interacting-enhancing
+(FIE) blocks, which are combined serially. Each of them
+consists of an intermodality relationship interacting (IMRI)
+subblock and a visual feature enhancing (VFE) subblock. Now,
+we will explain them one by one. Since the operations of the
+three FIE blocks are the same, we only use the first FIE block
+as an example to illustrate clearly.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+5611715
+
+Fig. 1. Framework of the proposed IEFT. There are three main components, including an FEM, an IIEM, and an RM. FEM leverages the linear projector
+and Bert to transform RS images and texts into d-dimensional visual and textual feature embeddings. IIEM aims to model intermodality relationships between
+different features and enhance the visual feature representation simultaneously, achieved by the IMRI subblocks and VFE subblocks. RM encloses three
+IMRI subblocks and an ITM head, focusing on further narrowing the semantic gaps between the two modalities and outputs matching scores that reflect the
+C means we concatenate the image and text features into a joint feature, and ⃝
+A indicates that we divide the joint
+similarities of RS images and texts. Here, ⃝
+feature into image and text features.
+
+where Xiln specifies the normalized format of the input data that
+is accomplished by the layer normalization operation LN(·),
+E Q (·), E K (·), and EV (·) denote three projection matrixes that
+map the normalized input data Xiln into queries, keys, and
+values, dk indicates a scaled factor, and softmax(·) is the
+softmax function. After h parallel SAMs, Xi is transformed
+into {Si1 , . . . , Sih }. Then, by contacting them together and
+applying a linear operation, the output of the MHA layer can
+be obtained. This step can be expressed as
+
+
+MHA Xiln = concat Si1 , . . . , Sih Eo
+(8)
+
+Fig. 2. Flowchart of FEM, which comprises an image embedding block
+and a text embedding block. The image embedding block leverages a simple
+linear projector to generate visual embeddings for RS images, while the
+text embedding block adopts Bert to map texts into textual embeddings.
+The different embeddings have the same dimensions, facilitating cross-modal
+retrieval.
+
+1) Intermodality Relationship Interacting Subblock: To
+bridge the gap between the two modalities, we use a
+transformer-encoder as our IMRI subblock, which contains an
+MHA layer, two layer-norm layers, and a multilayer perception
+(MLP). The residual connection integrates these components.
+As shown in Fig. 3, the MHA aims at modeling the inherent
+relationships between texts and RS images (spatialwise), while
+the layer-norm layers and MLP focus on guaranteeing the
+IMRI’s stability and improving its nonlinear fitness capacity.
+For an input data Xi =[Gi , Fi ] ∈ Rd×(l+n+2) , it would be
+normalized and passed through the MHA layer that mainly has
+h SAM in parallel. SAM can leverage the vectors’ dependence
+attention matrix to model the relationships between text and
+RS image embeddings. It is accomplished by the scale dotproduction, whose formulation is
+SAM Xiln
+
+
+
+
+T !
+
+E Q Xiln E K Xiln
+√
+EV Xiln
+= softmax
+dk
+(7)
+
+where concat(·) implies the contact operation and Eo means
+the linear mapping. Next, the summation of MHA(Xiln ) and
+Xi would be fed into the second layer-norm layer and MLP.
+Here, the MLP contains two fully connected layers connected
+by a Gaussian error linear unit (GeLU).
+As a whole, for the input data Xi , the process IMRI
+subblock can be formulated as
+Xiln = LN(Xi )
+
+Ximha = Xi + MHA Xiln
+Xiimri = Ximha + MLP LN Ximha
+
+
+
+(9)
+
+where Ximha ∈ Rd×(l+n+2) indicates the output of the MHA
+layer, MLP(·) means the operations of MLP, and Xiimri ∈
+Rd×(l+n+2) denotes the output of the IMRI subblock.
+2) Visual Feature-Enhancing Subblock: To enhance the
+visual embeddings, we first split the visual component Ziv ∈
+Rd×n from Xiimri according to the image-type identification.
+The rest part is recorded Zio ∈ Rd×(l+2) . Then, it would be
+fed into a channelwise feature-enhancing (CWFE) unit and a
+localwise feature-enhancing (LWFE) unit orderly (see Fig. 1).
+Like the proposed IMRI subblock, the base of the CWFE
+unit (see Fig. 4) is also the transformer-encoder which focuses
+on exploring the inner relationships hidden in the input data.
+Nevertheless, the CWFE unit tends to capture the helpful
+knowledge within RS images from the channel perspective.
+Particularly, Ziv is first transformed into the channelwise feature matrix Ziv T ∈ Rn×d by the transpose operation. Then,
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+Fig. 3. (Left) Structure of the IMRI subblock, which incorporates the SAM to model the inherent relationships between the RS image and text modalities.
+(Right) Schematic illustration of the goals of the IMRI subblock. The input data Xi is concatenated by the textual embeddings Gi = [g0 , gi1 , . . . , gli ] and
+the visual embeddings Fi = [f0 , fi1 , . . . , fin ]. Here, we record each item in Gi as a word-perspective vector, which represents a word in this text. Besides,
+each element within Fi is regarded as a spatial-perspective vector, which describes a patch obtained from the RS image. After passing Xi through the IMRI
+subblock, the relations between word- and spatial-perspective vectors can be captured by SAM.
+
+it would be passed through a normalization layer and a h-head
+SAM to perform an attention mechanism for channelwise
+relationships. The definitions of SAM can refer to (7) and (8).
+Next, another normalization layer and an MLP layer are
+applied. Note that the above two steps are connected in a
+residual way. The above process can be formulated as
+
+
+T
+Ziln = LN Ziv T
+ T
+T
+Zimha = Ziv T + MHA Ziln
+ 
+
+T
+T
+T
+Zicwfe = Zimha + MLP LN Zimha
+(10)
+T
+
+where Ziln ∈ Rn×d denotes the normalized feature matrix,
+T
+Zimha ∈ Rn×d means the channelwise output of the MHA
+T
+layer, and Zicwfe ∈ Rn×d means the output of the CWFE unit.
+The CWFE unit pays attention to exploiting the RS images’
+contents from the global aspect. To discover the salient local
+regions and enrich the visual embeddings, the LWFE unit with
+the depthwise convolution [59] is developed here. In detail,
+T
+we first apply a transpose operation on Zicwfe to obtain
+cwfe
+d×n
+layer,
+Zi
+∈ R . After passing through a normalization
+√ √
+we reshape it into the 2-D version Zi2−D ∈ Rd× n× n . Then,
+two 1√ ×√1 convolutions are
+to map Zi2−D into Ci1 ∈
+√ adopted
+√
+du × n× n
+2
+du × n× n
+R
+and Ci ∈ R
+in parallel. We formulate this
+step as
+
+up
+Ci1 = E1 Zi2−D
+
+up
+(11)
+Ci2 = E2 Zi2−D
+up
+
+up
+
+where E1 (·) and E2 (·) denote two 1 × 1 convolutions. Note
+that “up” means du > d. Next, we want to find the salient local
+areas hidden in RS images. To achieve this goal, depthwise
+convolution is adopted, which is good at capturing the local
+structure of images by learning neighborhood information.
+We apply a 3 × 3 depthwise convolution and a GeLU nonlinear activation to Ci1 for depressing the nonsalient backgrounds. Meanwhile, another 3 × 3 depthwise convolution is
+conducted on Ci2 to highlight the salient regions. By producing
+
+them in a√ dotted
+manner, we can obtain the fused feature
+√
+Ci ∈ Rd× n× n , containing luxuriant local clues. The above
+operations can be formulated as
+
+
+Ci = φ Wd1 Ci1 × Wd2 Ci2
+(12)
+where Wd1 (·) and Wd2 (·) mean two 3 × 3 depthwise convolutions, and φ(·) represents the GeLU nonlinearity. Finally, a
+1 × 1 convolution is used to reduce the channel numbers of
+Ci and the output of the LWFE unit is
+Ciout = Edown (Ci ) + Zi2−D
+
+(13)
+
+√ √
+d× n× n
+
+where Ciout ∈ R
+.
+After reshaping Ciout into Ziout ∈ Rd×n and contacting Ziout
+and Zio , the contextualized feature Xiout(1) ∈ Rd×(n+l+2) of the
+first FIE block can be generated. The other two FIE blocks
+operate the same. In this way, we can get the output of IIEM
+Xiout . Overall, the LWFE leverages the depthwise convolution
+to capture localwise information and finally enhances our
+model’s ability to discriminate nonsalient backgrounds and
+salient regions.
+D. Retrieval Module
+So far, we have obtained Xiout , which is rich in intermodality
+relationships and RS image contents. Now, RM is developed
+to accomplish cross-modal retrieval.
+As shown in Fig. 1, RM consists of three IMRI subblocks
+and an ITM head. Their functions are further to explore the
+relations between RS images and texts and to generate the
+matching scores Si ∈ [0, 1] that are used to measure the similarities between RS images and texts. The larger scores, the
+greater similarities between the RS images and texts. The
+structure and process of the IMRI subblock can be found
+in Section III-C1. After three IMRI subblocks, Xiout can be
+f
+transformed into Xi ∈ Rd×(l+n+2) . The ITM head consists of
+a linear mapping Eitm (·), a nonlinear activation layer tanh(·),
+and a matching score mapping Ematch (·). The matching scores
+can be obtained by
+f 
+Si = Ematch tanh Eitm Xi
+.
+(14)
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+5611715
+
+Fig. 4. (Left) Structure of the CWFE unit, which tends to capture the helpful knowledge within RS images from the channel aspect. (Right) Schematic
+illustration of the targets of the CWFE unit. When the visual component Ziv is input, we first transform it into Ziv T . Here, Ziv represents the RS images from
+the spatial aspect as it is obtained by the RS patches. Thus, Ziv T reflects knowledge of the RS images from the channel dimension. Then, SAM is applied on
+Ziv T to capture channelwise relationships hidden in RS images.
+
+Fig. 5. Flowchart of the LWFE unit, which mainly incorporates a normalization layer, three 1 × 1 convolutions, two 3 × 3 depthwise convolutions,
+and a GeLU activation function. The function of this unit is to enhance the
+visual representation by mining salient local regions within RS images.
+
+To train our IEFT using the obtained matching scores,
+we first construct positive and negative samples for each RS
+image. In particular, we treat an RS image and its paired texts
+as positive samples. At the same time, the RS image and
+λ random texts are regarded as negative samples. Then, the
+cross-entropy loss function is selected to minimize the gaps
+between Si and the relationship label m, that is,
+Lmatching = CrossEntropy(Si , m).
+
+(15)
+
+In the testing stage, we first count the matching scores
+between the query (an RS image or a text) and all candidates
+(texts or RS images in the archive). Then, the retrieval list can
+be determined in descending order of scores.
+IV. E XPERIMENTS AND D ISCUSSION
+A. Testing Datasets Introduction
+Four popular RS image datasets are employed to evaluate
+our IEFT, including the RSICD [60], RSITMD [16], UCMCaptions [61], and Sydney-Captions [61] datasets.
+The RSICD dataset is a large-scale RS image caption
+dataset, containing 10 921 RS images with varied pixel resolutions and fixed sizes (224 × 224). These RS images are
+divided into 30 categories, and the number of RS images
+per class varies from 240 to 1031. Also, each RS image
+
+has five description sentences in RSICD. RSITMD is a
+derivate of RSICD, with 4743 256 × 256 RS images. Parts
+are selected from the RSICD dataset, and Google Earth
+collects others. There are 32 classes in this dataset, and the
+numbers of RS images within each class are imbalanced.
+Like RSICD, each RS image in RSITMD has five textual
+captions. The UCM-Captions dataset was constructed based
+on the UC Merced Land Use dataset [62]. UCM-Captions
+contains 2100 RS images and are divided into 21 semantic
+classes equally. Their pixel resolutions and sizes are 1 ft and
+256 × 256, respectively. Five texts are manually annotated to
+describe a single RS image. It is noted that the descriptions for
+the RS images from the same category are similar [60], which
+enhances the difficulties of CMRSITR. The Sydney-Captions
+dataset was released in [61], and the original version is the
+Sydney dataset [63]. This dataset contains 613 RS images
+with the size of 500 × 500, and every image has five captions.
+Each image’s spatial resolution is approximately 0.5 m, and
+all RS images are divided into seven semantic categories. The
+detailed information related to RS images’ semantic categories
+and their volumes of four datasets can be found in the second
+section of the Supplementary Material.
+B. Experimental Setting
+1) Implementation Details: All experiments are carried out
+on two NVIDIA RTXA6000 GPUs with 48 GB memory.
+According to the JSON documents of four datasets, we set
+the ratios of the training and testing sets are 90% and 10% for
+different archives, respectively. In the training phase, we adopt
+the AdamW optimizer with the initialized learning rate of
+10−4 and weight decay of 10−2 to update the parameters of
+our IEFT. The batch size equals 8 for all datasets, and the
+epochs are 100 (Sydney-Captions and UCM-Captions) and
+50 (RSICD and RSITMD), respectively. The learning rate
+is warmed up at the beginning 10% of epochs, then decays
+to zero linearly. The CWFE and LWFE units are initialized
+randomly, and the ViLT’s pretrained parameters initialize the
+other parts of our IEFT [64], [65], [66], [67]. Note that we
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+TABLE I
+L ENGTH OF T EXTS ACROSS F OUR DATASETS
+
+repeat the experiments five times, and the exhibited results in
+this article are the average values.
+For texts, we first splice the [cls] and [sep] at the beginning
+and end of each text, respectively. Then, the lengths of texts
+are normalized to 40, that is, l + 1 = 40. The reasons for
+fixing the text length of 40 are twofold. The first one is the
+specification of the pretrained parameters of ViLT [23]. The
+ViLT is pretrained on millions of online image–text pairs data,
+providing rich cross-modal information that can be leveraged
+to enhance our model’s results. To keep consistency with
+ViLT, we set the text length to 40. The second one is the
+consideration of textual information integrity. After analyzing
+the texts in four testing datasets (see Table I), we can find
+that the length of texts varies from 20 to 34, and the average
+length equals approximately 10. Based on these observations,
+fixing the text length of 40 can guarantee the integrity of the
+textual information. To normalize all texts’ length as 40 for our
+model, we pad “0” at the end of the textual sequences. Here,
+the “0” token has no semantic meaning. Besides, since the
+predefined vocabulary (in Section III-B1) has 30 522 frequent
+words [68], the dimension of texts’ one-hot codes are 30 522,
+that is, do = 30 522.
+For RS images, we first resize each RS image into
+384 × 384 and slice it into n = 144 patches with the
+size of 32 × 32. Then, the RandAugment [69] is applied to
+augmented RS images without the color inversion and cutout.
+In our IEFT, the dimensions of RS images and texts are varied
+at different stages, and we set them d = 768 and du = 2042,
+respectively. The numbers of SAMs in the IMRI subblock and
+the CWFE unit are 12, that is, h = 12. Besides, the kernel size
+of depthwise convolutions in the LWFE unit is set as 3.
+2) Evaluation Metrics: To confirm the effectiveness of our
+IEFT, we choose two widely used evaluation metrics as R@k
+(where k = 1, 5, 10) and m R [10]. R@k is the ratio of
+ground truth appearing in the retrieval results of top k. Note
+that the ground truth shows the relationship label between
+the image or text with the query. The relationship labels
+equal to 1 means that the RS images and texts are positive
+sample pairs. Otherwise, they are regarded as negative sample
+pairs. To obtain the R@k, we should first obtain k image–text
+relationship labels corresponding to the top k matching scores
+between a query with all retrieval entities. Then we need
+to identify how many positive samples appear in the top k
+retrieval samples. Thus, the R@k can be defined as
+B
+
+R@k =
+
+1 X
+Precision(i, k)
+B i=1
+
+(16)
+
+where B means the volume of the query set, i means the
+ith query set, and Precision(i, k) denotes whether the positive items corresponding to ith query appear in the top
+
+k retrieval samples or not. If the positive sample exists in
+the top k retrieval results, Precision(i, k) = 1. Otherwise,
+Precision(i, k) = 0. Furthermore, m R is the average of all
+R@ks.
+When we leverage the above assessment criteria to judge
+the retrieval models, we found that the issue of duplicated
+texts (a textual caption may appear in different RS images)
+would impact them negatively. As shown in Fig. 6(a), there
+are two RS images and their corresponding texts. It is easy to
+find that the caption texts are duplicated. Logically speaking,
+when we use “This is a dense forest” as the query, these two
+RS images are both the correct “Image retrieval results”; or
+when we use one of the two RS images as the query, the
+“This is a dense forest” should be the correct “Text retrieval
+results.” However, each text links an “Image Label” in the
+dataset so that the sentence “This is a dense forest” will be
+changed into two sentences “This is a dense forest. (Image
+label1)” and “This is a dense forest. (Image label2)” When
+we use “This is a dense forest. (Image label1)” as a query,
+the second RS is regarded as an incorrect result. Similarly,
+when we use the first RS image as the query, the “ This is a
+dense forest. (Image label2)” would be deemed as an improper
+retrieval result. The schematic illustration of this phenomenon
+can be found in Fig. 6(b), which is somewhat unreasonable
+and disturbs the credibility of R@ks and m R.
+To overcome this dilemma, we develop a simple strategy to
+improve the robustness of assessment criteria. In detail, we first
+unify the texts in the dataset without duplication. Then, the
+“Image Labels” corresponding to each text are counted. Thus,
+one text may have several “Image Labels,” such as “This is a
+dense forest: Related Image labels:1, 2.” Consequently, when
+we use the above sentence as the query, the first and second
+RS images are both the correct “Image retrieval results.” Also,
+this sentence can be the right “Text retrieval result” for two
+RS images. This process can be found in Fig. 6(c). In this
+way, the obtained R@ks and m R values are more objective.
+For clarity, we record two indicators I M R@k and I Mm R
+in this article. In the following experiments, we use I M R@k
+and I Mm R to count the numerical results. The Supplementary
+Material will also summarize the original R@k and m R values
+for reference.
+C. Sensitivity Analysis
+As mentioned in Section III-D, we should set the number
+of negative texts λ before training the proposed IEFT. Thus,
+in this section, we study its influence on IEFT and provide
+the optimal values for different datasets. To this end, we vary
+the values of λ from 11 to 19 with an interval of 2. Based on
+different λ, we can train diverse IEFTs, and their performance
+for four archives is displayed in Fig. 7. By observing them,
+we can find that: 1) all IEFTs’ behavior is close to each other;
+2) the values of the assessment criteria are enhanced gradually
+at first and then descends to a degree; and 3) the peak values
+for different datasets appear at λ = 15. The above investigation
+confirms that introducing the negative texts into training is
+necessary, which can make IEFT keep semantic consistency
+reasonably. According to the contents discussed above, we set
+λ = 15 for the following experiments.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+5611715
+
+Fig. 6. Examples illustrate the negative influence of duplicated texts and the operation of I M R@k and I Mm R. Here, (a) denotes two RS images with their
+corresponding texts, (b) shows how duplicated texts negatively affect the results, and (c) illustrates the function of improved R@k and m R. Note that the
+uncorrected results are marked in red.
+
+Fig. 7. Illustration of influence of parameter λ on I M R@ks and I Mm Rs of four datasets. Here, (a) is the results of the RSICD dataset, (b) is the RSITMD
+dataset, (c) is the UCM-Caption dataset, and (d) is the Sydney-Captions dataset.
+
+D. Ablation Study
+As exhibited in Fig. 1, our IEFT involves an FEM, an IIEM,
+and an RM. Among the three modules, IIEM is the most
+complex one. It consists of three FIE blocks, each of which
+mainly contains an IMRI subblock and a VFE subblock. The
+IMRI subblock aims at modeling the relationships between
+RS images and texts by SAM. The VFE subblock focuses
+on enhancing the RS images’ representations by exploring the
+channelwise and localwise knowledge hidden in images, which
+is achieved by the CWFE and LWFE units. We construct the
+following four networks to study their contributions to the
+proposed IEFT further.
+1) Net-1: FEM + RM.
+2) Net-2: FEM + three IMRIs + RM.
+
+3) Net-3: FEM + (three IMRIs + CWFEs) + RM.
+4) Net-4: FEM + (three IMRIs + CWFEs + LWFEs) +
+RM.
+Here, Net-1 only comprises an FEM and an RM. Based
+on Net-1, Net-2 adds three IMRI subblocks between FEM
+and RM. Then, Net-3 embeds the CWFE units into three
+IMRI subblocks. Finally, Net-4 introduces the LWFE units
+on the basis of Net-3. Actually, Net-4 is our IEFT. The
+performance of the four networks is displayed in Table II.
+Here, “Text Retrieval” denotes that we use RS images as
+the queries to search the matched textual captions. While
+“Image Retrieval” means the opposite scenario. Note that the
+experimental settings are the same as the contents discussed
+in Section IV-B1.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+TABLE II
+I M R@k AND I Mm R VALUES (%) OF F OUR A BLATION N ETWORKS C OUNTED ON D IFFERENT DATASETS
+
+We can easily find that the values of all assessment criteria
+are increased from Net-1 to Net-4. For example, compared
+with Net-1, the significant enhancements in I Mm R achieved
+by Net-4 are 10.06% (RSICD), 13.14% (RSITMD), 17.70%
+(UCM-Captions), and 11.45% (Sydney-Captions). Taking the
+“Image Retrieval” results of RSITMD as another example,
+the improvements in I M R@10 obtained by Net-4 are 19.4%
+(Net-1), 1.32% (Net-2), and 0.43% (Net-3), respectively. The
+above discussion confirms the contributions of the IMRI
+subblocks, CWFE units, and LWFE units to our IEFT. Furthermore, we can summarize three points from the results.
+1) The distinct performance gaps between Net-1 and Net-2
+indicate that the IMRI subblocks can effectively model
+the relationships between RS images and texts. The
+acceptance results of different CMRSITR tasks can be
+generated based on those useful relationships. This also
+implies the importance of relationship creation in the
+cross-modal scenario.
+2) After introducing the CWFE unit into Net-2, the behavior of Net-3 becomes stronger than that of Net-2. This
+illustrates that the explored channelwise information is
+helpful in RS image understanding. By supplementing the channelwise clues into the global features, the
+obtained visual features are beneficial to describe the
+complex contents within RS images and to establish
+visual–textual relations.
+3) When we add LWFE into Net-3, Net-4 produces the best
+results, which demonstrates the usefulness of exploiting
+the local information from RS images. Not only can
+the discrimination of visual features be enhanced in this
+way, but also the rich knowledge hidden in RS images
+can be discovered. Therefore, we can get more credible
+visual and textual relations for CMRSITR tasks.
+To further study the effectiveness of the IMRI subblock,
+we conduct the following experiments. In particular, we vary
+the number of IMRI subblocks from 1 to 5 based on Net-2,
+and the results counted on the four datasets are shown in
+Fig. 8. By observing them, we can find that: 1) the I Mm R
+values consistently rise as the number of IMRI subblocks
+increases and 2) the most substantial improvements appear
+when the number of the IMRI subblock changes from 2 to 3.
+These imply the positive contributions of the IMRI subblock.
+Also, the more IMRI subblocks, the stronger behavior of the
+final network. Nevertheless, the cost of good performance
+
+is a significant increase in time complexity. Considering the
+tradeoff between the performance and time costs, we suggest
+the number of the IMRI subblocks equals three.
+E. Comparisons With Other Approaches
+To comprehensively evaluate the retrieval performance of
+the proposed IEFT, we compare it with the following models.
+1) CLIP [70]: This model adopts the specific encoders to
+map the different input data into a multimodal embedding space for image–text search tasks. The adopted
+image encoders are ResNet50 [18] and ViT-B/32 [26],
+and the selected text encoder is a 12-layer transformer [24]. We use ViT-B/32 and the 12-layer transformer in the following experiments to complete the data
+embedding and cross-modal retrieval.
+2) MSIT [11]: After obtaining the embeddings of RS
+images and the corresponding textual captions, multiscale interactive transformer (MSIT) directly constructs
+a single-branch transformer-based network to learn the
+semantic relationships between them for CMRSITR.
+Also, a lightweight multiscale feature exploration submodule is developed and embedded in MSIT to mine
+the important local information hidden in RS images.
+3) AMFMN [16]: AMFMN is a dual-branch network that
+uses a DCNN to learn RS image features and a gate
+recurrent unit (GRU) model to obtain text features.
+Then, the visual-guided attention (VGA) module is
+developed to narrow the semantic gap between visual
+and textual features so that credible CMRSITR results
+can be generated. AMFMN provides three different
+attention operations, that is, soft attention, fusion attention, and similarity attention. In the following experiments, we record AMFMN with different attention
+ways AMFMN-soft, AMFMN-fusion, and AMFMNsim, respectively.
+4) LW-MCR [8]: Like AMFMN, a lightweight multiscale
+crossmodal text-image retrieval method (LW-MCR) also
+leverages a DCNN to learn the visual features from RS
+images. Unlike AMFMN, LW-MCR adopts the group
+convolution scheme to obtain the textual features. Then,
+LW-MCR introduces knowledge distillation to achieve
+satisfactory and efficient CMRSITR results. According to the knowledge distillation manner, two models
+(LW-MCR-b and LW-MCR-d) are used in the following.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+5611715
+
+Fig. 8.
+I M R@ks and I Mm Rs values of Net-2 with different numbers of the IMRI subblocks. (a) RSICD. (b) RSITMD. (c) UCM-Captions.
+(d) Sydney-Captions.
+
+LW-MCR-b means that there is no other network during
+the knowledge distillation, and LW-MCR-d indicates a
+teacher network exists in the knowledge distillation.
+5) GaLR [10]: A novel retrieval framework based on global
+and local information (GaLR) first proposes a multilevel
+information dynamic fusion (MIDF) scheme to explore
+both the global and local information within RS images
+and texts. Then, a multivariate rerank algorithm is developed to refine the cross-modal retrieval results.
+Here, contrastive language-image pre-training (CLIP) and
+MSIT are transformer-based methods, and others are DCNNbased methods. We simulate CLIP and MSIT by ourselves, and
+the DCNN-based methods are accomplished by the released
+codes. All free parameters are set according to the original
+literature, and the experimental settings are consistent with
+ours. Among all compared methods, MSIT, LW-MCR, and
+GaLR have some assistive designs or technologies. Hence,
+we make some changes when we complete them in the
+following experiments for fairness, which are given in detail.
+1) MSIT has six transformer encoders in its main module
+to learn the relations between RS images and texts.
+However, IEFT only has three transformer encoders
+(located in IIEM). Accordingly, we reduce the number
+of transformer encoders in MSIT to three.
+2) In LW-MCR, apart from the cross-modal learning network with a knowledge distillation strategy, the authors
+introduce a large number of unlabeled RS images
+collected from Google Earth to enhance the retrieval
+performance. Nevertheless, the proposed IEFT does not
+have any auxiliary information. Thus, in the following
+experiments, we remove the unlabeled data learning part
+from the main body of LW-MCR.
+3) To explore the helpful information from RS images,
+GaLR adopts object detection techniques. In addition,
+a specific reranking scheme is added after the initial
+
+retrieval to improve the final accuracy. Nonetheless, the
+above techniques do not exist in the proposed IEFT.
+Therefore, we discard object detection and image reranking when we complete GaLR.
+1) Results of the RSICD Dataset: The RSICD dataset is the
+largest among the four datasets, and the results of different
+methods are shown in Table III. From the observation of
+the results, we can find that all methods’ performance is
+acceptable, and the behavior of the transformer-based methods
+(CLIP, MSIT, and our IEFT) is stronger than that of the
+DCNN-based models. This implies that the mechanism of the
+transformer is beneficial to exploit the intermodality relationships between RS images and texts in RSICD, leading to the
+small semantic gaps between the visual and textual features
+and better CMRSITR results. Although the compared methods
+achieve good results, the proposed IEFT outperforms them
+in all cases. Taking I Mm R as examples, the enhancements
+achieved by IEFT are 1.99% (over CLIP), 3.42% (over MSIT),
+6.01% (over AMFMN-soft), 5.98% (over AMFMN-fusion),
+5.67% (over AMFMN-sim), 8.75% (over LW-WCR-b), 7.70%
+(over LW-MCR-d), and 5.87% (over GaLR). The reasons
+behind this encouraging investigation are twofold. First, IEFT
+processes RS image and text embeddings simultaneously,
+which can mitigate the misaligned problem in multimodal
+feature distributions. Second, owing to the specific structure of
+the developed IIEM, not only the relations between RS images
+and texts, but also the rich information hidden in RS images
+can be explored. The positive results discussed above confirm
+the usefulness of IEFT for the RSICD dataset.
+2) Results of the RSITMD Dataset: The CMRSITR results
+of different methods are summarized in Table III. Like
+RSICD, our method achieves the best performance on the
+RSITMD dataset. For example, in the “Image Retrieval”
+scenario, the I M R@10 values of IEFT is 58.54%, whose
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+TABLE III
+I M R@k AND I Mm R VALUES (%) OF D IFFERENT C OMPARISON M ETHODS C OUNTED ON D IFFERENT DATASETS
+
+improvements compared with other methods are 14.36% (over
+CLIP), 0.01% (over MSIT), 3.39% (over AMFMN-soft),
+5.60% (over AMFMN-fusion), 2.68% (over AMFMN-sim),
+4.51% (over LW-WCR-b), 8.45% (over LW-MCR-d), and
+5.63% (over GaLR). For another example, in the “Text
+Retrieval” scenario, the I M R@10 value of IEFT is 51.40%,
+whose enhancements in comparison to other methods are
+14.90% (over CLIP), 2.66% (over MSIT), 7.31% (over
+AMFMN-soft), 8.49% (over AMFMN-fusion), 8.37% (over
+AMFMN-sim), 14.02% (over LW-WCR-b), 11.80% (over LWMCR-d), and 8.48% (over GaLR). These promising results
+illustrate that our IEFT is helpful to the RSITMD dataset.
+A notable observation is that the behavior of CLIP is the
+weakest. The main reasons behind this phenomenon are as
+follows. First, CLIP is developed for natural images and
+ignores the characteristics of RS images (such as multiscale).
+Second, since the volume of samples in RSITMD is not
+big enough, the pretrained parameters of CLIP cannot be
+optimized to the ideal state. This significant change implies the
+importance of considering RS scenes’ specific characteristics.
+3) Results of the UCM-Captions Dataset: The diverse
+methods’ CMRSITR results are exhibited in Table III. Similar
+to the results of RSICD and RSITMD, IEFT is the best among
+all methods. For I Mm R, our IEFT achieves 77.38%, which is
+22.10%, 6.61%, 8.37%, 8.11%, 6.43%, 12.61%, 12.26%, and
+17.36% higher than CLIP, MSIT, AMFMN-soft, AMFMNfusion, AMFMN-sim, LW-WCR-b, LW-WCR-d, and GaLR,
+respectively. Also, the biggest improvements of I M R@10 are
+as high as 14.36% and 14.90% in the “Image Retrieval”
+and “Text Retrieval” cases, respectively. Those observations
+confirm the effectiveness of the proposed IEFT again. We are
+pleasantly surprised to note that the enhancements achieved by
+our method on the UCM dataset are more distinct than RSICD
+and RSITMD. This is largely due to the following reasons.
+On the one hand, compared with the other two datasets, the
+number of RS images per category in the UCM dataset is
+balanced, which is helpful to our IEFT sufficiently modeling
+
+relationships between RS images and their corresponding
+texts. On the other hand, besides exploring the relations
+between the different data, IEFT focuses on capturing the
+complex contents within RS from different aspects, which is
+conducive to CMRSITR tasks directly.
+4) Results of the Sydney-Captions Dataset: The results of
+various methods are exhibited in Table III. Not surprisingly,
+the performance of IEFT ranks first among all methods.
+For “Image Retrieval,” the I M R@k values of IEFT are
+approximately 1.05 (I M R@1), 1.01 (I M R@5), and 1.00
+(I M R@10) times as many as that of the second places
+(CLIP, LW-WCR-d, and LW-WCR-b). Similarly, for “Text
+Retrieval,” the I M R@k values of IEFT are approximately
+1.01 (I M R@1), 1.04 (I M R@5), and 1.01 (I M R@10) times
+as many as that of the second places (MIST). As a whole,
+compared to the second place (MSIT), the I Mm R value IEFT
+is 1.05 times as many as that of MSIT. These positive results
+confirm the superiorities of our IEFT again.
+Apart from the above numerical results, we also: 1) study
+the IEFT’s performance across the different categories in
+different datasets; 2) analyze the IEFT’s behavior under the
+noisy scenario (i.e., there are some negative words in the
+caption sentences); and 3) provide visual retrieval examples.
+From observing those results, we can find that our IEFT can
+still perform well. Detailed information can be found in the
+Supplementary Material.
+F. Time Cost Discussion
+In this section, we study the efficiency of our method by
+counting its inference times and parameter size.
+For inference times, we randomly select an RS image (or
+a text) to be the query and retrieve the corresponding texts
+(or RS images) from the testing set using the trained IEFT.
+The results (averaged values of ten random experiments) are
+exhibited in Table IV. The inference times of the other seven
+compared methods are also reported for reference. Note that
+the experimental settings of different methods are the same
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+TABLE IV
+R ETRIEVAL E FFICIENCY OF D IFFERENT M ETHODS (U NIT: S ECOND )
+
+5611715
+
+length of input tokens gradually [73]; and 3) altering the
+attention mechanism by the spatial reduction attention (such
+as PVTv2 [74]). Solving this shortcoming and balancing our
+model’s inference times and performance are our future works.
+V. C ONCLUSION
+
+TABLE V
+PARAMETERS VOLUME OF D IFFERENT M ETHODS (U NIT: M ILLIONS )
+
+as Table III. By observing those results, we can find that
+the inference times of all methods stay within a reasonable
+range. Nevertheless, due to the MHA mechanism, the time
+costs of the transform-based methods (CLIP, MSIT, and IEFT)
+are longer than that of DCNN-based models (AMFMN-soft,
+AMFMN-fusion, AMFMN-sim, LW-MCR, and GaLR). The
+most time-saving model is LW-MCR, while our IEFT is the
+most time-consuming model. The reason behind this investigation can be summarized as follows. The essential part of
+our IEFT is the transformer encoder, which contains multiple
+SAMs to explore the relations between RS images and texts.
+The time complexity of these SAMs is high, so the time costs
+of the proposed network are relatively high. Fortunately, the
+distinct performance gaps between IEFT and other methods
+(especially the DCNN-based models) illustrate that the extra
+time is well spent.
+The parameter volume of different models is displayed
+in Table V. By observing the results, we find that the
+transformer-based models (CLIP, MSIT, and IEFT) are heavier than the DCNN-based methods (AMFMN, LW-WCR,
+and GaLR). This is because the transformer encoder has
+more parameters compared with components within DCNN.
+Besides, IEFT is lighter than CLIP but heavier than MSIT.
+The reasons are that CLIP has more transformer encoders than
+IEFT, and IEFT’s feature learning module (i.e., IIEM) is larger
+than MSIT’s feature extract part. This investigation means the
+proposed IEFT is not the largest one, at least. In addition,
+the parameter sizes of different parts within our IEFT are
+25.83 million (FEM), 52.32 million (IIEM), and 21.97 million
+(RM).
+A notable observation is that although IEFT is not the
+heaviest model, its inference times are the longest. This is
+due to the CWFE unit embedded in IIEM. As mentioned in
+Section III-C2, CWFE tends to capture the helpful knowledge
+within RS images from the channel aspect. To this end,
+it would transpose the input feature map and then apply SAM.
+Since the number of channels is always large, the computational complexity of CWFE would be expensive. The possible
+solutions for this limitation are: 1) using sparse learning [71],
+[72] to optimize the attention mechanism; 2) decreasing the
+
+This article proposes an IEFT model to accomplish the
+CMRSITR task. It regards the RS images and texts as a whole
+and processes them simultaneously, which can effectively
+learn multimodel features and directly align their cross-modal
+semantic relationships. After mapping RS images and texts
+into the feature embeddings, IEFT first uses IIEM to deeply
+study the cross-modal data’s similarity relations (IMRI). Also,
+the visual features are enhanced in IIEM through a channelwise process (CWFE) and a localwise operation (LWFE).
+Then, the RM is developed and embedded at the top of our
+model to model the resemblance relationships further and
+produce the matching scores. Finally, the cross-modal retrieval
+results can be decided by those scores. The positive experimental results counted on four public datasets demonstrate the
+effectiveness of IEFT.
+Although the IEFT’s performance is well, there is still
+room for improvement. First, the IEFT only emphasizes the
+intermodal similarities or differences when it studies the
+cross-modal relationships. However, the intermodal affinity is
+ignored. Another deficiency of IEFT is the relatively high time
+complexity. Our future work will focus on these two points to
+optimize.
+R EFERENCES
+[1] Y. Gu, Y. Wang, and Y. Li, “A survey on deep learning-driven remote
+sensing image scene understanding: Scene classification, scene retrieval
+and scene-guided object detection,” Appl. Sci., vol. 9, no. 10, p. 2110,
+May 2019.
+[2] G. Cheng, X. Xie, J. Han, L. Guo, and G. Xia, “Remote sensing
+image scene classification meets deep learning: Challenges, methods,
+benchmarks, and opportunities,” IEEE J. Sel. Topics Appl. Earth Observ.
+Remote Sens., vol. 13, pp. 3735–3756, 2020.
+[3] I. Kotaridis and M. Lazaridou, “Remote sensing image segmentation
+advances: A meta-analysis,” ISPRS J. Photogramm. Remote Sens.,
+vol. 173, pp. 309–322, Mar. 2021.
+[4] Y. Li, J. Ma, and Y. Zhang, “Image retrieval from remote sensing big
+data: A survey,” Inf. Fusion, vol. 67, pp. 94–115, Mar. 2021.
+[5] X. Tang, X. Zhang, F. Liu, and L. Jiao, “Unsupervised deep feature
+learning for remote sensing image retrieval,” Remote Sens., vol. 10, no. 8,
+p. 1243, Aug. 2018.
+[6] C. Liu, J. Ma, X. Tang, F. Liu, X. Zhang, and L. Jiao, “Deep hash
+learning for remote sensing image retrieval,” IEEE Trans. Geosci.
+Remote Sens., vol. 59, no. 4, pp. 3420–3443, Apr. 2021.
+[7] X. Tang et al., “Meta-hashing for remote sensing image retrieval,” IEEE
+Trans. Geosci. Remote Sens., vol. 60, pp. 1–19, 2021.
+[8] Z. Yuan et al., “A lightweight multi-scale crossmodal text-image retrieval
+method in remote sensing,” IEEE Trans. Geosci. Remote Sens., vol. 60,
+pp. 1–19, 2021.
+[9] Q. Cheng, Y. Zhou, P. Fu, Y. Xu, and L. Zhang, “A deep semantic
+alignment network for the cross-modal image-text retrieval in remote
+sensing,” IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 14,
+pp. 4284–4297, 2021.
+[10] Z. Yuan et al., “Remote sensing cross-modal text-image retrieval based
+on global and local information,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5620616.
+[11] Y. Wang, J. Ma, M. Li, X. Tang, X. Han, and L. Jiao, “Multiscale interactive transformer for remote sensing cross-modal image-text
+retrieval,” in Proc. IEEE Int. Geosci. Remote Sens. Symp., Jul. 2022,
+pp. 839–842.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+5611715
+
+IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023
+
+[12] X. Tang et al., “An unsupervised remote sensing change detection
+method based on multiscale graph convolutional network and metric learning,” IEEE Trans. Geosci. Remote Sens., vol. 60, pp. 1–15,
+2021.
+[13] Y. Yang et al., “AR2 Det: An accurate and real-time rotational one-stage
+ship detector in remote sensing images,” IEEE Trans. Geosci. Remote
+Sens., vol. 60, pp. 1–14, 2021.
+[14] X. Tang et al., “Hyperspectral image classification based on 3-D
+octave convolution with spatial–spectral attention network,” IEEE Trans.
+Geosci. Remote Sens., vol. 59, no. 3, pp. 2430–2447, Mar. 2021.
+[15] Y. Liu, Q. Li, Y. Yuan, Q. Du, and Q. Wang, “ABNet: Adaptive balanced
+network for multiscale object detection in remote sensing imagery,”
+IEEE Trans. Geosci. Remote Sens., vol. 60, pp. 1–14, 2021.
+[16] Z. Yuan et al., “Exploring a fine-grained multiscale method for crossmodal remote sensing image retrieval,” IEEE Trans. Geosci. Remote
+Sens., vol. 60, 2022, Art. no. 4404119.
+[17] Y. Lv, W. Xiong, X. Zhang, and Y. Cui, “Fusion-based correlation
+learning model for cross-modal remote sensing image retrieval,” IEEE
+Geosci. Remote Sens. Lett., vol. 19, pp. 1–5, 2022.
+[18] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for
+image recognition,” in Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2016, pp. 770–778.
+[19] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” Neural
+Comput., vol. 9, no. 8, pp. 1735–1780, 1997.
+[20] F. Faghri, D. J. Fleet, J. R. Kiros, and S. Fidler, “VSE++:
+Improving visual-semantic embeddings with hard negatives,” 2017,
+arXiv:1707.05612.
+[21] C. Feichtenhofer et al., “Masked autoencoders as spatiotemporal
+learners,” in Proc. Adv. Neural Inf. Process. Syst., vol. 35, 2022,
+pp. 35946–35958.
+[22] X. Li et al., “OSCAR: Object-semantics aligned pre-training for visionlanguage tasks,” in Proc. Eur. Conf. Comput. Vis. Cham, Switzerland:
+Springer, 2020, pp. 121–137.
+[23] W. Kim, B. Son, and I. Kim, “ViLT: Vision-and-language transformer
+without convolution or region supervision,” in Proc. Int. Conf. Mach.
+Learn., 2021, pp. 5583–5594.
+[24] A. Vaswani et al., “Attention is all you need,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 30, 2017, pp. 1–11.
+[25] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training
+of deep bidirectional transformers for language understanding,” 2018,
+arXiv:1810.04805.
+[26] A. Dosovitskiy et al., “An image is worth 16 × 16 words: Transformers
+for image recognition at scale,” 2020, arXiv:2010.11929.
+[27] B. Kim, J. Lee, J. Kang, E. Kim, and H. J. Kim, “HOTR: End-toend human-object interaction detection with transformers,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2021,
+pp. 74–83.
+[28] N. Wang, W. Zhou, J. Wang, and H. Li, “Transformer meets tracker:
+Exploiting temporal context for robust visual tracking,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR), Jun. 2021,
+pp. 1571–1580.
+[29] Z. Jiang, Z. Xiang, J. Xu, and M. Zhao, “LGT-Net: Indoor panoramic
+room layout estimation with geometry-aware transformer network,”
+in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR),
+Jun. 2022, pp. 1644–1653.
+[30] Y.-C. Chen et al., “UNITER: Universal image-text image representation
+learning,” in Proc. 16th Eur. Conf. Comput. Vis. (ECCV). Glasgow, U.K.:
+Springer, Aug. 2020, pp. 104–120.
+[31] S. Li, T. Xiao, H. Li, W. Yang, and X. Wang, “Identity-aware textualvisual matching with latent co-attention,” in Proc. IEEE Int. Conf.
+Comput. Vis. (ICCV), Oct. 2017, pp. 1908–1917.
+[32] J. Gu, J. Cai, S. Joty, L. Niu, and G. Wang, “Look, imagine and match:
+Improving textual-visual cross-modal retrieval with generative models,”
+in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit., Jun. 2018,
+pp. 7181–7189.
+[33] M. Żelaszczyk and J. Mańdziuk, “Cross-modal text and visual generation: A systematic review. Part 1: Image to text,” Inf. Fusion, vol. 93,
+pp. 302–329, May 2023.
+[34] Q. You, J. Luo, and Z. Zhang, “End-to-end convolutional semantic
+embeddings,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.,
+Jun. 2018, pp. 5735–5744.
+[35] L. Zhen, P. Hu, X. Wang, and D. Peng, “Deep supervised cross-modal
+retrieval,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2019, pp. 10386–10395.
+
+[36] Z. Zheng, L. Zheng, M. Garrett, Y. Yang, M. Xu, and Y.-D. Shen, “Dualpath convolutional image-text embeddings with instance loss,” ACM
+Trans. Multimedia Comput., Commun., Appl., vol. 16, no. 2, pp. 1–23,
+May 2020.
+[37] C. Wang, L. Li, C. Yan, Z. Wang, Y. Sun, and J. Zhang, “Cross-modal
+semantic correlation learning by Bi-CNN network,” IET Image Process.,
+vol. 15, no. 14, pp. 3674–3684, Dec. 2021.
+[38] Z. Ji, H. Wang, J. Han, and Y. Pang, “SMAN: Stacked multimodal
+attention network for cross-modal image–text retrieval,” IEEE Trans.
+Cybern., vol. 52, no. 2, pp. 1086–1097, Feb. 2022.
+[39] K.-H. Lee, X. Chen, G. Hua, H. Hu, and X. He, “Stacked cross attention
+for image-text matching,” in Proc. Eur. Conf. Comput. Vis. (ECCV),
+2018, pp. 201–216.
+[40] Y. Huang, Q. Wu, C. Song, and L. Wang, “Learning semantic concepts
+and order for image and sentence matching,” in Proc. IEEE/CVF Conf.
+Comput. Vis. Pattern Recognit., Jun. 2018, pp. 6163–6171.
+[41] K. Li, Y. Zhang, K. Li, Y. Li, and Y. Fu, “Visual semantic reasoning
+for image-text matching,” in Proc. IEEE/CVF Int. Conf. Comput. Vis.
+(ICCV), Oct. 2019, pp. 4653–4661.
+[42] X. Xu, T. Wang, Y. Yang, L. Zuo, F. Shen, and H. T. Shen, “Crossmodal attention with semantic consistence for image–text matching,”
+IEEE Trans. Neural Netw. Learn. Syst., vol. 31, no. 12, pp. 5412–5425,
+Dec. 2020.
+[43] K. Li, Y. Zhang, K. Li, Y. Li, and Y. Fu, “Image-text embedding learning
+via visual and textual semantic reasoning,” IEEE Trans. Pattern Anal.
+Mach. Intell., vol. 45, no. 1, pp. 641–656, Jan. 2023.
+[44] J. Lu, D. Batra, D. Parikh, and S. Lee, “ViLBERT: Pretraining taskagnostic visiolinguistic representations for vision-and-language tasks,”
+in Proc. Adv. Neural Inf. Process. Syst., vol. 32, 2019, pp. 1–11.
+[45] J. Li, R. Selvaraju, A. Gotmare, S. Joty, C. Xiong, and S. C. H. Hoi,
+“Align before fuse: Vision and language representation learning with
+momentum distillation,” in Proc. Adv. Neural Inf. Process. Syst.
+(NeurIPS), vol. 34, 2021, pp. 9694–9705.
+[46] G. Mikriukov, M. Ravanbakhsh, and B. Demir, “Unsupervised contrastive hashing for cross-modal retrieval in remote sensing,” in Proc.
+IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP), May 2022,
+pp. 4463–4467.
+[47] A. Radford et al., “Improving language understanding by generative pretraining,” Tech. Rep., 2018.
+[48] A. Radford et al., “Language models are unsupervised multitask learners,” OpenAI blog, vol. 1, no. 8, p. 9, 2019.
+[49] T. B. Brown et al., “Language models are few-shot learners,” in Proc.
+Adv. Neur. Inf. Process. Sys., vol. 33, 2020, pp. 1877–1901.
+[50] S. Khan, M. Naseer, M. Hayat, S. W. Zamir, F. S. Khan, and M. Shah,
+“Transformers in vision: A survey,” ACM Comput. Surveys, vol. 54,
+no. 10s, pp. 1–41, Jan. 2022.
+[51] Y. Bazi, L. Bashmal, M. M. A. Rahhal, R. A. Dayil, and N. A. Ajlan,
+“Vision transformers for remote sensing image classification,” Remote
+Sens., vol. 13, no. 3, p. 516, Feb. 2021.
+[52] P. Lv, W. Wu, Y. Zhong, F. Du, and L. Zhang, “SCViT: A spatialchannel feature preserving vision transformer for remote sensing image
+scene classification,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 4409512.
+[53] J. Ma, M. Li, X. Tang, X. Zhang, F. Liu, and L. Jiao, “Homo–
+heterogenous transformer learning framework for RS scene classification,” IEEE J. Sel. Topics Appl. Earth Observ. Remote Sens., vol. 15,
+pp. 2223–2239, 2022.
+[54] X. Tang, M. Li, J. Ma, X. Zhang, F. Liu, and L. Jiao, “EMTCAL:
+Efficient multiscale transformer and cross-level attention learning for
+remote sensing scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 60, 2022, Art. no. 5626915.
+[55] Q. Wang, Y. Liu, Z. Xiong, and Y. Yuan, “Hybrid feature aligned
+network for salient object detection in optical remote sensing imagery,”
+IEEE Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5624915.
+[56] D. Hong et al., “SpectralFormer: Rethinking hyperspectral image classification with transformers,” IEEE Trans. Geosci. Remote Sens., vol. 60,
+pp. 1–15, 2021.
+[57] Q. Li, R. Zhong, X. Du, and Y. Du, “TransUNetCD: A hybrid transformer network for change detection in optical remote-sensing images,”
+IEEE Trans. Geosci. Remote Sens., vol. 60, 2022, Art. no. 5622519.
+[58] L. Ding et al., “Looking outside the window: Wide-context transformer for the semantic segmentation of high-resolution remote sensing images,” IEEE Trans. Geosci. Remote Sens., vol. 60, 2022,
+Art. no. 4410313.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+TANG et al.: IEFT FOR CROSS-MODAL REMOTE-SENSING IMAGE AND TEXT RETRIEVAL
+
+[59] S. W. Zamir, A. Arora, S. Khan, M. Hayat, F. S. Khan, and M. Yang,
+“Restormer: Efficient transformer for high-resolution image restoration,”
+in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR),
+Jun. 2022, pp. 5718–5729.
+[60] X. Lu, B. Wang, X. Zheng, and X. Li, “Exploring models and data for
+remote sensing image caption generation,” IEEE Trans. Geosci. Remote
+Sens., vol. 56, no. 4, pp. 2183–2195, Apr. 2018.
+[61] B. Qu, X. Li, D. Tao, and X. Lu, “Deep semantic understanding of
+high resolution remote sensing image,” in Proc. Int. Conf. Comput., Inf.
+Telecommun. Syst. (CITS), Jul. 2016, pp. 1–5.
+[62] Y. Yang and S. Newsam, “Bag-of-visual-words and spatial extensions
+for land-use classification,” in Proc. 18th SIGSPATIAL Int. Conf. Adv.
+Geographic Inf. Syst., Nov. 2010, pp. 270–279.
+[63] F. Zhang, B. Du, and L. Zhang, “Saliency-guided unsupervised feature
+learning for scene classification,” IEEE Trans. Geosci. Remote Sens.,
+vol. 53, no. 4, pp. 2175–2184, Apr. 2015.
+[64] T.-Y. Lin et al., “Microsoft COCO: Common objects in context,” in
+Proc. Eur. Conf. Comput. Vis. Cham, Switzerland: Springer, 2014,
+pp. 740–755.
+[65] R. Krishna et al., “Visual genome: Connecting language and vision using
+crowdsourced dense image annotations,” Int. J. Comput. Vis., vol. 123,
+no. 1, pp. 32–73, May 2017.
+[66] V. Ordonez, G. Kulkarni, and T. Berg, “Im2Text: Describing images
+using 1 million captioned photographs,” in Proc. Adv. Neural Inf.
+Process. Syst., vol. 24, 2011, pp. 1–9.
+[67] P. Sharma, N. Ding, S. Goodman, and R. Soricut, “Conceptual captions:
+A cleaned, hypernymed, image alt-text dataset for automatic image
+captioning,” in Proc. 56th Annu. Meeting Assoc. Comput. Linguistics,
+2018, pp. 2556–2565.
+[68] Y. Wu et al., “Google’s neural machine translation system: Bridging the
+gap between human and machine translation,” 2016, arXiv:1609.08144.
+[69] E. D. Cubuk, B. Zoph, J. Shlens, and Q. V. Le, “Randaugment: Practical
+automated data augmentation with a reduced search space,” in Proc.
+IEEE/CVF Conf. Comput. Vis. Pattern Recognit. Workshops (CVPRW),
+Jun. 2020, pp. 3008–3017.
+[70] A. Radford et al., “Learning transferable visual models from natural language supervision,” in Proc. Int. Conf. Mach. Learn., 2021,
+pp. 8748–8763.
+[71] R. Child, S. Gray, A. Radford, and I. Sutskever, “Generating long
+sequences with sparse transformers,” 2019, arXiv:1904.10509.
+[72] L. Fan et al., “Embracing single stride 3D object detector with sparse
+transformer,” in Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit.
+(CVPR), Jun. 2022, pp. 8448–8458.
+[73] Z. Dai, G. Lai, Y. Yang, and Q. Le, “Funnel-Transformer: Filtering out
+sequential redundancy for efficient language processing,” in Proc. Adv.
+Neural Inf. Process. Syst., vol. 33, pp. 4271–4282, 2020.
+[74] W. Wang et al., “PVT v2: Improved baselines with pyramid vision
+transformer,” Comput. Vis. Media, vol. 8, no. 3, pp. 415–424, Sep. 2022.
+
+Xu Tang (Senior Member, IEEE) received the
+B.Sc., M.Sc., and Ph.D. degrees in electronic circuits
+and systems from Xidian University, Xi’an, China,
+in 2007, 2010, and 2017, respectively.
+From 2015 to 2016, he was a Joint Ph.D. Student
+along with Prof. W. J. Emery at the University
+of Colorado at Boulder, Boulder, CO, USA. He is
+currently an Associate Professor with the Key Laboratory of Intelligent Perception and Image Understanding, Ministry of Education, Xidian University.
+His research interests include remote-sensing image
+content-based retrieval and reranking, hyperspectral image processing, remotesensing scene classification, and object detection. For more details, refer to
+https://web.xidian.edu.cn/tangxu/.
+
+5611715
+
+Yijing Wang (Graduate Student Member, IEEE)
+received the B.E. degree in intelligent science and
+technology from Xidian University, Xi’an, China,
+in 2021, where she is currently pursuing the Ph.D.
+degree in computer science and technology with the
+Key Laboratory of Intelligent Perception and Image
+Understanding of the Ministry of Education.
+Her research interests include cross-modal remotesensing image and text retrieval, remote-sensing
+image processing, and deep learning.
+
+Jingjing Ma (Member, IEEE) received the B.S. and
+Ph.D. degrees from Xidian University, Xi’an, China,
+in 2004 and 2012, respectively.
+She is currently an Associate Professor with the
+Key Laboratory of Intelligent Perception and Image
+Understanding, Ministry of Education, Xidian University. Her research interests include computational
+intelligence and image understanding.
+
+Xiangrong Zhang (Senior Member, IEEE) received
+the B.S. and M.S. degrees from the School of
+Computer Science, Xidian University, Xi’an, China,
+in 1999 and 2003, respectively, and the Ph.D. degree
+from the School of Electronic Engineering, Xidian
+University, in 2006.
+From January 2015 to March 2016, she was
+a Visiting Scientist with the Computer Science
+and Artificial Intelligence Laboratory, Massachusetts
+Institute of Technology, Cambridge, MA, USA. She
+is currently a Professor with the Key Laboratory of
+Intelligent Perception and Image Understanding of the Ministry of Education,
+Xidian University. Her research interests include pattern recognition, machine
+learning, and remote-sensing image analysis and understanding.
+Fang Liu (Member, IEEE) was born in China in
+1990. She received the B.S. degree in information and computing science from Henan University,
+Kaifeng, China, in 2012, and the Ph.D. degree in
+intelligent information processing from Xidian University, Xi’an, China, in 2018.
+She is currently a Lecturer with the Nanjing University of Science and Technology, Nanjing, China.
+Her research interests include deep learning, object
+detection, polarimetric SAR image classification,
+and change detection.
+Licheng Jiao (Fellow, IEEE) received the B.S.
+degree in high voltage from Shanghai Jiao Tong
+University, Shanghai, China, in 1982, and the M.S.
+and Ph.D. degrees in electronic engineering from
+Xi’an Jiaotong University, Xi’an, China, in 1984 and
+1990, respectively.
+From 1984 to 1986, he was an Assistant Professor
+with the Civil Aviation Institute of China, Tianjin,
+China. From 1990 to 1991, he was a Post-Doctoral
+Fellow with the Key Laboratory for Radar Signal
+Processing, Xidian University, Xi’an, where he is
+currently the Director of the Key Laboratory of Intelligent Perception and
+Image Understanding of the Ministry of Education of China. He has authored
+or coauthored more than 200 scientific articles. His research interests include
+signal and image processing, nonlinear circuits and systems theory, wavelet
+theory, natural computation, and intelligent information processing.
+Dr. Jiao is also a member of the IEEE Xian Section Executive Committee
+and an Executive Committee Member of the Chinese Association of Artificial
+Intelligence. He is the Chairperson of the Awards and Recognition Committee.
+
+Authorized licensed use limited to: XIDIAN UNIVERSITY. Downloaded on April 16,2026 at 05:57:24 UTC from IEEE Xplore. Restrictions apply.
+
+

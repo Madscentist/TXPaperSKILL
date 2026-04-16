@@ -1,0 +1,86 @@
+[
+  {
+    "filename": "EATDer_Edge-Assisted_Adaptive_Transformer_Detector_for_Remote_Sensing_Change_Detection.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/EATDer_Edge-Assisted_Adaptive_Transformer_Detector_for_Remote_Sensing_Change_Detection.txt",
+    "word_count": 12926,
+    "char_count": 78047,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024\n\n5602015\n\nEATDer: Edge-Assisted Adaptive Transformer\nDetector for Remote Sensing Change Detection\nJingjing Ma, Member, IEEE, Junyi Duan , Xu Tang , Senior Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, and Licheng Jiao , Fellow, IEEE\nAbstract— Change detection (CD) is one of the important\nresearch topics in remote sensing (RS) image processing.\nRecently, convolutional neural networks (CNNs) have dominated\nthe RSCD community...."
+  },
+  {
+    "filename": "Interacting-Enhancing_Feature_Transformer_for_Cross-Modal_Remote-Sensing_Image_and_Text_Retrieval.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Interacting-Enhancing_Feature_Transformer_for_Cross-Modal_Remote-Sensing_Image_and_Text_Retrieval.txt",
+    "word_count": 13283,
+    "char_count": 83375,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023\n\n5611715\n\nInteracting-Enhancing Feature Transformer for\nCross-Modal Remote-Sensing Image\nand Text Retrieval\nXu Tang , Senior Member, IEEE, Yijing Wang , Graduate Student Member, IEEE, Jingjing Ma, Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE, and Licheng Jiao , Fellow, IEEE\nAbstract— Cross-modal remote-sensing image–text retrieval\n(CMRSITR) is a challenging topic in the remote-sensing (RS)\ncommunity..."
+  },
+  {
+    "filename": "Language-Guided_Progressive_Query_Refinement_With_Diffusion_Model_for_Visual_Grounding_on_Remote_Sensing_Images.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Language-Guided_Progressive_Query_Refinement_With_Diffusion_Model_for_Visual_Grounding_on_Remote_Sensing_Images.txt",
+    "word_count": 12726,
+    "char_count": 83768,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025\n\n5647614\n\nLanguage-Guided Progressive Query Refinement\nWith Diffusion Model for Visual Grounding on\nRemote Sensing Images\nXu Tang , Senior Member, IEEE, Ruitao Shen , Jingjing Ma, Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu , Senior Member, IEEE,\nand Licheng Jiao , Life Fellow, IEEE\nAbstract—Remote sensing visual grounding (RSVG) is a lively\nresearch topic in the RS community. Due to the superior performance of t..."
+  },
+  {
+    "filename": "Multiple_Information_Collaborative_Fusion_Network_for_Joint_Classification_of_Hyperspectral_and_LiDAR_Data.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Multiple_Information_Collaborative_Fusion_Network_for_Joint_Classification_of_Hyperspectral_and_LiDAR_Data.txt",
+    "word_count": 12157,
+    "char_count": 79783,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024\n\n5525416\n\nMultiple Information Collaborative Fusion Network\nfor Joint Classification of Hyperspectral\nand LiDAR Data\nXu Tang , Senior Member, IEEE, Yizhou Zou, Jingjing Ma, Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE,\nand Licheng Jiao , Fellow, IEEE\n\nAbstract— Joint classification of hyperspectral image (HSI)\nand light detection and ranging (LiDAR) can simultaneously\nutilize rich spectral informati..."
+  },
+  {
+    "filename": "Multipretext-Task_Prototypes_Guided_Dynamic_Contrastive_Learning_Network_for_Few-Shot_Remote_Sensing_Scene_Classification.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Multipretext-Task_Prototypes_Guided_Dynamic_Contrastive_Learning_Network_for_Few-Shot_Remote_Sensing_Scene_Classification.txt",
+    "word_count": 13011,
+    "char_count": 79819,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023\n\n5614216\n\nMultipretext-Task Prototypes Guided Dynamic\nContrastive Learning Network for Few-Shot Remote\nSensing Scene Classification\nJingjing Ma, Member, IEEE, Weiquan Lin, Xu Tang , Senior Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu, Member, IEEE, and Licheng Jiao , Fellow, IEEE\n\nAbstract— As a content management technique, remote sensing\n(RS) scene classification (RSSC) always attracts researchers’\nattention. In..."
+  },
+  {
+    "filename": "Multiscale_Sparse_Cross-Attention_Network_for_Remote_Sensing_Scene_Classification.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Multiscale_Sparse_Cross-Attention_Network_for_Remote_Sensing_Scene_Classification.txt",
+    "word_count": 12641,
+    "char_count": 81392,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025\n\n5605416\n\nMultiscale Sparse Cross-Attention Network for\nRemote Sensing Scene Classification\nJingjing Ma, Member, IEEE, Wei Jiang, Xu Tang , Senior Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE,\nand Licheng Jiao , Fellow, IEEE\n\nAbstract— Remote sensing (RS) scene classification (RSSC) is\na prominent research topic in the RS community. Multilevel\nfeature fusion is an important way of addressing RSSC, a..."
+  },
+  {
+    "filename": "remotesensing-15-04229-v2.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/remotesensing-15-04229-v2.txt",
+    "word_count": 8984,
+    "char_count": 60739,
+    "text_preview": "remote sensing\nTechnical Note\n\nMTGL40-5: A Multi-Temporal Dataset for Remote Sensing\nImage Geo-Localization\nJingjing Ma, Shiji Pei, Yuqun Yang, Xu Tang *\n\nand Xiangrong Zhang\n\nSchool of Artificial Intelligence, Xidian University, Xi’an 710071, China; jjma@xidian.edu.cn (J.M.);\n21171213974@stu.xidian.edu.cn (S.P.); 21171110176@stu.xidian.edu.cn (Y.Y.); xrzhang@mail.xidian.edu.cn (X.Z.)\n* Correspondence: tangxu128@xidian.edu.cn\n\nCitation: Ma, J.; Pei, S.; Yang, Y.;\nTang, X.; Zhang, X. MTGL40-5: A\n..."
+  },
+  {
+    "filename": "remotesensing-15-05706-v2.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/remotesensing-15-05706-v2.txt",
+    "word_count": 16608,
+    "char_count": 105718,
+    "text_preview": "remote sensing\nArticle\n\nNoisy Remote Sensing Scene Classification via Progressive\nLearning Based on Multiscale Information Exploration\nXu Tang * , Ruiqi Du, Jingjing Ma and Xiangrong Zhang\nSchool of Artificial Intelligence, Xidian University, Xi’an 710071, China; 22171214800@stu.xidian.edu.cn (R.D.);\njjma@xidian.edu.cn (J.M.); xrzhang@mail.xidian.edu.cn (X.Z.)\n* Correspondence: tangxu128@xidian.edu.cn\n\nCitation: Tang, X.; Du, R.; Ma, J.;\nZhang, X. Noisy Remote Sensing\n\nAbstract: Remote sensing (..."
+  },
+  {
+    "filename": "Spatial_Pooling_Transformer_Network_and_Noise-Tolerant_Learning_for_Noisy_Hyperspectral_Image_Classification.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Spatial_Pooling_Transformer_Network_and_Noise-Tolerant_Learning_for_Noisy_Hyperspectral_Image_Classification.txt",
+    "word_count": 14829,
+    "char_count": 94225,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 62, 2024\n\n5509719\n\nSpatial Pooling Transformer Network and\nNoise-Tolerant Learning for Noisy\nHyperspectral Image Classification\nJingjing Ma, Member, IEEE, Yizhou Zou, Xu Tang , Senior Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu , Member, IEEE, and Licheng Jiao , Fellow, IEEE\nAbstract— Hyperspectral image (HSI) classification is a hot\ntopic in remote sensing (RS). A large number of studies have\nbeen proposed and achieved e..."
+  },
+  {
+    "filename": "SpiralMamba_Spatial-Spectral_Complementary_Mamba_With_Spatial_Spiral_Scan_for_Hyperspectral_Image_Classification.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/SpiralMamba_Spatial-Spectral_Complementary_Mamba_With_Spatial_Spiral_Scan_for_Hyperspectral_Image_Classification.txt",
+    "word_count": 14132,
+    "char_count": 92566,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 63, 2025\n\n5510319\n\nSpiralMamba: Spatial–Spectral Complementary\nMamba With Spatial Spiral Scan for\nHyperspectral Image Classification\nXu Tang , Senior Member, IEEE, Yuexi Yao, Jingjing Ma, Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Yuqun Yang, Bo Wang,\nand Licheng Jiao , Fellow, IEEE\n\nAbstract— Hyperspectral image (HSI) classification is crucial in the remote sensing (RS) community. In recent years,\nTransformers have been popular ..."
+  },
+  {
+    "filename": "Unsupervised_SAR_Image_Change_Detection_Based_on_Feature_Fusion_of_Information_Transfer.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/Unsupervised_SAR_Image_Change_Detection_Based_on_Feature_Fusion_of_Information_Transfer.txt",
+    "word_count": 4766,
+    "char_count": 29592,
+    "text_preview": "IEEE GEOSCIENCE AND REMOTE SENSING LETTERS, VOL. 20, 2023\n\n4004905\n\nUnsupervised SAR Image Change Detection Based\non Feature Fusion of Information Transfer\nJingjing Ma, Member, IEEE, Desheng Li, Xu Tang , Senior Member, IEEE, Yuqun Yang, Student Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, and Licheng Jiao , Fellow, IEEE\nAbstract— Synthetic aperture radar (SAR) image change\ndetection is a hot but challenging task due to SAR images’\ncomplex contents and inherent speckle noises. The expect..."
+  },
+  {
+    "filename": "WNet_W-Shaped_Hierarchical_Network_for_Remote-Sensing_Image_Change_Detection.pdf",
+    "txt_path": "/mnt/g/project/PaperSkill/extracted_texts/WNet_W-Shaped_Hierarchical_Network_for_Remote-Sensing_Image_Change_Detection.txt",
+    "word_count": 11700,
+    "char_count": 73768,
+    "text_preview": "IEEE TRANSACTIONS ON GEOSCIENCE AND REMOTE SENSING, VOL. 61, 2023\n\n5615814\n\nWNet: W-Shaped Hierarchical Network for\nRemote-Sensing Image Change Detection\nXu Tang , Senior Member, IEEE, Tianxiang Zhang, Jingjing Ma, Member, IEEE,\nXiangrong Zhang , Senior Member, IEEE, Fang Liu, Member, IEEE, and Licheng Jiao , Fellow, IEEE\n\nAbstract— Change detection (CD) is a hot research topic in the\nremote-sensing (RS) community. With the increasing availability\nof high-resolution (HR) RS images, there is a gr..."
+  }
+]

@@ -1,0 +1,161 @@
+{
+  "summary": {
+    "total_papers_analyzed": 12,
+    "analysis_dimensions": [
+      "surface_style",
+      "syntactic_style",
+      "rhetorical_structure",
+      "academic_stance"
+    ]
+  },
+  "surface_style_aggregate": {
+    "sentence_length_stats": {
+      "短句": "9篇 (75.0%)",
+      "中等句": "3篇 (25.0%)"
+    },
+    "voice_stats": {
+      "主动语态较多": "12篇 (100.0%)"
+    },
+    "first_person_stats": {
+      "使用第一人称": "5篇 (41.7%)",
+      "避免第一人称": "7篇 (58.3%)"
+    },
+    "top_conjunctions": [
+      [
+        "however",
+        9
+      ],
+      [
+        "but",
+        6
+      ],
+      [
+        "therefore",
+        5
+      ],
+      [
+        "in addition",
+        4
+      ],
+      [
+        "although",
+        4
+      ],
+      [
+        "for example",
+        3
+      ],
+      [
+        "thus",
+        3
+      ],
+      [
+        "on the other hand",
+        1
+      ],
+      [
+        "specifically",
+        1
+      ],
+      [
+        "furthermore",
+        1
+      ]
+    ],
+    "top_hedge_words": [
+      [
+        "indicates",
+        1
+      ]
+    ],
+    "top_emphasis_words": [
+      [
+        "especially",
+        2
+      ],
+      [
+        "essentially",
+        1
+      ],
+      [
+        "particularly",
+        1
+      ]
+    ],
+    "total_papers": 12
+  },
+  "syntactic_style_aggregate": {
+    "avg_general_specific_ratio": 0.025712394615795737,
+    "general_specific_pref": "较少使用先总后分",
+    "avg_concession_ratio": 0.06642875715817305,
+    "concession_pref": "常用让步句",
+    "avg_causal_ratio": 0.07903303200824033,
+    "causal_pref": "常用因果句",
+    "avg_comparison_ratio": 0.0033282130056323605,
+    "comparison_pref": "较少使用比较句",
+    "avg_nominalization_ratio": 0.050655064872650125,
+    "nominalization_pref": "常用名词化"
+  },
+  "rhetorical_structure_aggregate": {
+    "introduction": {
+      "most_common_pattern": "background → method",
+      "frequency": "8篇 (80.0%)",
+      "total_papers": 10
+    },
+    "methods": {
+      "most_common_pattern": "overview → technical details",
+      "frequency": "3篇 (100.0%)",
+      "total_papers": 3
+    },
+    "results": {
+      "most_common_pattern": "setup → results → comparison",
+      "frequency": "5篇 (100.0%)",
+      "total_papers": 5
+    }
+  },
+  "academic_stance_aggregate": {
+    "assertion_stats": {
+      "平衡": "8篇 (66.7%)",
+      "强断言": "4篇 (33.3%)"
+    },
+    "conservative_stats": {
+      "保守表达较少": "12篇 (100.0%)"
+    },
+    "limitation_stats": {
+      "较少承认局限": "12篇 (100.0%)"
+    },
+    "top_emphasis_directions": [
+      [
+        "novelty",
+        1
+      ]
+    ]
+  },
+  "stable_styles": {
+    "句长偏好_短句": {
+      "confidence": "高置信",
+      "description": "75.0%的论文使用短句",
+      "recommendation": "优先采用"
+    },
+    "语态偏好_主动语态较多": {
+      "confidence": "高置信",
+      "description": "100.0%的论文使用主动语态较多",
+      "recommendation": "优先采用"
+    },
+    "句法结构_让步句": {
+      "confidence": "中置信",
+      "description": "平均使用率0.066",
+      "recommendation": "根据需要采用"
+    },
+    "学术姿态_平衡": {
+      "confidence": "高置信",
+      "description": "66.7%的论文使用平衡",
+      "recommendation": "优先采用"
+    }
+  },
+  "confidence_levels": {
+    "high_confidence": "稳定出现在>60%论文中的风格",
+    "medium_confidence": "部分一致的风格（30-60%论文）",
+    "unstable": "不稳定的风格（<30%论文，忽略）"
+  }
+}

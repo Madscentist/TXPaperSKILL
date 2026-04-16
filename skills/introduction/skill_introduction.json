@@ -1,0 +1,48 @@
+{
+  "section": "introduction",
+  "goal": [
+    "介绍研究领域和背景",
+    "指出现有方法的不足和问题",
+    "提出本文的方法和创新",
+    "说明论文的主要贡献",
+    "引导读者理解论文结构"
+  ],
+  "structure": [
+    "研究背景（2-3段）",
+    "现有方法的局限性（1-2段）",
+    "本文方法的提出（1-2段）",
+    "主要贡献（1段）",
+    "论文结构说明（可选）"
+  ],
+  "tone": [
+    "客观、严谨、有说服力",
+    "使用文献支持观点",
+    "避免过度批评现有方法",
+    "强调创新性和必要性"
+  ],
+  "preferred_phrases": [
+    "In recent years, ... has attracted increasing attention",
+    "However, existing methods still face challenges",
+    "To address these issues, we propose...",
+    "The main contributions of this paper are:",
+    "First, ... Second, ... Finally, ..."
+  ],
+  "logic_pattern": [
+    "background → method"
+  ],
+  "avoid": [
+    "过度批评现有方法",
+    "夸大研究意义",
+    "使用第一人称过多",
+    "缺乏文献支持",
+    "逻辑不连贯"
+  ],
+  "constraints": [
+    "长度：800-1200词",
+    "引用：至少15-20篇参考文献",
+    "结构：背景→问题→方法→贡献",
+    "贡献：明确列出2-4个主要贡献",
+    "不编造研究背景",
+    "不夸大方法创新性"
+  ]
+}
