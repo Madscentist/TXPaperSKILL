@@ -1,0 +1,22 @@
+{
+  "default_author": "xu-tang",
+  "authors": [
+    {
+      "id": "xu-tang",
+      "name": "唐旭",
+      "domain": "remote-sensing",
+      "papers_count": 12,
+      "sections": [
+        "abstract",
+        "introduction",
+        "related_work",
+        "methods",
+        "results",
+        "discussion",
+        "conclusion"
+      ],
+      "skill_path": "hermes-skills/author-styles/xu-tang-paper-style",
+      "confidence": "high"
+    }
+  ]
+}
